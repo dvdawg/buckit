@@ -17,7 +17,6 @@ config.resolver.nodeModulesPaths = [
 
 config.resolver.disableHierarchicalLookup = true;
 
-// Add path alias for @ to point to the project root
 config.resolver.alias = {
   '@': projectRoot,
 };

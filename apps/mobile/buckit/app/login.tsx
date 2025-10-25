@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/hooks/useSession';
+import BucketLogo from '@/components/BucketLogo';
+
+const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,6 +24,24 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { signOut } = useSession();
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -74,163 +97,156 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Welcome to Buckit</Text>
-          <Text style={styles.subtitle}>
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </Text>
-
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleAuth}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={() => setIsSignUp(!isSignUp)}
-            >
-              <Text style={styles.switchText}>
-                {isSignUp 
-                  ? 'Already have an account? Sign In' 
-                  : "Don't have an account? Sign Up"
-                }
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.developerButton}
-              onPress={handleDeveloperAuth}
-              disabled={loading}
-            >
-              <Text style={styles.developerButtonText}>
-                {loading ? 'Loading...' : 'Developer Sign In'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={handleSignOut}
-            >
-              <Text style={styles.signOutText}>Sign Out</Text>
-            </TouchableOpacity>
+    <View style={styles.container}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }
+        ]}
+      >
+        {/* Logo Section */}
+        <View style={styles.logoSection}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.buckitText}>Buckit</Text>
+            <BucketLogo size={32} color="#fff" />
           </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        {/* Welcome Text */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>Welcome</Text>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.buttonDisabled]}
+            onPress={handleAuth}
+            disabled={loading}
+          >
+            <Text style={styles.loginButtonText}>
+              {loading ? 'Loading...' : 'Login'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={() => setIsSignUp(!isSignUp)}
+          >
+            <Text style={styles.registerButtonText}>Register</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Developer Tools */}
+        <View style={styles.developerSection}>
+          <TouchableOpacity
+            style={styles.developerButton}
+            onPress={handleDeveloperAuth}
+            disabled={loading}
+          >
+            <Text style={styles.developerButtonText}>
+              {loading ? 'Loading...' : 'Developer Sign In'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollContainer: {
-    flexGrow: 1,
+    backgroundColor: '#000',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 40,
   },
   content: {
-    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 48,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#666',
-  },
-  form: {
     width: '100%',
   },
-  input: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingVertical: 16,
+  logoSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 80,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buckitText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 1,
+    marginRight: 12,
+  },
+  welcomeSection: {
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  welcomeTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    marginBottom: 40,
+  },
+  loginButton: {
+    backgroundColor: '#4ade80',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    flex: 1,
+    marginRight: 12,
+    alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#374151',
   },
-  buttonText: {
-    color: 'white',
+  loginButtonText: {
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
   },
-  switchButton: {
+  registerButton: {
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    flex: 1,
+    marginLeft: 12,
     alignItems: 'center',
-    marginBottom: 24,
   },
-  switchText: {
-    color: '#007AFF',
-    fontSize: 14,
+  registerButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  developerSection: {
+    alignItems: 'center',
+    marginTop: 40,
   },
   developerButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#3b82f6',
     borderRadius: 8,
-    paddingVertical: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   developerButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  signOutButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  signOutText: {
-    color: '#ff3b30',
+    color: '#fff',
     fontSize: 14,
+    fontWeight: '600',
   },
 });

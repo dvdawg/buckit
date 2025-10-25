@@ -69,6 +69,8 @@ const cardWidth = (width - 60) / 2; // 2 columns with padding
 export default function Buckets() {
   const router = useRouter();
 
+  console.log('Buckets page rendering');
+
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);
   };
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
   },
   bucketCard: {
     width: cardWidth,
-    height: 200,
+    height: 280,
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',

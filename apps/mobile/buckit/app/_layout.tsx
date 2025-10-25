@@ -6,6 +6,7 @@ export default function RootLayout() {
     <SessionProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="buckets" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         <Stack.Screen name="modals" options={{ headerShown: false }} />
       </Stack>

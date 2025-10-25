@@ -30,6 +30,7 @@ function AuthGate() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="buckets" />
+      <Stack.Screen name="performance" />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       <Stack.Screen name="modals" />
     </Stack>

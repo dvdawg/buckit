@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
+import PerformancePreview from '@/components/PerformancePreview';
 
 // Dummy data
 const user = {
@@ -98,6 +99,9 @@ export default function Profile() {
           </Text>
         </View>
       </View>
+
+      {/* Performance Preview */}
+      <PerformancePreview />
 
       {/* Buckets Section */}
       <View style={styles.section}>

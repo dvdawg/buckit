@@ -16,37 +16,58 @@ const jitsBucket = {
       id: "1",
       title: "Mt. Tam Hike",
       location: "Mt Tamalpais",
-      completed: false,
+      completed: true,
+      satisfaction: 5,
+      photos: [
+        "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+      ],
     },
     {
       id: "2", 
-      title: "Mt. Tam Hike",
-      location: "Mt Tamalpais",
-      completed: false,
+      title: "Golden Gate Bridge Walk",
+      location: "San Francisco",
+      completed: true,
+      satisfaction: 4,
+      photos: [
+        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+      ],
     },
     {
       id: "3",
-      title: "Mt. Tam Hike", 
-      location: "Mt Tamalpais",
+      title: "Muir Woods Trail", 
+      location: "Mill Valley",
       completed: false,
+      satisfaction: null,
+      photos: [],
     },
     {
       id: "4",
-      title: "Mt. Tam Hike",
-      location: "Mt Tamalpais", 
-      completed: false,
+      title: "Lands End Coastal Walk",
+      location: "San Francisco", 
+      completed: true,
+      satisfaction: 3,
+      photos: [
+        "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      ],
     },
     {
       id: "5",
-      title: "Mt. Tam Hike",
-      location: "Mt Tamalpais",
+      title: "Angel Island Hike",
+      location: "Tiburon",
       completed: false,
+      satisfaction: null,
+      photos: [],
     },
     {
       id: "6",
-      title: "Mt. Tam Hike",
-      location: "Mt Tamalpais",
+      title: "Point Reyes Lighthouse",
+      location: "Point Reyes",
       completed: false,
+      satisfaction: null,
+      photos: [],
     },
   ],
 };
@@ -57,6 +78,8 @@ export default function BucketDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
+  const [challenges, setChallenges] = useState<any[]>(jitsBucket?.challenges || []);
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -93,8 +116,34 @@ export default function BucketDetail() {
     console.log('Add new item to bucket');
   };
 
+  const toggleChallengeCompletion = (challengeId: string) => {
+    setChallenges(prevChallenges => 
+      prevChallenges.map(challenge => 
+        challenge.id === challengeId 
+          ? { 
+              ...challenge, 
+              completed: !challenge.completed,
+              // If completing for the first time, add default satisfaction
+              satisfaction: !challenge.completed && challenge.satisfaction === null ? 5 : challenge.satisfaction
+            }
+          : challenge
+      )
+    );
+    
+    // Update selected challenge if it's the one being toggled
+    if (selectedChallenge && selectedChallenge.id === challengeId) {
+      setSelectedChallenge((prev: any) => ({
+        ...prev,
+        completed: !prev.completed,
+        satisfaction: !prev.completed && prev.satisfaction === null ? 5 : prev.satisfaction
+      }));
+    }
+  };
+
   const handleChallengePress = (challengeId: string) => {
-    if (challengeId === "1") {
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (challenge) {
+      setSelectedChallenge(challenge);
       setModalVisible(true);
       // Start expand animation
       Animated.parallel([
@@ -115,7 +164,6 @@ export default function BucketDetail() {
         }),
       ]).start();
     } else {
-      // TODO: Handle other challenges
       console.log('Navigate to challenge:', challengeId);
     }
   };
@@ -185,22 +233,55 @@ export default function BucketDetail() {
 
       {/* Challenges List */}
       <ScrollView style={styles.challengesSection} showsVerticalScrollIndicator={false}>
-        {bucket.challenges.map((challenge) => (
+        {challenges.map((challenge) => (
           <TouchableOpacity
             key={challenge.id}
             style={styles.challengeCard}
             onPress={() => handleChallengePress(challenge.id)}
           >
-            <View style={styles.challengeIcon}>
-              <Ionicons name="ellipse-outline" size={24} color="#fff" />
-            </View>
+            {/* Completion Status & Icon */}
+            <TouchableOpacity 
+              style={styles.challengeIcon}
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleChallengeCompletion(challenge.id);
+              }}
+            >
+              {challenge.completed ? (
+                <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
+              ) : (
+                <Ionicons name="ellipse-outline" size={24} color="#fff" />
+              )}
+            </TouchableOpacity>
+            
+            {/* Challenge Info */}
             <View style={styles.challengeInfo}>
               <Text style={styles.challengeTitle}>{challenge.title}</Text>
               <View style={styles.challengeLocation}>
                 <Text style={styles.locationPin}>📍</Text>
                 <Text style={styles.locationText}>{challenge.location}</Text>
               </View>
+              
+              {/* Additional Info Row */}
+              <View style={styles.challengeMeta}>
+                {/* Satisfaction Rating */}
+                {challenge.completed && challenge.satisfaction && (
+                  <View style={styles.satisfactionContainer}>
+                    <Ionicons name="star" size={12} color="#f59e0b" />
+                    <Text style={styles.satisfactionText}>{challenge.satisfaction}/5</Text>
+                  </View>
+                )}
+                
+                {/* Photo Count */}
+                {challenge.photos && challenge.photos.length > 0 && (
+                  <View style={styles.photoCountContainer}>
+                    <Ionicons name="camera" size={12} color="#9BA1A6" />
+                    <Text style={styles.photoCountText}>{challenge.photos.length}</Text>
+                  </View>
+                )}
+              </View>
             </View>
+            
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
         ))}
@@ -239,48 +320,108 @@ export default function BucketDetail() {
               ]}
             >
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              {/* Header */}
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{challenge.title}</Text>
-              </View>
+              {selectedChallenge && (
+                <>
+                  {/* Header */}
+                  <View style={styles.modalHeader}>
+                    <View style={styles.modalTitleSection}>
+                      <Text style={styles.modalTitle}>{selectedChallenge.title}</Text>
+                      <TouchableOpacity 
+                        style={styles.modalCompletionBadge}
+                        onPress={() => toggleChallengeCompletion(selectedChallenge.id)}
+                      >
+                        {selectedChallenge.completed ? (
+                          <>
+                            <Ionicons name="checkmark-circle" size={14} color="#4ade80" />
+                            <Text style={styles.modalCompletionText}>Completed</Text>
+                          </>
+                        ) : (
+                          <>
+                            <Ionicons name="ellipse-outline" size={14} color="#9BA1A6" />
+                            <Text style={styles.modalCompletionTextIncomplete}>Mark Complete</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
-              {/* Details */}
-              <View style={styles.modalDetailsSection}>
-                <View style={styles.modalDetailRow}>
-                  <Text style={styles.modalLocationPin}>🪣</Text>
-                  <Text style={styles.modalDetailText}>{challenge.bucket}</Text>
-                </View>
-                <View style={styles.modalDetailRow}>
-                  <Text style={styles.modalLocationPin}>📍</Text>
-                  <Text style={styles.modalDetailText}>{challenge.location}</Text>
-                </View>
-                <View style={styles.modalDetailRow}>
-                  <Text style={styles.modalLocationPin}>🎯</Text>
-                  <Text style={styles.modalDetailText}>{challenge.date}</Text>
-                </View>
-              </View>
+                  {/* Details */}
+                  <View style={styles.modalDetailsSection}>
+                    <View style={styles.modalDetailRow}>
+                      <Text style={styles.modalLocationPin}>🪣</Text>
+                      <Text style={styles.modalDetailText}>{bucket?.title}</Text>
+                    </View>
+                    <View style={styles.modalDetailRow}>
+                      <Text style={styles.modalLocationPin}>📍</Text>
+                      <Text style={styles.modalDetailText}>{selectedChallenge.location}</Text>
+                    </View>
+                    {selectedChallenge.completed && (
+                      <View style={styles.modalDetailRow}>
+                        <Text style={styles.modalLocationPin}>⭐</Text>
+                        <Text style={styles.modalDetailText}>Satisfaction: {selectedChallenge.satisfaction || 5}/5</Text>
+                        <View style={styles.satisfactionStars}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <TouchableOpacity
+                              key={star}
+                              onPress={() => {
+                                const updatedChallenges = challenges.map(c => 
+                                  c.id === selectedChallenge.id 
+                                    ? { ...c, satisfaction: star }
+                                    : c
+                                );
+                                setChallenges(updatedChallenges);
+                                setSelectedChallenge((prev: any) => ({ ...prev, satisfaction: star }));
+                              }}
+                            >
+                              <Ionicons 
+                                name={star <= (selectedChallenge.satisfaction || 5) ? "star" : "star-outline"} 
+                                size={20} 
+                                color="#f59e0b" 
+                              />
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
 
-              {/* Separator */}
-              <View style={styles.modalSeparator} />
+                  {/* Separator */}
+                  <View style={styles.modalSeparator} />
 
-              {/* Description */}
-              <View style={styles.modalDescriptionSection}>
-                <Text style={styles.modalDescriptionText}>{challenge.description}</Text>
-              </View>
+                  {/* Description */}
+                  <View style={styles.modalDescriptionSection}>
+                    <Text style={styles.modalDescriptionText}>
+                      {selectedChallenge.completed 
+                        ? `Completed this challenge! ${selectedChallenge.satisfaction ? `Rated ${selectedChallenge.satisfaction}/5 stars.` : ''}`
+                        : 'This challenge is waiting to be completed.'
+                      }
+                    </Text>
+                  </View>
 
-              {/* Photo Album */}
-              <View style={styles.modalPhotoAlbumSection}>
-                <Text style={styles.modalPhotoAlbumTitle}>Photo Album</Text>
-                <View style={styles.modalPhotoGrid}>
-                  {challenge.photos.map((photo, index) => (
-                    <Image
-                      key={index}
-                      source={{ uri: photo }}
-                      style={styles.modalPhotoThumbnail}
-                    />
-                  ))}
-                </View>
-              </View>
+                  {/* Photo Album */}
+                  <View style={styles.modalPhotoAlbumSection}>
+                    <Text style={styles.modalPhotoAlbumTitle}>
+                      Photo Album ({selectedChallenge.photos ? selectedChallenge.photos.length : 0})
+                    </Text>
+                    <View style={styles.modalPhotoGrid}>
+                      {/* Upload Button */}
+                      <TouchableOpacity style={styles.uploadButton}>
+                        <Ionicons name="add" size={24} color="#9BA1A6" />
+                        <Text style={styles.uploadText}>Add Photo</Text>
+                      </TouchableOpacity>
+                      
+                      {/* Existing Photos */}
+                      {selectedChallenge.photos && selectedChallenge.photos.map((photo: string, index: number) => (
+                        <Image
+                          key={index}
+                          source={{ uri: photo }}
+                          style={styles.modalPhotoThumbnail}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                </>
+              )}
             </ScrollView>
 
             {/* Close Button */}
@@ -398,6 +539,7 @@ const styles = StyleSheet.create({
   challengeLocation: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 6,
   },
   locationPin: {
     fontSize: 12,
@@ -406,6 +548,39 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 14,
     color: '#9BA1A6',
+  },
+  challengeMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  satisfactionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  satisfactionText: {
+    fontSize: 12,
+    color: '#f59e0b',
+    marginLeft: 2,
+    fontWeight: '600',
+  },
+  photoCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(155, 161, 166, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  photoCountText: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    marginLeft: 2,
+    fontWeight: '600',
   },
   floatingAddButton: {
     position: 'absolute',
@@ -458,10 +633,35 @@ const styles = StyleSheet.create({
   modalHeader: {
     marginBottom: 20,
   },
+  modalTitleSection: {
+    flex: 1,
+  },
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#fff',
+    marginBottom: 8,
+  },
+  modalCompletionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  modalCompletionText: {
+    fontSize: 12,
+    color: '#4ade80',
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  modalCompletionTextIncomplete: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    marginLeft: 4,
+    fontWeight: '600',
   },
   modalDetailsSection: {
     marginBottom: 20,
@@ -470,6 +670,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  satisfactionStars: {
+    flexDirection: 'row',
+    marginLeft: 12,
+    gap: 4,
   },
   modalLocationPin: {
     fontSize: 12,
@@ -504,13 +709,33 @@ const styles = StyleSheet.create({
   modalPhotoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   modalPhotoThumbnail: {
-    width: (width * 0.9 - 60) / 3,
-    height: (width * 0.9 - 60) / 3,
+    width: (width - 80) / 3,
+    height: (width - 80) / 3,
     borderRadius: 8,
+    marginRight: 8,
     marginBottom: 8,
+  },
+  uploadButton: {
+    width: (width - 80) / 3,
+    height: (width - 80) / 3,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#9BA1A6',
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(155, 161, 166, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  uploadText: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    marginTop: 4,
+    textAlign: 'center',
   },
   modalCloseButton: {
     position: 'absolute',

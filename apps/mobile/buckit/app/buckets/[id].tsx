@@ -1,7 +1,9 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { useState, useRef, useEffect } from 'react';
 
 // Dummy data for Jits bucket
 const jitsBucket = {
@@ -54,9 +56,33 @@ const { width, height } = Dimensions.get('window');
 export default function BucketDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  // Animation values
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const blurAnim = useRef(new Animated.Value(0)).current;
 
   // For now, only handle Jits bucket (id: "1")
   const bucket = id === "1" ? jitsBucket : null;
+
+  // Challenge data for modal
+  const challenge = {
+    id: "1",
+    title: "Mt. Tam Hike",
+    bucket: "Jits",
+    location: "Mt Tamalpais",
+    date: "12/18/2025",
+    description: "Go to the Mill Valley Library, do some light gardening, and wander around.",
+    photos: [
+      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+    ],
+  };
 
   const handleBack = () => {
     router.back();
@@ -68,8 +94,53 @@ export default function BucketDetail() {
   };
 
   const handleChallengePress = (challengeId: string) => {
-    // TODO: Navigate to challenge detail
-    console.log('Navigate to challenge:', challengeId);
+    if (challengeId === "1") {
+      setModalVisible(true);
+      // Start expand animation
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(blurAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // TODO: Handle other challenges
+      console.log('Navigate to challenge:', challengeId);
+    }
+  };
+
+  const handleCloseModal = () => {
+    // Start collapse animation
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(blurAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false);
+    });
   };
 
   if (!bucket) {
@@ -126,7 +197,7 @@ export default function BucketDetail() {
             <View style={styles.challengeInfo}>
               <Text style={styles.challengeTitle}>{challenge.title}</Text>
               <View style={styles.challengeLocation}>
-                <Ionicons name="location" size={12} color="#ff4444" />
+                <Text style={styles.locationPin}>📍</Text>
                 <Text style={styles.locationText}>{challenge.location}</Text>
               </View>
             </View>
@@ -139,6 +210,87 @@ export default function BucketDetail() {
       <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
         <Ionicons name="add" size={24} color="#000" />
       </TouchableOpacity>
+
+      {/* Challenge Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="none"
+        onRequestClose={handleCloseModal}
+      >
+        <Animated.View 
+          style={[
+            styles.blurContainer,
+            {
+              opacity: blurAnim,
+            }
+          ]}
+        >
+          <BlurView intensity={20} style={styles.blurView}>
+            <Animated.View 
+              style={[
+                styles.modalContainer,
+                {
+                  transform: [
+                    { scale: scaleAnim },
+                  ],
+                  opacity: opacityAnim,
+                }
+              ]}
+            >
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{challenge.title}</Text>
+              </View>
+
+              {/* Details */}
+              <View style={styles.modalDetailsSection}>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLocationPin}>🪣</Text>
+                  <Text style={styles.modalDetailText}>{challenge.bucket}</Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLocationPin}>📍</Text>
+                  <Text style={styles.modalDetailText}>{challenge.location}</Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLocationPin}>🎯</Text>
+                  <Text style={styles.modalDetailText}>{challenge.date}</Text>
+                </View>
+              </View>
+
+              {/* Separator */}
+              <View style={styles.modalSeparator} />
+
+              {/* Description */}
+              <View style={styles.modalDescriptionSection}>
+                <Text style={styles.modalDescriptionText}>{challenge.description}</Text>
+              </View>
+
+              {/* Photo Album */}
+              <View style={styles.modalPhotoAlbumSection}>
+                <Text style={styles.modalPhotoAlbumTitle}>Photo Album</Text>
+                <View style={styles.modalPhotoGrid}>
+                  {challenge.photos.map((photo, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: photo }}
+                      style={styles.modalPhotoThumbnail}
+                    />
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Close Button */}
+            <TouchableOpacity style={styles.modalCloseButton} onPress={handleCloseModal}>
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+            </Animated.View>
+          </BlurView>
+        </Animated.View>
+      </Modal>
     </View>
   );
 }
@@ -247,10 +399,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  locationPin: {
+    fontSize: 12,
+    marginRight: 4,
+  },
   locationText: {
     fontSize: 14,
     color: '#9BA1A6',
-    marginLeft: 4,
   },
   floatingAddButton: {
     position: 'absolute',
@@ -276,5 +431,96 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 100,
+  },
+  // Modal styles
+  blurContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blurView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: width * 0.9,
+    maxHeight: height * 0.8,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+    position: 'relative',
+  },
+  modalContent: {
+    padding: 20,
+  },
+  modalHeader: {
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  modalDetailsSection: {
+    marginBottom: 20,
+  },
+  modalDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalLocationPin: {
+    fontSize: 12,
+    marginRight: 8,
+  },
+  modalDetailText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  modalSeparator: {
+    height: 1,
+    backgroundColor: '#333',
+    marginBottom: 20,
+  },
+  modalDescriptionSection: {
+    marginBottom: 30,
+  },
+  modalDescriptionText: {
+    fontSize: 16,
+    color: '#fff',
+    lineHeight: 24,
+  },
+  modalPhotoAlbumSection: {
+    marginBottom: 20,
+  },
+  modalPhotoAlbumTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  modalPhotoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  modalPhotoThumbnail: {
+    width: (width * 0.9 - 60) / 3,
+    height: (width * 0.9 - 60) / 3,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

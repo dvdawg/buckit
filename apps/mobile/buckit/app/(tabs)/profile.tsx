@@ -1,7 +1,10 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Button } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSession } from '@/hooks/useSession';
+import { useMe } from '@/hooks/useMe';
+import SupabaseTest from '@/components/SupabaseTest';
 
 // Dummy data
 const user = {
@@ -64,6 +67,8 @@ const { width } = Dimensions.get('window');
 
 export default function Profile() {
   const router = useRouter();
+  const { signOut } = useSession();
+  const { me, loading } = useMe();
 
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);
@@ -79,14 +84,21 @@ export default function Profile() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Profile Header with Full-Width Image */}
       <View style={styles.headerContainer}>
-        <Image source={{ uri: user.profileImage }} style={styles.profileHeaderImage} />
+        <Image 
+          source={{ uri: me?.avatar_url || user.profileImage }} 
+          style={styles.profileHeaderImage} 
+        />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userLocation}>{user.location}</Text>
+          <Text style={styles.userName}>
+            {loading ? 'Loading...' : (me?.full_name ?? me?.handle ?? user.name)}
+          </Text>
+          <Text style={styles.userLocation}>
+            {me?.points ? `Points: ${me.points}` : user.location}
+          </Text>
         </View>
       </View>
 
@@ -129,6 +141,19 @@ export default function Profile() {
         <Text style={styles.allChallengesText}>All Challenges</Text>
         <Ionicons name="chevron-forward" size={20} color="#9BA1A6" />
       </TouchableOpacity>
+
+      {/* Sign Out Button */}
+      <View style={styles.signOutContainer}>
+        <Button title="Sign out" onPress={signOut} />
+      </View>
+      
+      {/* Supabase Backend Test Component */}
+      <View style={styles.testPanelContainer}>
+        <Text style={styles.testPanelTitle}>
+          Backend Test Panel
+        </Text>
+        <SupabaseTest />
+      </View>
     </ScrollView>
   );
 }
@@ -235,6 +260,23 @@ const styles = StyleSheet.create({
   allChallengesText: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#fff',
+  },
+  signOutContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  testPanelContainer: {
+    marginTop: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
+  testPanelTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
     color: '#fff',
   },
 });

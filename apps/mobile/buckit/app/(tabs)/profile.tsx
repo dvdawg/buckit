@@ -209,7 +209,7 @@ export default function Profile() {
             {loading ? 'Loading...' : (me?.full_name ?? me?.handle ?? user.name)}
           </Text>
           <Text style={styles.userLocation}>
-            {me?.points ? `Points: ${me.points}` : user.location}
+            {me?.location || `Points: ${me?.points || 0}`}
           </Text>
             </View>
           </View>

@@ -1,13 +1,31 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { usePerformance } from '@/hooks/usePerformance';
 
 export default function PerformancePreview() {
   const router = useRouter();
+  const { performance, loading } = usePerformance();
 
   const handlePress = () => {
     router.push('/performance');
   };
+
+  // Show loading state
+  if (loading || !performance) {
+    return (
+      <TouchableOpacity style={styles.container} onPress={handlePress}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Ionicons name="analytics" size={20} color="#4ade80" />
+            <Text style={styles.title}>Performance</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
+        </View>
+        <Text style={styles.loadingText}>Loading performance data...</Text>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity style={styles.container} onPress={handlePress}>
@@ -28,7 +46,7 @@ export default function PerformancePreview() {
             <Ionicons name="checkmark-circle" size={16} color="#4ade80" />
             <Text style={styles.metricLabel}>Progress</Text>
           </View>
-          <Text style={styles.metricValue}>56%</Text>
+          <Text style={styles.metricValue}>{Math.round(performance.overallProgress * 100)}%</Text>
           <Text style={styles.metricSubtext}>across buckets</Text>
         </View>
 
@@ -38,7 +56,7 @@ export default function PerformancePreview() {
             <Ionicons name="flame" size={16} color="#f59e0b" />
             <Text style={styles.metricLabel}>Streak</Text>
           </View>
-          <Text style={styles.metricValue}>5</Text>
+          <Text style={styles.metricValue}>{performance.currentStreak}</Text>
           <Text style={styles.metricSubtext}>day streak</Text>
         </View>
 
@@ -48,7 +66,7 @@ export default function PerformancePreview() {
             <Ionicons name="trending-up" size={16} color="#3b82f6" />
             <Text style={styles.metricLabel}>Growth</Text>
           </View>
-          <Text style={styles.metricValue}>+250%</Text>
+          <Text style={styles.metricValue}>+{Math.round(performance.growthRate)}%</Text>
           <Text style={styles.metricSubtext}>this month</Text>
         </View>
       </View>
@@ -56,12 +74,12 @@ export default function PerformancePreview() {
       {/* Quick Stats */}
       <View style={styles.quickStats}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>14</Text>
+          <Text style={styles.statNumber}>{performance.totalCompletions}</Text>
           <Text style={styles.statLabel}>challenges completed</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>4</Text>
+          <Text style={styles.statNumber}>{performance.activeBuckets}</Text>
           <Text style={styles.statLabel}>active buckets</Text>
         </View>
       </View>
@@ -153,5 +171,11 @@ const styles = StyleSheet.create({
     height: 30,
     backgroundColor: '#333',
     marginHorizontal: 16,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });

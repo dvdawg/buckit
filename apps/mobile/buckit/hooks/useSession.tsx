@@ -1,27 +1,75 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Session, User } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+
+// Global state to prevent loops
+let globalHasRedirected = false;
+let globalHasShownAlert = false;
 
 type SessionCtx = {
   session: Session | null;
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  isSessionValid: boolean;
+  sessionError: string | null;
+  hasRedirected: boolean;
+  hasShownAlert: boolean;
+  resetRedirectState: () => void;
+  markRedirected: () => void;
+  markAlertShown: () => void;
 };
 
-const Ctx = createContext<SessionCtx>({ session: null, user: null, loading: false, signOut: async () => {} });
+const Ctx = createContext<SessionCtx>({ 
+  session: null, 
+  user: null, 
+  loading: false, 
+  signOut: async () => {},
+  isSessionValid: false,
+  sessionError: null,
+  hasRedirected: false,
+  hasShownAlert: false,
+  resetRedirectState: () => {},
+  markRedirected: () => {},
+  markAlertShown: () => {}
+});
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isSessionValid, setIsSessionValid] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  const validateSession = (session: Session | null) => {
+    // Simple validation - just check if session and user exist
+    if (!session || !session.user) {
+      setIsSessionValid(false);
+      setSessionError('No active session found');
+      return false;
+    }
+
+    // Session is valid
+    setIsSessionValid(true);
+    setSessionError(null);
+    return true;
+  };
+
+  const markRedirected = () => {
+    globalHasRedirected = true;
+  };
+
+  const markAlertShown = () => {
+    globalHasShownAlert = true;
+  };
 
   useEffect(() => {
     // Get initial session first
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session);
       setSession(session);
+      validateSession(session);
       setLoading(false);
     });
     
@@ -43,6 +91,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       }
       
       setSession(session);
+      validateSession(session);
       setLoading(false);
     });
     return () => sub.data.subscription.unsubscribe();
@@ -78,10 +127,27 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }, 2000);
   }
 
+  const resetRedirectState = () => {
+    globalHasRedirected = false;
+    globalHasShownAlert = false;
+  };
+
   const user = session?.user ?? null;
-  console.log('SessionProvider - session:', session, 'user:', user, 'loading:', loading);
+  console.log('SessionProvider - session:', session, 'user:', user, 'loading:', loading, 'isSessionValid:', isSessionValid, 'sessionError:', sessionError, 'hasRedirected:', globalHasRedirected, 'hasShownAlert:', globalHasShownAlert);
   return (
-    <Ctx.Provider value={{ session, user, loading, signOut }}>
+    <Ctx.Provider value={{ 
+      session, 
+      user, 
+      loading, 
+      signOut, 
+      isSessionValid, 
+      sessionError,
+      hasRedirected: globalHasRedirected,
+      hasShownAlert: globalHasShownAlert,
+      resetRedirectState,
+      markRedirected,
+      markAlertShown
+    }}>
       {children}
     </Ctx.Provider>
   );

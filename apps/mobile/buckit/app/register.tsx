@@ -8,8 +8,10 @@ import {
   Animated,
   Dimensions,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 import BucketLogo from '@/components/BucketLogo';
 
 const { width, height } = Dimensions.get('window');
@@ -29,6 +31,7 @@ export default function RegisterScreen() {
     profilePicture: null,
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -49,12 +52,113 @@ export default function RegisterScreen() {
   }, []);
 
   const updateFormData = (key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    let processedValue = value;
+    
+    // Format birthday input
+    if (key === 'birthday') {
+      // Remove all non-digits
+      const digits = value.replace(/\D/g, '');
+      
+      // Format as MM/DD/YYYY
+      if (digits.length >= 2) {
+        processedValue = digits.slice(0, 2);
+        if (digits.length >= 4) {
+          processedValue += '/' + digits.slice(2, 4);
+        }
+        if (digits.length >= 8) {
+          processedValue += '/' + digits.slice(4, 8);
+        }
+      } else {
+        processedValue = digits;
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [key]: processedValue }));
+    // Clear error when user starts typing
+    if (errors[key]) {
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    }
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
+  const validateBirthday = (birthday: string) => {
+    const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+    if (!dateRegex.test(birthday)) return false;
+    
+    const [month, day, year] = birthday.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    const now = new Date();
+    const age = now.getFullYear() - year;
+    
+    return date.getMonth() === month - 1 && 
+           date.getDate() === day && 
+           date.getFullYear() === year &&
+           age >= 13 && age <= 120;
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    }
+
+    if (!formData.birthday) {
+      newErrors.birthday = 'Birthday is required';
+    } else if (!validateBirthday(formData.birthday)) {
+      newErrors.birthday = 'Please enter a valid birthday (MM/DD/YYYY) and ensure you are at least 13 years old';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
     if (currentStep < 2) {
-      setCurrentStep(currentStep + 1);
+      if (validateForm()) {
+        setCurrentStep(currentStep + 1);
+      }
     } else {
       handleCreateAccount();
     }
@@ -70,13 +174,85 @@ export default function RegisterScreen() {
 
   const handleCreateAccount = async () => {
     setLoading(true);
-    // TODO: Implement account creation logic
-    console.log('Creating account with:', formData);
-    // For now, just navigate back
-    setTimeout(() => {
+    
+    try {
+      // Step 1: Create Supabase auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone: formData.phone,
+            city: formData.city,
+            birthday: formData.birthday,
+          }
+        }
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to create user account');
+      }
+
+      // Step 2: Create user profile in our database
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          auth_id: authData.user.id,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          handle: formData.email.split('@')[0], // Use email prefix as handle
+          avatar_url: formData.profilePicture,
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // If profile creation fails, we should clean up the auth user
+        // But for now, we'll just show an error
+        throw new Error('Failed to create user profile');
+      }
+
+      // Step 3: Check if email confirmation is required
+      if (authData.user.email_confirmed_at) {
+        // User is immediately confirmed, navigate to app
+        router.replace('/(tabs)/home');
+      } else {
+        // Show confirmation message
+        Alert.alert(
+          'Check your email',
+          'We sent you a confirmation link. Please check your email and click the link to activate your account.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/login')
+            }
+          ]
+        );
+      }
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      
+      let errorMessage = 'An error occurred during registration. Please try again.';
+      
+      if (error.message?.includes('already registered')) {
+        errorMessage = 'An account with this email already exists. Please try logging in instead.';
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message?.includes('Password should be at least')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Registration Failed', errorMessage);
+    } finally {
       setLoading(false);
-      router.replace('/(tabs)/profile');
-    }, 2000);
+    }
   };
 
   const canProceed = () => {
@@ -100,7 +276,7 @@ export default function RegisterScreen() {
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Email</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.email && styles.textInputError]}
             placeholder="Enter your email"
             placeholderTextColor="#9BA1A6"
             value={formData.email}
@@ -109,24 +285,26 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Phone Number</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.phone && styles.textInputError]}
             placeholder="Enter your phone number"
             placeholderTextColor="#9BA1A6"
             value={formData.phone}
             onChangeText={(value) => updateFormData('phone', value)}
             keyboardType="phone-pad"
           />
+          {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Password</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.password && styles.textInputError]}
             placeholder="Create a password"
             placeholderTextColor="#9BA1A6"
             value={formData.password}
@@ -134,12 +312,13 @@ export default function RegisterScreen() {
             secureTextEntry
             autoCapitalize="none"
           />
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Confirm Password</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.confirmPassword && styles.textInputError]}
             placeholder="Confirm your password"
             placeholderTextColor="#9BA1A6"
             value={formData.confirmPassword}
@@ -147,54 +326,60 @@ export default function RegisterScreen() {
             secureTextEntry
             autoCapitalize="none"
           />
+          {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>First Name</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.firstName && styles.textInputError]}
             placeholder="Enter your first name"
             placeholderTextColor="#9BA1A6"
             value={formData.firstName}
             onChangeText={(value) => updateFormData('firstName', value)}
             autoCapitalize="words"
           />
+          {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Last Name</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.lastName && styles.textInputError]}
             placeholder="Enter your last name"
             placeholderTextColor="#9BA1A6"
             value={formData.lastName}
             onChangeText={(value) => updateFormData('lastName', value)}
             autoCapitalize="words"
           />
+          {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>City</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.city && styles.textInputError]}
             placeholder="Enter your city"
             placeholderTextColor="#9BA1A6"
             value={formData.city}
             onChangeText={(value) => updateFormData('city', value)}
             autoCapitalize="words"
           />
+          {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Birthday</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, errors.birthday && styles.textInputError]}
             placeholder="MM/DD/YYYY"
             placeholderTextColor="#9BA1A6"
             value={formData.birthday}
             onChangeText={(value) => updateFormData('birthday', value)}
-            keyboardType="numeric"
+            keyboardType="number-pad"
+            maxLength={10}
           />
+          {errors.birthday && <Text style={styles.errorText}>{errors.birthday}</Text>}
         </View>
       </View>
     </View>
@@ -373,6 +558,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
+  },
+  textInputError: {
+    borderColor: '#ef4444',
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+    marginTop: 4,
+    marginLeft: 4,
   },
   profilePictureContainer: {
     backgroundColor: '#1a1a1a',

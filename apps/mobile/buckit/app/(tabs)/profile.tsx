@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
+import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 import PerformancePreview from '@/components/PerformancePreview';
 
 // Dummy data
@@ -183,6 +184,9 @@ export default function Profile() {
   const router = useRouter();
   const { signOut } = useSession();
   const { me, loading } = useMe();
+  
+  // Monitor session validity
+  useSessionMonitor();
 
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);

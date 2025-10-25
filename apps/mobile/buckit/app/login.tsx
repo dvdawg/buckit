@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signOut } = useSession();
+  const { signOut, resetRedirectState } = useSession();
   const router = useRouter();
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -66,6 +66,8 @@ export default function LoginScreen() {
           password,
         });
         if (error) throw error;
+        // Reset redirect state on successful login
+        resetRedirectState();
       }
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -91,6 +93,8 @@ export default function LoginScreen() {
         password: 'oskibuckit',
       });
       if (error) throw error;
+      // Reset redirect state on successful login
+      resetRedirectState();
     } catch (error: any) {
       Alert.alert('Developer Auth Error', error.message);
     } finally {

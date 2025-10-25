@@ -35,15 +35,15 @@ export default function PerformanceDashboard() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Performance Overview</Text>
-        <Text style={styles.subtitle}>Track your progress across all your buckets.</Text>
+        <Text style={styles.title}>Your Stats</Text>
+        <Text style={styles.subtitle}>Reflect on your experiences across all your buckets.</Text>
       </View>
 
       {/* Section 1 - Progress by Bucket */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
-          <Text style={styles.cardTitle}>Progress by Bucket</Text>
+          <Text style={styles.cardTitle}>Moments Lived by Bucket</Text>
         </View>
         
         <View style={styles.chartContainer}>
@@ -67,7 +67,7 @@ export default function PerformanceDashboard() {
         </View>
         
         <Text style={styles.cardFooter}>
-          You've completed {Math.round(totalCompletion * 100)}% of your total bucket challenges.
+          You've lived {Math.round(totalCompletion * 100)}% of your total bucket moments.
         </Text>
       </View>
 
@@ -98,7 +98,7 @@ export default function PerformanceDashboard() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="trending-up" size={20} color="#3b82f6" />
-          <Text style={styles.cardTitle}>Total Challenges Completed</Text>
+          <Text style={styles.cardTitle}>Experiences Over Time</Text>
         </View>
         
         <View style={styles.lineChartContainer}>
@@ -122,7 +122,7 @@ export default function PerformanceDashboard() {
         </View>
         
         <Text style={styles.cardFooter}>
-          You've increased completions by {Math.round(growthRate)}% this month.
+          Your momentum increased by {Math.round(growthRate)}% this month.
         </Text>
       </View>
     </View>

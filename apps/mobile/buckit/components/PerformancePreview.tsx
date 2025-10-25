@@ -15,7 +15,7 @@ export default function PerformancePreview() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="analytics" size={20} color="#4ade80" />
-          <Text style={styles.title}>Performance</Text>
+          <Text style={styles.title}>Overview</Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
       </View>
@@ -26,10 +26,10 @@ export default function PerformancePreview() {
         <View style={styles.metricCard}>
           <View style={styles.metricHeader}>
             <Ionicons name="checkmark-circle" size={16} color="#4ade80" />
-            <Text style={styles.metricLabel}>Progress</Text>
+            <Text style={styles.metricLabel}>Moments</Text>
           </View>
           <Text style={styles.metricValue}>56%</Text>
-          <Text style={styles.metricSubtext}>across buckets</Text>
+          <Text style={styles.metricSubtext}>lived</Text>
         </View>
 
         {/* Current Streak */}
@@ -46,7 +46,7 @@ export default function PerformancePreview() {
         <View style={styles.metricCard}>
           <View style={styles.metricHeader}>
             <Ionicons name="trending-up" size={16} color="#3b82f6" />
-            <Text style={styles.metricLabel}>Growth</Text>
+            <Text style={styles.metricLabel}>Momentum</Text>
           </View>
           <Text style={styles.metricValue}>+250%</Text>
           <Text style={styles.metricSubtext}>this month</Text>
@@ -57,12 +57,12 @@ export default function PerformancePreview() {
       <View style={styles.quickStats}>
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>14</Text>
-          <Text style={styles.statLabel}>challenges completed</Text>
+          <Text style={styles.statLabel}>experiences completed</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>4</Text>
-          <Text style={styles.statLabel}>active buckets</Text>
+          <Text style={styles.statLabel}>buckets</Text>
         </View>
       </View>
     </TouchableOpacity>

@@ -13,16 +13,14 @@ const Ctx = createContext<SessionCtx>({ session: null, user: null, loading: fals
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Start with no session and not loading
-    setSession(null);
-    setLoading(false);
-    
-    // Force sign out to clear any cached sessions
+    // Force sign out immediately to clear any cached sessions
     supabase.auth.signOut().then(() => {
       console.log('Forced sign out on app start');
+      setSession(null);
+      setLoading(false);
     });
     
     const sub = supabase.auth.onAuthStateChange((event, session) => {

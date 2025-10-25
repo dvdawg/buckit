@@ -60,9 +60,10 @@ export default function LoginScreen() {
   const handleDeveloperAuth = async () => {
     setLoading(true);
     try {
+      // Use specific developer credentials
       const { error } = await supabase.auth.signInWithPassword({
-        email: 'developer@buckit.app',
-        password: 'developer123',
+        email: 'oskical@buckit.app',
+        password: 'oskibuckit',
       });
       if (error) throw error;
     } catch (error: any) {

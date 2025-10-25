@@ -296,7 +296,20 @@ export default function Profile() {
 
       {/* Sign Out Button */}
       <View style={styles.signOutContainer}>
-        <Button title="Sign out" onPress={signOut} />
+        <TouchableOpacity 
+          style={styles.signOutButton} 
+          onPress={async () => {
+            try {
+              console.log('Profile: Starting sign out...');
+              await signOut();
+              console.log('Profile: Sign out completed');
+            } catch (error) {
+              console.error('Profile: Sign out error:', error);
+            }
+          }}
+        >
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
       
     </ScrollView>
@@ -478,5 +491,17 @@ const styles = StyleSheet.create({
   signOutContainer: {
     paddingHorizontal: 20,
     marginBottom: 20,
+  },
+  signOutButton: {
+    backgroundColor: '#ef4444',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  signOutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, FlatList, RefreshControl, Button, Modal, Pressable, Text } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useMe } from '@/hooks/useMe';
-import { BucketCard } from '@/components/bucketcard';
+import { BucketCard } from '@/components/BucketCard';
 
 export default function Buckets() {
   const { me } = useMe();

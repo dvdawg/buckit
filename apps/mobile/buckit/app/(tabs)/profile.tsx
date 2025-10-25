@@ -71,7 +71,7 @@ const allChallenges = [
     title: "Mt. Tam Hike",
     location: "Mt Tamalpais",
     dueDate: "Jan 15",
-    urgency: "Due Soon",
+    urgency: "Coming Up",
     urgencyColor: "#f59e0b",
     completed: true,
     satisfaction: 5,
@@ -82,7 +82,7 @@ const allChallenges = [
     title: "Family Dinner",
     location: "Home",
     dueDate: "Jan 12",
-    urgency: "Overdue",
+    urgency: "Missed",
     urgencyColor: "#ef4444",
     completed: false,
     satisfaction: null,
@@ -93,7 +93,7 @@ const allChallenges = [
     title: "Try New Restaurant",
     location: "Downtown",
     dueDate: "Jan 20",
-    urgency: "No Rush",
+    urgency: "Anytime",
     urgencyColor: "#6b7280",
     completed: false,
     satisfaction: null,
@@ -104,7 +104,7 @@ const allChallenges = [
     title: "Golden Gate Bridge Walk",
     location: "San Francisco",
     dueDate: "Jan 18",
-    urgency: "Due Soon",
+    urgency: "Coming Up",
     urgencyColor: "#f59e0b",
     completed: true,
     satisfaction: 4,
@@ -115,7 +115,7 @@ const allChallenges = [
     title: "Morning Run",
     location: "Park",
     dueDate: "Jan 14",
-    urgency: "Due Soon",
+    urgency: "Coming Up",
     urgencyColor: "#f59e0b",
     completed: false,
     satisfaction: null,
@@ -126,7 +126,7 @@ const allChallenges = [
     title: "Plan Weekend Trip",
     location: "Napa Valley",
     dueDate: "Jan 25",
-    urgency: "No Rush",
+    urgency: "Anytime",
     urgencyColor: "#6b7280",
     completed: false,
     satisfaction: null,
@@ -137,7 +137,7 @@ const allChallenges = [
     title: "Visit Art Museum",
     location: "SFMOMA",
     dueDate: "Jan 16",
-    urgency: "Due Soon",
+    urgency: "Coming Up",
     urgencyColor: "#f59e0b",
     completed: false,
     satisfaction: null,
@@ -148,7 +148,7 @@ const allChallenges = [
     title: "Learn New Song",
     location: "Home Studio",
     dueDate: "Jan 22",
-    urgency: "No Rush",
+    urgency: "Anytime",
     urgencyColor: "#6b7280",
     completed: false,
     satisfaction: null,
@@ -159,7 +159,7 @@ const allChallenges = [
     title: "Call Grandma",
     location: "Phone",
     dueDate: "Jan 13",
-    urgency: "Overdue",
+    urgency: "Missed",
     urgencyColor: "#ef4444",
     completed: false,
     satisfaction: null,
@@ -170,7 +170,7 @@ const allChallenges = [
     title: "Cook New Recipe",
     location: "Kitchen",
     dueDate: "Jan 19",
-    urgency: "Due Soon",
+    urgency: "Coming Up",
     urgencyColor: "#f59e0b",
     completed: false,
     satisfaction: null,
@@ -280,15 +280,8 @@ export default function Profile() {
               <Text style={styles.challengePreviewTitle}>{challenge.title}</Text>
               <View style={styles.challengePreviewFooter}>
                 <Text style={styles.challengeLocation}>📍 {challenge.location}</Text>
-                {challenge.completed ? (
-                  <View style={styles.completionInfo}>
-                    <Ionicons name="checkmark-circle" size={14} color="#4ade80" />
-                    <Text style={styles.satisfactionText}>{challenge.satisfaction}/5</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.dueDateText}>{challenge.dueDate}</Text>
-      )}
-    </View>
+                <Text style={styles.dueDateText}>{challenge.dueDate}</Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>

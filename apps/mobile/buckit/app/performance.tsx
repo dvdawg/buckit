@@ -41,21 +41,21 @@ export default function PerformancePage() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Performance Overview</Text>
+        <Text style={styles.headerTitle}>Overview</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Subtitle */}
         <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>Track your progress across all your buckets.</Text>
+          <Text style={styles.subtitle}>Reflect on your experiences across all your buckets.</Text>
         </View>
 
         {/* Section 1 - Progress by Bucket */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
-            <Text style={styles.cardTitle}>Progress by Bucket</Text>
+            <Text style={styles.cardTitle}>Moments Lived by Bucket</Text>
           </View>
           
           <View style={styles.chartContainer}>
@@ -79,7 +79,7 @@ export default function PerformancePage() {
           </View>
           
           <Text style={styles.cardFooter}>
-            You've completed {Math.round(totalCompletion * 100)}% of your total bucket challenges.
+            You've lived {Math.round(totalCompletion * 100)}% of your total bucket moments.
           </Text>
         </View>
 
@@ -96,8 +96,10 @@ export default function PerformancePage() {
               <Text style={styles.streakText}>{activeDays}-Day Streak</Text>
             </View>
             <View style={styles.streakRing}>
-              <View style={[styles.streakSegment, { backgroundColor: '#4ade80', width: `${(activeDays / totalDays) * 100}%` }]} />
-              <View style={[styles.streakSegment, { backgroundColor: '#374151', width: `${(streakData[1].value / totalDays) * 100}%` }]} />
+              <View style={styles.streakRingBackground} />
+              <View style={[styles.streakRingProgress, { 
+                transform: [{ rotate: `${(activeDays / totalDays) * 360}deg` }] 
+              }]} />
             </View>
           </View>
           
@@ -110,7 +112,7 @@ export default function PerformancePage() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="trending-up" size={20} color="#3b82f6" />
-            <Text style={styles.cardTitle}>Total Challenges Completed</Text>
+            <Text style={styles.cardTitle}>Experiences Over Time</Text>
           </View>
           
           <View style={styles.lineChartContainer}>
@@ -134,7 +136,7 @@ export default function PerformancePage() {
           </View>
           
           <Text style={styles.cardFooter}>
-            You've increased completions by {Math.round(growthRate)}% this month.
+            Your momentum increased by {Math.round(growthRate)}% this month.
           </Text>
         </View>
       </ScrollView>
@@ -258,14 +260,28 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streakRingBackground: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     borderWidth: 8,
     borderColor: '#374151',
-    position: 'relative',
   },
-  streakSegment: {
+  streakRingProgress: {
     position: 'absolute',
-    height: '100%',
+    width: 80,
+    height: 80,
     borderRadius: 40,
+    borderWidth: 8,
+    borderColor: '#4ade80',
+    borderTopColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
   },
   lineChartContainer: {
     height: 120,

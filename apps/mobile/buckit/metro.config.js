@@ -17,7 +17,6 @@ config.watchFolders.push(path.resolve(workspaceRoot, 'packages'));
 
 config.resolver.disableHierarchicalLookup = true;
 
-// Add path alias for @ to point to the project root
 config.resolver.alias = {
   '@': projectRoot,
 };

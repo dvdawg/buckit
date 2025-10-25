@@ -17,10 +17,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
+      console.log('Initial session check:', data.session);
       setSession(data.session ?? null);
       setLoading(false);
     });
-    const sub = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const sub = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session);
+      setSession(session);
+    });
     return () => sub.data.subscription.unsubscribe();
   }, []);
 

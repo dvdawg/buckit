@@ -42,6 +42,7 @@ function AuthGate() {
       <Stack.Screen name="splash" />
       <Stack.Screen name="definition" />
       <Stack.Screen name="login" />
+      <Stack.Screen name="register" />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       <Stack.Screen name="modals" />
     </Stack>

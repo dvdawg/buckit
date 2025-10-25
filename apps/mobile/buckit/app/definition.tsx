@@ -5,8 +5,10 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import BucketLogo from '@/components/BucketLogo';
 
 const { width, height } = Dimensions.get('window');
@@ -15,6 +17,7 @@ export default function DefinitionScreen() {
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Start animation sequence
@@ -31,13 +34,21 @@ export default function DefinitionScreen() {
       }),
     ]).start();
 
-    // Navigate to login after 2.5 seconds
+    // Show button after 3 seconds
     const timer = setTimeout(() => {
-      router.replace('/login');
-    }, 2500);
+      Animated.timing(buttonOpacity, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
+
+  const handleNext = () => {
+    router.replace('/login');
+  };
 
   return (
     <View style={styles.container}>
@@ -50,26 +61,27 @@ export default function DefinitionScreen() {
           }
         ]}
       >
-        {/* Buckit Logo */}
-        <View style={styles.logoContainer}>
-          <Text style={styles.buckitText}>Buckit</Text>
-          <BucketLogo size={32} color="#fff" />
-        </View>
-
         {/* Dictionary Definition */}
         <View style={styles.definitionContainer}>
           <Text style={styles.wordTitle}>Buckit</Text>
           
           <View style={styles.definitionSection}>
-            <Text style={styles.partOfSpeech}>verb (buck it)</Text>
+            <Text style={styles.partOfSpeech}>verb (buhk it)</Text>
             <Text style={styles.definition}>"the act of choosing experience over hesitation"</Text>
           </View>
 
           <View style={styles.definitionSection}>
-            <Text style={styles.partOfSpeech}>noun (buck it)</Text>
+            <Text style={styles.partOfSpeech}>noun (buhk it)</Text>
             <Text style={styles.definition}>"a collection of moments, experiences, or challenges one hopes to live"</Text>
           </View>
         </View>
+
+        {/* Next Arrow */}
+        <Animated.View style={[styles.arrowContainer, { opacity: buttonOpacity }]}>
+          <TouchableOpacity style={styles.arrowButton} onPress={handleNext}>
+            <Text style={styles.arrowText}>→</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </Animated.View>
     </View>
   );
@@ -87,19 +99,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 60,
-  },
-  buckitText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 1,
-    marginRight: 12,
-  },
   definitionContainer: {
     alignItems: 'flex-start',
     width: '100%',
@@ -110,6 +109,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 30,
     textAlign: 'left',
+    fontFamily: 'Times New Roman',
   },
   definitionSection: {
     marginBottom: 24,
@@ -119,11 +119,28 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#9BA1A6',
     marginBottom: 8,
+    fontFamily: 'Times New Roman',
   },
   definition: {
     fontSize: 18,
     color: '#fff',
     lineHeight: 26,
     fontWeight: '400',
+    fontFamily: 'Times New Roman',
+  },
+  arrowContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    paddingBottom: 0,
+    paddingRight: 0,
+  },
+  arrowButton: {
+    padding: 10,
+  },
+  arrowText: {
+    fontSize: 32,
+    color: '#4ade80',
+    fontWeight: 'bold',
   },
 });

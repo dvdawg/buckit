@@ -12,6 +12,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/hooks/useSession';
 import BucketLogo from '@/components/BucketLogo';
@@ -24,6 +25,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { signOut } = useSession();
+  const router = useRouter();
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -110,8 +112,8 @@ export default function LoginScreen() {
         {/* Logo Section */}
         <View style={styles.logoSection}>
           <View style={styles.logoContainer}>
-            <Text style={styles.buckitText}>Buckit</Text>
             <BucketLogo size={32} color="#fff" />
+            <Text style={styles.buckitText}>Buckit</Text>
           </View>
         </View>
 
@@ -120,23 +122,61 @@ export default function LoginScreen() {
           <Text style={styles.welcomeTitle}>Welcome</Text>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.buttonsContainer}>
+        {/* Login Form */}
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your email"
+              placeholderTextColor="#9BA1A6"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your password"
+              placeholderTextColor="#9BA1A6"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </View>
+
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.buttonDisabled]}
+            style={[styles.submitButton, loading && styles.buttonDisabled]}
             onPress={handleAuth}
             disabled={loading}
           >
-            <Text style={styles.loginButtonText}>
-              {loading ? 'Loading...' : 'Login'}
+            <Text style={styles.submitButtonText}>
+              {loading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.registerButton}
-            onPress={() => setIsSignUp(!isSignUp)}
+            style={styles.switchButton}
+            onPress={() => {
+              if (isSignUp) {
+                setIsSignUp(false);
+              } else {
+                router.push('/register');
+              }
+            }}
           >
-            <Text style={styles.registerButtonText}>Register</Text>
+            <Text style={styles.switchText}>
+              {isSignUp 
+                ? 'Already have an account? Sign In' 
+                : "Don't have an account? Sign Up"
+              }
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -180,11 +220,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buckitText: {
-    fontSize: 28,
+    fontSize: 56,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 1,
-    marginRight: 12,
+    marginLeft: 12,
   },
   welcomeSection: {
     alignItems: 'center',
@@ -195,42 +235,51 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
-  buttonsContainer: {
-    flexDirection: 'row',
+  formContainer: {
     width: '100%',
-    justifyContent: 'space-between',
     marginBottom: 40,
   },
-  loginButton: {
+  inputContainer: {
+    marginBottom: 24,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  textInput: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  submitButton: {
     backgroundColor: '#4ade80',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    flex: 1,
-    marginRight: 12,
     alignItems: 'center',
+    marginBottom: 16,
   },
   buttonDisabled: {
     backgroundColor: '#374151',
   },
-  loginButtonText: {
+  submitButtonText: {
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
   },
-  registerButton: {
-    backgroundColor: '#374151',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    flex: 1,
-    marginLeft: 12,
+  switchButton: {
     alignItems: 'center',
   },
-  registerButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  switchText: {
+    color: '#4ade80',
+    fontSize: 14,
+    fontWeight: '500',
   },
   developerSection: {
     alignItems: 'center',

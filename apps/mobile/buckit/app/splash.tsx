@@ -53,8 +53,8 @@ export default function SplashScreen() {
       >
         {/* Bucket Logo */}
         <View style={styles.logoContainer}>
-          <Text style={styles.buckitText}>Buckit</Text>
           <BucketLogo size={40} color="#fff" />
+          <Text style={styles.buckitText}>Buckit</Text>
         </View>
       </Animated.View>
     </View>
@@ -74,10 +74,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buckitText: {
-    fontSize: 32,
+    fontSize: 64,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 1,
-    marginRight: 16,
+    marginLeft: 16,
   },
 });

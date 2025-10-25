@@ -19,6 +19,7 @@ type SessionCtx = {
   resetRedirectState: () => void;
   markRedirected: () => void;
   markAlertShown: () => void;
+  isSigningOut: boolean;
 };
 
 const Ctx = createContext<SessionCtx>({ 
@@ -32,7 +33,8 @@ const Ctx = createContext<SessionCtx>({
   hasShownAlert: false,
   resetRedirectState: () => {},
   markRedirected: () => {},
-  markAlertShown: () => {}
+  markAlertShown: () => {},
+  isSigningOut: false
 });
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
@@ -146,7 +148,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       hasShownAlert: globalHasShownAlert,
       resetRedirectState,
       markRedirected,
-      markAlertShown
+      markAlertShown,
+      isSigningOut
     }}>
       {children}
     </Ctx.Provider>

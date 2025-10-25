@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import LoginScreen from './login';
 
 function AuthGate() {
-  const { user, loading, isSessionValid, sessionError, hasRedirected, hasShownAlert, markRedirected, markAlertShown } = useSession();
+  const { user, loading, isSessionValid, sessionError, hasRedirected, hasShownAlert, markRedirected, markAlertShown, isSigningOut } = useSession();
   const router = useRouter();
 
   console.log('AuthGate - loading:', loading, 'user:', user, 'isSessionValid:', isSessionValid, 'sessionError:', sessionError, 'hasRedirected:', hasRedirected, 'hasShownAlert:', hasShownAlert);
@@ -17,6 +17,15 @@ function AuthGate() {
       // Check if session is invalid
       if (!isSessionValid && sessionError) {
         console.log('Invalid session detected:', sessionError);
+        
+        // If we're signing out, just redirect to login without showing error
+        if (isSigningOut) {
+          console.log('Sign out in progress, redirecting to login without error');
+          markRedirected();
+          router.replace('/login');
+          return;
+        }
+        
         markRedirected();
         
         // Only show alert if we haven't shown it yet
@@ -65,7 +74,8 @@ function AuthGate() {
   }
 
   // If we have a session error and haven't redirected yet, automatically redirect after a short delay
-  if (!isSessionValid && sessionError && !hasRedirected) {
+  // Skip error page if we're signing out
+  if (!isSessionValid && sessionError && !hasRedirected && !isSigningOut) {
     // Auto-redirect after 2 seconds if alert doesn't work
     setTimeout(() => {
       if (!hasRedirected) {

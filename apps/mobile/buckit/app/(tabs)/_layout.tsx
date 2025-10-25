@@ -1,35 +1,44 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import { SessionProvider, useSession } from '@/hooks/useSession';
+import { View, Text, Button } from 'react-native';
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+function Gate({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useSession();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    // auto sign-in flow can be added here (magic link deep link handling)
+  }, []);
 
+  if (loading) return <View style={{ flex:1, alignItems:'center', justifyContent:'center' }}><Text>Loading…</Text></View>;
+
+  if (!user) {
+    return (
+      <View style={{ flex:1, alignItems:'center', justifyContent:'center', gap:12 }}>
+        <Text style={{ fontSize:18, fontWeight:'600' }}>Welcome to Buckit</Text>
+        <Button title="Sign in with Magic Link (dev)" onPress={async () => {
+          // dev helper: hardcode your own email for now
+          await supabase.auth.signInWithOtp({ email: 'you@example.com', options: { emailRedirectTo: 'buckit://auth' } });
+          alert('Magic link sent to you@example.com');
+        }} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+export default function Layout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
+    <SessionProvider>
+      <Gate>
+        <Tabs screenOptions={{ headerShown: false }}>
+          <Tabs.Screen name="home" options={{ title: 'Home' }} />
+          <Tabs.Screen name="buckets" options={{ title: 'Buckets' }} />
+          <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+        </Tabs>
+      </Gate>
+    </SessionProvider>
   );
 }

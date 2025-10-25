@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
+import PerformancePreview from '@/components/PerformancePreview';
 
 // Dummy data
 const user = {
@@ -62,6 +63,120 @@ const user = {
   ],
 };
 
+// All Challenges dummy data
+const allChallenges = [
+  {
+    id: "1",
+    bucket: { name: "Jits", emoji: "🪣", color: "#4ade80" },
+    title: "Mt. Tam Hike",
+    location: "Mt Tamalpais",
+    dueDate: "Jan 15",
+    urgency: "Due Soon",
+    urgencyColor: "#f59e0b",
+    completed: true,
+    satisfaction: 5,
+  },
+  {
+    id: "2",
+    bucket: { name: "Family", emoji: "🏠", color: "#3b82f6" },
+    title: "Family Dinner",
+    location: "Home",
+    dueDate: "Jan 12",
+    urgency: "Overdue",
+    urgencyColor: "#ef4444",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "3",
+    bucket: { name: "Food", emoji: "🍽️", color: "#8b5cf6" },
+    title: "Try New Restaurant",
+    location: "Downtown",
+    dueDate: "Jan 20",
+    urgency: "No Rush",
+    urgencyColor: "#6b7280",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "4",
+    bucket: { name: "Jits", emoji: "🪣", color: "#4ade80" },
+    title: "Golden Gate Bridge Walk",
+    location: "San Francisco",
+    dueDate: "Jan 18",
+    urgency: "Due Soon",
+    urgencyColor: "#f59e0b",
+    completed: true,
+    satisfaction: 4,
+  },
+  {
+    id: "5",
+    bucket: { name: "Fitness", emoji: "💪", color: "#10b981" },
+    title: "Morning Run",
+    location: "Park",
+    dueDate: "Jan 14",
+    urgency: "Due Soon",
+    urgencyColor: "#f59e0b",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "6",
+    bucket: { name: "Travel", emoji: "✈️", color: "#f97316" },
+    title: "Plan Weekend Trip",
+    location: "Napa Valley",
+    dueDate: "Jan 25",
+    urgency: "No Rush",
+    urgencyColor: "#6b7280",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "7",
+    bucket: { name: "Art", emoji: "🎨", color: "#ec4899" },
+    title: "Visit Art Museum",
+    location: "SFMOMA",
+    dueDate: "Jan 16",
+    urgency: "Due Soon",
+    urgencyColor: "#f59e0b",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "8",
+    bucket: { name: "Music", emoji: "🎵", color: "#6366f1" },
+    title: "Learn New Song",
+    location: "Home Studio",
+    dueDate: "Jan 22",
+    urgency: "No Rush",
+    urgencyColor: "#6b7280",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "9",
+    bucket: { name: "Family", emoji: "🏠", color: "#3b82f6" },
+    title: "Call Grandma",
+    location: "Phone",
+    dueDate: "Jan 13",
+    urgency: "Overdue",
+    urgencyColor: "#ef4444",
+    completed: false,
+    satisfaction: null,
+  },
+  {
+    id: "10",
+    bucket: { name: "Food", emoji: "🍽️", color: "#8b5cf6" },
+    title: "Cook New Recipe",
+    location: "Kitchen",
+    dueDate: "Jan 19",
+    urgency: "Due Soon",
+    urgencyColor: "#f59e0b",
+    completed: false,
+    satisfaction: null,
+  },
+];
+
 const { width } = Dimensions.get('window');
 
 export default function Profile() {
@@ -96,8 +211,11 @@ export default function Profile() {
           <Text style={styles.userLocation}>
             {me?.points ? `Points: ${me.points}` : user.location}
           </Text>
-        </View>
-      </View>
+            </View>
+          </View>
+
+      {/* Performance Preview */}
+      <PerformancePreview />
 
       {/* Buckets Section */}
       <View style={styles.section}>
@@ -106,14 +224,17 @@ export default function Profile() {
           router.push('/buckets');
         }}>
           <Text style={styles.sectionTitle}>Buckets</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9BA1A6" />
+          <View style={styles.sectionHeaderRight}>
+            <Text style={styles.seeAllText}>See All</Text>
+            <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
+          </View>
         </TouchableOpacity>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.bucketsContainer}
         >
-          {user.buckets.map((bucket) => (
+          {user.buckets.slice(0, 6).map((bucket) => (
             <TouchableOpacity
               key={bucket.id}
               style={styles.bucketCard}
@@ -133,11 +254,45 @@ export default function Profile() {
         </ScrollView>
       </View>
 
-      {/* All Challenges Link */}
-      <TouchableOpacity style={styles.allChallengesButton} onPress={handleAllChallenges}>
-        <Text style={styles.allChallengesText}>All Challenges</Text>
-        <Ionicons name="chevron-forward" size={20} color="#9BA1A6" />
-      </TouchableOpacity>
+      {/* All Challenges Section */}
+      <View style={styles.section}>
+        <TouchableOpacity style={styles.sectionHeader} onPress={handleAllChallenges}>
+          <Text style={styles.sectionTitle}>All Challenges</Text>
+          <View style={styles.sectionHeaderRight}>
+            <Text style={styles.seeAllText}>See All</Text>
+            <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
+          </View>
+        </TouchableOpacity>
+        
+        {/* Challenges Preview Grid */}
+        <View style={styles.challengesGrid}>
+          {allChallenges.slice(0, 10).map((challenge) => (
+            <TouchableOpacity key={challenge.id} style={styles.challengePreviewCard}>
+              <View style={styles.challengePreviewHeader}>
+                <View style={styles.challengeBucketInfo}>
+                  <Text style={styles.challengeBucketEmoji}>{challenge.bucket.emoji}</Text>
+                  <Text style={styles.challengeBucketName}>{challenge.bucket.name}</Text>
+                </View>
+                <View style={[styles.urgencyBadge, { backgroundColor: challenge.urgencyColor }]}>
+                  <Text style={styles.urgencyText}>{challenge.urgency}</Text>
+                </View>
+              </View>
+              <Text style={styles.challengePreviewTitle}>{challenge.title}</Text>
+              <View style={styles.challengePreviewFooter}>
+                <Text style={styles.challengeLocation}>📍 {challenge.location}</Text>
+                {challenge.completed ? (
+                  <View style={styles.completionInfo}>
+                    <Ionicons name="checkmark-circle" size={14} color="#4ade80" />
+                    <Text style={styles.satisfactionText}>{challenge.satisfaction}/5</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.dueDateText}>{challenge.dueDate}</Text>
+      )}
+    </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       {/* Sign Out Button */}
       <View style={styles.signOutContainer}>
@@ -201,6 +356,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  sectionHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    marginRight: 4,
+  },
   bucketsContainer: {
     paddingRight: 20,
   },
@@ -239,18 +403,77 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9BA1A6',
   },
-  allChallengesButton: {
+  challengesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  challengePreviewCard: {
+    width: (width - 60) / 2,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  challengePreviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  challengeBucketInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 20,
   },
-  allChallengesText: {
+  challengeBucketEmoji: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  challengeBucketName: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    fontWeight: '500',
+  },
+  urgencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  urgencyText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  challengePreviewTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+    marginBottom: 8,
+  },
+  challengePreviewFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  challengeLocation: {
+    fontSize: 12,
+    color: '#9BA1A6',
+  },
+  completionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  satisfactionText: {
+    fontSize: 12,
+    color: '#4ade80',
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  dueDateText: {
+    fontSize: 12,
+    color: '#9BA1A6',
   },
   signOutContainer: {
     paddingHorizontal: 20,

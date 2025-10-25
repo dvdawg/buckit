@@ -9,18 +9,22 @@ type SessionCtx = {
   signOut: () => Promise<void>;
 };
 
-const Ctx = createContext<SessionCtx>({ session: null, user: null, loading: true, signOut: async () => {} });
+const Ctx = createContext<SessionCtx>({ session: null, user: null, loading: false, signOut: async () => {} });
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      console.log('Initial session check:', data.session);
-      setSession(data.session ?? null);
-      setLoading(false);
+    // Start with no session and not loading
+    setSession(null);
+    setLoading(false);
+    
+    // Force sign out to clear any cached sessions
+    supabase.auth.signOut().then(() => {
+      console.log('Forced sign out on app start');
     });
+    
     const sub = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state change:', event, session);
       setSession(session);

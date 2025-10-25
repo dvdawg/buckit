@@ -1,8 +1,9 @@
-import { View, Text, Image, Button, FlatList, RefreshControl } from 'react-native';
+import { View, Text, Image, Button, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import SupabaseTest from '@/components/SupabaseTest';
 
 export default function Profile() {
   const { signOut } = useSession();
@@ -25,7 +26,7 @@ export default function Profile() {
   useEffect(() => { if (me?.id) loadFriends(); }, [me?.id]);
 
   return (
-    <View style={{ flex:1, padding:16, backgroundColor:'#fafafa' }}>
+    <ScrollView style={{ flex:1, padding:16, backgroundColor:'#fafafa' }}>
       {loading ? <Text>Loading…</Text> : me && (
         <>
           <View style={{ flexDirection:'row', alignItems:'center', gap:12 }}>
@@ -49,6 +50,14 @@ export default function Profile() {
           </View>
         </>
       )}
-    </View>
+      
+      {/* Supabase Backend Test Component */}
+      <View style={{ marginTop: 30, borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 20 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+          Backend Test Panel
+        </Text>
+        <SupabaseTest />
+      </View>
+    </ScrollView>
   );
 }

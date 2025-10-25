@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
-import SupabaseTest from '@/components/SupabaseTest';
 
 // Dummy data
 const user = {
@@ -78,8 +77,6 @@ export default function Profile() {
     router.push('/challenges');
   };
 
-
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Profile Header with Full-Width Image */}
@@ -147,13 +144,6 @@ export default function Profile() {
         <Button title="Sign out" onPress={signOut} />
       </View>
       
-      {/* Supabase Backend Test Component */}
-      <View style={styles.testPanelContainer}>
-        <Text style={styles.testPanelTitle}>
-          Backend Test Panel
-        </Text>
-        <SupabaseTest />
-      </View>
     </ScrollView>
   );
 }
@@ -265,18 +255,5 @@ const styles = StyleSheet.create({
   signOutContainer: {
     paddingHorizontal: 20,
     marginBottom: 20,
-  },
-  testPanelContainer: {
-    marginTop: 30,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-    paddingTop: 20,
-    paddingHorizontal: 20,
-  },
-  testPanelTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#fff',
   },
 });

@@ -54,7 +54,7 @@ export default function Home() {
             <View style={styles.postTitleOverlay}>
               <Text style={styles.postTitle}>{post.title}</Text>
               <View style={styles.locationContainer}>
-                <Ionicons name="location" size={12} color="#ff4444" />
+                <Text style={styles.locationPin}>📍</Text>
                 <Text style={styles.locationText}>{post.location}</Text>
               </View>
             </View>
@@ -140,10 +140,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  locationPin: {
+    fontSize: 12,
+    marginRight: 4,
+  },
   locationText: {
     fontSize: 14,
     color: '#9BA1A6',
-    marginLeft: 4,
   },
   likeButton: {
     position: 'absolute',

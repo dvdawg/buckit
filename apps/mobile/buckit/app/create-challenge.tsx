@@ -37,7 +37,6 @@ export default function CreateChallengeScreen() {
     title: '',
     description: '',
     location: '',
-    category: '',
     targetDate: null as Date | null,
     bucketId: bucketId as string || '',
   });
@@ -76,7 +75,6 @@ export default function CreateChallengeScreen() {
         p_bucket_id: formData.bucketId,
         p_title: formData.title,
         p_description: formData.description,
-        p_category: formData.category,
         p_location_name: selectedLocation?.name || formData.location,
         p_location_point: selectedLocation ? 
           `POINT(${selectedLocation.coordinates.longitude} ${selectedLocation.coordinates.latitude})` : 
@@ -208,17 +206,6 @@ export default function CreateChallengeScreen() {
             )}
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Category</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g., Adventure, Fitness, Learning"
-              placeholderTextColor="#9BA1A6"
-              value={formData.category}
-              onChangeText={(value) => updateFormData('category', value)}
-              maxLength={25}
-            />
-          </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Location</Text>

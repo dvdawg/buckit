@@ -179,6 +179,12 @@ export default function SearchUsersScreen() {
             <Text style={styles.emptySubtitle}>
               Search for friends by their username or name
             </Text>
+            <View style={styles.privacyNotice}>
+              <Ionicons name="information-circle" size={16} color="#6B7280" />
+              <Text style={styles.privacyNoticeText}>
+                Users control bucket sharing. Send a friend request to see their shared buckets.
+              </Text>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -262,6 +268,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 40,
+  },
+  privacyNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 24,
+    maxWidth: 300,
+  },
+  privacyNoticeText: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 16,
   },
   resultsList: {
     paddingBottom: 20,

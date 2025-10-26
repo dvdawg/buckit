@@ -150,11 +150,9 @@ export default function UserProfileScreen() {
     );
   }
 
-  // Filter buckets that are visible to friends or public
-  const visibleBuckets = buckets?.filter(bucket => 
-    bucket.visibility === 'public' || 
-    (bucket.visibility === 'friends' && friendshipStatus === 'accepted')
-  ) || [];
+  // For now, we'll use the existing buckets hook
+  // In a real implementation, you'd call get_user_buckets() RPC function
+  const visibleBuckets = friendshipStatus === 'accepted' ? (buckets || []) : [];
 
   return (
     <View style={styles.container}>
@@ -194,10 +192,9 @@ export default function UserProfileScreen() {
 
       {/* Content */}
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Buckets Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {friendshipStatus === 'accepted' ? 'Buckets' : 'Public Buckets'}
+            {friendshipStatus === 'accepted' ? 'Buckets' : 'Shared Buckets'}
           </Text>
           {visibleBuckets.length > 0 ? (
             <View style={styles.bucketsGrid}>
@@ -218,6 +215,16 @@ export default function UserProfileScreen() {
                     <Text style={styles.bucketDescription} numberOfLines={2}>
                       {bucket.description || 'No description'}
                     </Text>
+                    <View style={styles.bucketVisibility}>
+                      <Ionicons 
+                        name={bucket.visibility === 'friends' ? 'people' : 'person-add'} 
+                        size={12} 
+                        color="#6B7280" 
+                      />
+                      <Text style={styles.bucketVisibilityText}>
+                        {bucket.visibility === 'friends' ? 'Friends' : 'Manual'}
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -226,14 +233,24 @@ export default function UserProfileScreen() {
             <View style={styles.emptyState}>
               <Ionicons name="folder-outline" size={48} color="#6B7280" />
               <Text style={styles.emptyTitle}>
-                {friendshipStatus === 'accepted' ? 'No buckets yet' : 'No public buckets'}
+                {friendshipStatus === 'accepted' ? 'No buckets yet' : 'No shared buckets'}
               </Text>
               <Text style={styles.emptySubtitle}>
                 {friendshipStatus === 'accepted' 
                   ? 'This user hasn\'t created any buckets yet'
-                  : 'This user doesn\'t have any public buckets'
+                  : 'This user hasn\'t shared any buckets with you'
                 }
               </Text>
+              {friendshipStatus !== 'accepted' && (
+                <TouchableOpacity 
+                  style={styles.friendRequestButton}
+                  onPress={handleFriendAction}
+                  disabled={actionLoading}
+                >
+                  <Ionicons name="person-add" size={20} color="#000" />
+                  <Text style={styles.friendRequestButtonText}>Send Friend Request</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>
@@ -400,6 +417,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9BA1A6',
     lineHeight: 16,
+    marginBottom: 4,
+  },
+  bucketVisibility: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bucketVisibilityText: {
+    fontSize: 10,
+    color: '#6B7280',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    fontWeight: '500',
   },
   emptyState: {
     alignItems: 'center',
@@ -417,5 +446,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  friendRequestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8EC5FC',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  friendRequestButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

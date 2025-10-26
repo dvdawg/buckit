@@ -77,7 +77,10 @@ export default function FriendsListScreen() {
                 <View style={styles.friendInfo}>
                   <Text style={styles.friendName}>{friend.full_name || friend.handle}</Text>
                   <Text style={styles.friendHandle}>@{friend.handle}</Text>
-                  <Text style={styles.friendPoints}>{friend.points} points</Text>
+                  <View style={styles.friendStatus}>
+                    <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                    <Text style={styles.friendStatusText}>Friends</Text>
+                  </View>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#6B7280" />
               </TouchableOpacity>
@@ -175,9 +178,16 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
     marginBottom: 2,
   },
-  friendPoints: {
+  friendStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  friendStatusText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#10B981',
+    marginLeft: 4,
+    fontWeight: '500',
   },
   emptyContainer: {
     alignItems: 'center',

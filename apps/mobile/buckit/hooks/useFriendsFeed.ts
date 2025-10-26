@@ -33,10 +33,14 @@ export function useFriendsFeed() {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 Fetching friends completions with offset:', offset, 'limit:', limit);
+
       const { data, error: fetchError } = await supabase.rpc('get_friends_completed_challenges', {
         limit_rows: limit,
         offset_rows: offset
       });
+
+      console.log('📊 Friends completions response:', { data, error: fetchError });
 
       if (fetchError) throw fetchError;
 
@@ -54,6 +58,7 @@ export function useFriendsFeed() {
       // Get total count on first load
       if (offset === 0) {
         const { data: countData, error: countError } = await supabase.rpc('get_friends_completed_challenges_count');
+        console.log('📈 Friends completions count:', { countData, countError });
         if (!countError) {
           setTotalCount(countData || 0);
         }
@@ -76,6 +81,23 @@ export function useFriendsFeed() {
   }, [fetchCompletions]);
 
   useEffect(() => {
+    // Debug: Check current user and friends
+    const debugUserAndFriends = async () => {
+      try {
+        const { data: userData } = await supabase.rpc('me_user_id');
+        console.log('👤 Current user ID:', userData);
+        
+        const { data: friendsData } = await supabase.rpc('get_friends');
+        console.log('👥 User friends:', friendsData);
+        
+        const { data: completionsData } = await supabase.from('completions').select('*').limit(5);
+        console.log('✅ Recent completions:', completionsData);
+      } catch (err) {
+        console.log('❌ Debug error:', err);
+      }
+    };
+    
+    debugUserAndFriends();
     fetchCompletions(0, 20);
   }, [fetchCompletions]);
 

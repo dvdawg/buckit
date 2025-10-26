@@ -9,6 +9,7 @@ import {
   Dimensions,
   Image,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useRecommendations } from '@/hooks/use-recommendations';
 import { useLocation } from '@/hooks/useLocation';
+import { usePopularThemes } from '@/hooks/usePopularThemes';
 import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -122,10 +124,18 @@ export default function ExploreScreen() {
     enabled: !!location
   });
 
+  // Get popular themes
+  const { 
+    themes: popularThemes, 
+    loading: themesLoading, 
+    error: themesError,
+    refetch: refetchThemes
+  } = usePopularThemes();
+
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      await refetchRecommendations();
+      await Promise.all([refetchRecommendations(), refetchThemes()]);
     },
     minDuration: 1200, // 1.2 seconds minimum for smooth transition
   });
@@ -260,53 +270,74 @@ export default function ExploreScreen() {
           <Text style={styles.sectionTitle}>Browse Categories</Text>
         </View>
 
-        {/* Generic Categories */}
+        {/* Dynamic Popular Categories */}
         <View style={styles.section}>
           <Text style={styles.subsectionTitle}>Popular Categories</Text>
         </View>
 
-        <View style={styles.categoriesGrid}>
-          {[
-            { name: 'Adventure', icon: '🏔️', color: '#4ade80' },
-            { name: 'Learning', icon: '📚', color: '#8EC5FC' },
-            { name: 'Health', icon: '💪', color: '#ef4444' },
-          ].map((category, index) => (
-            <TouchableOpacity key={index} style={styles.categoryCard}>
-              <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
-                <Text style={styles.categoryEmoji}>{category.icon}</Text>
-              </View>
-              <Text style={styles.categoryName}>{category.name}</Text>
+        {themesLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#8EC5FC" />
+            <Text style={styles.loadingText}>Loading themes...</Text>
+          </View>
+        ) : themesError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Failed to load themes</Text>
+            <TouchableOpacity onPress={refetchThemes} style={styles.retryButton}>
+              <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Niche Categories with Confidence Scores */}
-        <View style={styles.section}>
-          <Text style={styles.subsectionTitle}>Recommended for You</Text>
-        </View>
-
-        <View style={styles.nicheCategoriesGrid}>
-          {[
-            { name: 'Photography', icon: '📸', color: '#8b5cf6', confidence: 92 },
-            { name: 'Language Learning', icon: '🗣️', color: '#f59e0b', confidence: 88 },
-            { name: 'Digital Art', icon: '🎨', color: '#ec4899', confidence: 85 },
-            { name: 'Urban Exploration', icon: '🏙️', color: '#10b981', confidence: 78 },
-            { name: 'Sustainable Living', icon: '🌱', color: '#4ade80', confidence: 82 },
-            { name: 'Music Production', icon: '🎵', color: '#8EC5FC', confidence: 75 },
-          ].map((category, index) => (
-            <TouchableOpacity key={index} style={styles.nicheCategoryCard}>
-              <View style={styles.nicheCategoryHeader}>
-                <View style={[styles.nicheCategoryIcon, { backgroundColor: category.color }]}>
-                  <Text style={styles.nicheCategoryEmoji}>{category.icon}</Text>
+          </View>
+        ) : (
+          <View style={styles.categoriesGrid}>
+            {popularThemes.slice(0, 6).map((theme, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.categoryCard}
+                onPress={() => router.push(`/challenges/theme/${encodeURIComponent(theme.theme)}`)}
+              >
+                <View style={[styles.categoryIcon, { backgroundColor: theme.color }]}>
+                  <Text style={styles.categoryEmoji}>{theme.icon}</Text>
                 </View>
-                <View style={[styles.confidenceBadge, { backgroundColor: getApplicabilityColor(category.confidence) }]}>
-                  <Text style={styles.confidenceScore}>{category.confidence}%</Text>
+                <Text style={styles.categoryName}>{theme.theme}</Text>
+                <View style={[styles.popularityBadge, { backgroundColor: getApplicabilityColor(theme.popularity_score) }]}>
+                  <Text style={styles.popularityScore}>{theme.popularity_score}%</Text>
                 </View>
-              </View>
-              <Text style={styles.nicheCategoryName}>{category.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Additional Popular Themes */}
+        {popularThemes.length > 6 && (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.subsectionTitle}>More Popular Themes</Text>
+            </View>
+
+            <View style={styles.nicheCategoriesGrid}>
+              {popularThemes.slice(6).map((theme, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={styles.nicheCategoryCard}
+                  onPress={() => router.push(`/challenges/theme/${encodeURIComponent(theme.theme)}`)}
+                >
+                  <View style={styles.nicheCategoryHeader}>
+                    <View style={[styles.nicheCategoryIcon, { backgroundColor: theme.color }]}>
+                      <Text style={styles.nicheCategoryEmoji}>{theme.icon}</Text>
+                    </View>
+                    <View style={[styles.confidenceBadge, { backgroundColor: getApplicabilityColor(theme.popularity_score) }]}>
+                      <Text style={styles.confidenceScore}>{theme.popularity_score}%</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.nicheCategoryName}>{theme.theme}</Text>
+                  <Text style={styles.themeStats}>
+                    {theme.challenge_count} challenges • {theme.completion_rate}% completion
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Recommended Content Section */}
         <View style={styles.section}>
@@ -341,13 +372,13 @@ export default function ExploreScreen() {
                 }}
               >
                 {/* Score Badge - Top Right Corner */}
-                <View style={[styles.challengeApplicabilityBadge, { backgroundColor: getApplicabilityColor(Math.round(item.score * 100)) }]}>
-                  <Text style={styles.applicabilityScore}>{Math.round(item.score * 100)}%</Text>
+                <View style={[styles.challengeApplicabilityBadge, { backgroundColor: getApplicabilityColor(item.score ? Math.round(item.score * 100) : 0) }]}>
+                  <Text style={styles.applicabilityScore}>{item.score ? Math.round(item.score * 100) : 0}%</Text>
                 </View>
 
                 <View style={styles.challengeHeader}>
                   <Text style={styles.challengeTitle}>Recommended Item</Text>
-                  <Text style={styles.challengeDescription}>Score: {item.score.toFixed(2)}</Text>
+                  <Text style={styles.challengeDescription}>Score: {item.score ? item.score.toFixed(2) : 'N/A'}</Text>
                 </View>
 
                 <View style={styles.challengeDetails}>
@@ -603,6 +634,7 @@ const styles = StyleSheet.create({
     width: (width - 60) / 3,
     alignItems: 'center',
     marginBottom: 20,
+    position: 'relative',
   },
   categoryIcon: {
     width: 60,
@@ -621,6 +653,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Poppins',
     textAlign: 'center',
+    marginTop: 4,
+  },
+  popularityBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 30,
+    alignItems: 'center',
+  },
+  popularityScore: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
   },
   // Niche categories styles
   nicheCategoriesGrid: {
@@ -668,6 +716,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    fontFamily: 'Poppins',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  themeStats: {
+    fontSize: 12,
+    color: '#9BA1A6',
     fontFamily: 'Poppins',
     textAlign: 'center',
   },

@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type Params = { userId: string; lat: number; lon: number; radiusKm?: number; k?: number };
 
-const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
+const EMBED_DIM = 384; // Fixed to match database schema
 
 // MMR Selection function (embedded)
 function mmrSelect<T extends { embedding?: number[]; score: number }>(

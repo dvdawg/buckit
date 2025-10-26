@@ -44,14 +44,16 @@ export default function FriendsCompletionCard({ completion, onPress }: FriendsCo
       {/* User Profile Header */}
       <View style={styles.userHeader}>
         <View style={styles.userInfo}>
-          <Avatar 
-            user={{
-              avatar_url: completion.completed_by_avatar,
-              full_name: completion.completed_by_name,
-              handle: null
-            }}
-            size="small"
-          />
+          <View style={styles.avatarContainer}>
+            <Avatar 
+              user={{
+                avatar_url: completion.completed_by_avatar,
+                full_name: completion.completed_by_name,
+                handle: null
+              }}
+              size="small"
+            />
+          </View>
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{completion.completed_by_name}</Text>
             <Text style={styles.timeAgo}>{formatTimeAgo(completion.completed_at)}</Text>
@@ -95,22 +97,6 @@ export default function FriendsCompletionCard({ completion, onPress }: FriendsCo
 
       {/* Rating */}
       {renderStars(completion.satisfaction_rating)}
-
-      {/* Action Buttons */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="heart-outline" size={20} color="#A0A0A0" />
-          <Text style={styles.actionText}>Like</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-outline" size={20} color="#A0A0A0" />
-          <Text style={styles.actionText}>Comment</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="share-outline" size={20} color="#A0A0A0" />
-          <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
-      </View>
     </TouchableOpacity>
   );
 }
@@ -136,11 +122,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  avatarContainer: {
+    marginRight: 12,
+  },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 12,
   },
   userDetails: {
     flex: 1,
@@ -220,24 +208,5 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: 'row',
     marginBottom: 12,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  actionText: {
-    fontSize: 14,
-    color: '#A0A0A0',
-    fontFamily: 'Poppins',
-    marginLeft: 4,
   },
 });

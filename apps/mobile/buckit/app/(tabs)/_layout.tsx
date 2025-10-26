@@ -37,6 +37,15 @@ export default function Layout() {
           }} 
         />
         <Tabs.Screen 
+          name="explore" 
+          options={{ 
+            title: 'Explore',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="compass" size={size} color={color} />
+            ),
+          }} 
+        />
+        <Tabs.Screen 
           name="add" 
           options={{ 
             title: '',

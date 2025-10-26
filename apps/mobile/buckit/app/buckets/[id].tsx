@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated, TextInput, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
 import SharedPhotoAlbum from '@/components/SharedPhotoAlbum';
 import CompletionRatingModal from '@/components/CompletionRatingModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,7 +48,15 @@ export default function BucketDetail() {
     coordinates: { latitude: number; longitude: number };
     address?: string;
   } | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  
+  // Pull to refresh functionality
+  const { refreshing, onRefresh } = usePullToRefresh({
+    onRefresh: async () => {
+      // Recalculate count and refresh data
+      await recalculateCount();
+    },
+    minDuration: 1000, // 1 second minimum for smooth transition
+  });
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -97,14 +106,6 @@ export default function BucketDetail() {
     router.push(`/create-challenge?bucketId=${id}`);
   };
 
-  const handleRecalculateCount = async () => {
-    try {
-      await recalculateCount();
-      Alert.alert('Success', 'Challenge count has been recalculated!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to recalculate challenge count');
-    }
-  };
 
   const handleEditToggle = () => {
     if (bucket) {
@@ -452,7 +453,8 @@ export default function BucketDetail() {
     });
   };
 
-  if (loading) {
+  // Only show loading screen on initial load, not during refresh
+  if (loading && !bucket) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -494,12 +496,6 @@ export default function BucketDetail() {
           </TouchableOpacity>
           <View style={styles.headerRightButtons}>
             <TouchableOpacity 
-              style={styles.refreshButton}
-              onPress={handleRecalculateCount}
-            >
-              <Ionicons name="refresh" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity 
               style={styles.editButton}
               onPress={handleEditToggle}
             >
@@ -525,7 +521,18 @@ export default function BucketDetail() {
       </View>
 
       {/* Challenges List */}
-      <ScrollView style={styles.challengesSection} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.challengesSection} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8EC5FC"
+            colors={["#8EC5FC"]}
+          />
+        }
+      >
         {challenges.map((challenge) => (
           <TouchableOpacity
             key={challenge.id}
@@ -980,12 +987,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   editButton: {
     width: 40,

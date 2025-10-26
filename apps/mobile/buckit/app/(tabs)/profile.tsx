@@ -194,7 +194,6 @@ export default function Profile() {
   const { buckets, loading: bucketsLoading, refresh: refreshBuckets } = useBuckets();
   const { items, loading: itemsLoading } = useItems();
   const { getFriendCount } = useFriends();
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [friendCount, setFriendCount] = useState<number>(0);
@@ -339,23 +338,6 @@ export default function Profile() {
                 onPress={() => router.push('/search-users')}
               >
                 <Ionicons name="person-add-outline" size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.refreshButton}
-                onPress={async () => {
-                  console.log('Profile: Manual refresh triggered');
-                  setIsRefreshing(true);
-                  await refresh();
-                  await refreshBuckets();
-                  setIsRefreshing(false);
-                }}
-                disabled={isRefreshing}
-              >
-                <Ionicons 
-                  name={isRefreshing ? "refresh" : "refresh-outline"} 
-                  size={20} 
-                  color="#fff" 
-                />
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.settingsButton}
@@ -573,11 +555,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   addFriendsButton: {
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 16,
-  },
-  refreshButton: {
     padding: 8,
     backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 16,

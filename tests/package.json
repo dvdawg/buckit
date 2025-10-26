@@ -1,0 +1,18 @@
+{
+  "name": "buckit-recommender-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for Buckit recommendation system",
+  "main": "recommend.test.ts",
+  "scripts": {
+    "test": "ts-node recommend.test.ts",
+    "test:watch": "ts-node --watch recommend.test.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

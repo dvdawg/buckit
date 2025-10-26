@@ -54,27 +54,32 @@ export default function Buckets() {
             <Text style={styles.emptySubtext}>Create your first bucket to get started!</Text>
           </View>
         ) : (
-          buckets.map((bucket) => (
-            <TouchableOpacity
-              key={bucket.id}
-              style={styles.bucketCard}
-              onPress={() => handleBucketPress(bucket.id)}
-            >
-              <View style={[styles.bucketImage, { backgroundColor: bucket.color }]}>
-                <Text style={styles.bucketEmoji}>{bucket.emoji}</Text>
-              </View>
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.7)']}
-                style={styles.bucketGradient}
-              />
-              
-              {/* Bucket Info */}
-              <View style={styles.bucketInfo}>
-                <Text style={styles.bucketTitle}>{bucket.title}</Text>
-                <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
-              </View>
-            </TouchableOpacity>
-          ))
+          buckets.map((bucket) => {
+            // Use cover_url if available, otherwise use a placeholder
+            const imageSource = bucket.cover_url 
+              ? { uri: bucket.cover_url }
+              : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
+
+            return (
+              <TouchableOpacity
+                key={bucket.id}
+                style={styles.bucketCard}
+                onPress={() => handleBucketPress(bucket.id)}
+              >
+                <Image source={imageSource} style={styles.bucketImage} />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.bucketGradient}
+                />
+                
+                {/* Bucket Info */}
+                <View style={styles.bucketInfo}>
+                  <Text style={styles.bucketTitle}>{bucket.title}</Text>
+                  <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
     </View>

@@ -363,25 +363,30 @@ export default function Profile() {
               <Text style={styles.emptySubtext}>Create your first bucket to get started!</Text>
             </View>
           ) : (
-            buckets.slice(0, 6).map((bucket) => (
-              <TouchableOpacity
-                key={bucket.id}
-                style={styles.bucketCard}
-                onPress={() => handleBucketPress(bucket.id)}
-              >
-                <View style={[styles.bucketImagePlaceholder, { backgroundColor: bucket.color }]}>
-                  <Text style={styles.bucketEmoji}>{bucket.emoji}</Text>
-                </View>
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.7)']}
-                  style={styles.bucketGradient}
-                />
-                <View style={styles.bucketInfo}>
-                  <Text style={styles.bucketTitle} numberOfLines={2} ellipsizeMode="tail">{bucket.title}</Text>
-                  <Text style={styles.bucketChallenges} numberOfLines={1} ellipsizeMode="tail">{bucket.challenge_count} Challenges</Text>
-                </View>
-              </TouchableOpacity>
-            ))
+            buckets.slice(0, 6).map((bucket) => {
+              // Use cover_url if available, otherwise use a placeholder
+              const imageSource = bucket.cover_url 
+                ? { uri: bucket.cover_url }
+                : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
+
+              return (
+                <TouchableOpacity
+                  key={bucket.id}
+                  style={styles.bucketCard}
+                  onPress={() => handleBucketPress(bucket.id)}
+                >
+                  <Image source={imageSource} style={styles.bucketImage} />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.7)']}
+                    style={styles.bucketGradient}
+                  />
+                  <View style={styles.bucketInfo}>
+                    <Text style={styles.bucketTitle} numberOfLines={2} ellipsizeMode="tail">{bucket.title}</Text>
+                    <Text style={styles.bucketChallenges} numberOfLines={1} ellipsizeMode="tail">{bucket.challenge_count} Challenges</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
       </View>
@@ -453,23 +458,6 @@ export default function Profile() {
         </View>
       </View>
 
-      {/* Sign Out Button */}
-      <View style={styles.signOutContainer}>
-        <TouchableOpacity 
-          style={styles.signOutButton} 
-          onPress={async () => {
-            try {
-              console.log('Profile: Starting sign out...');
-              await signOut();
-              console.log('Profile: Sign out completed');
-            } catch (error) {
-              console.error('Profile: Sign out error:', error);
-            }
-          }}
-        >
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
       
       {/* Challenge Modal */}
       <ChallengeModal
@@ -698,22 +686,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9BA1A6',
     flexShrink: 0,
-  },
-  signOutContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  signOutButton: {
-    backgroundColor: '#ef4444',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  signOutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   loadingContainer: {
     padding: 20,

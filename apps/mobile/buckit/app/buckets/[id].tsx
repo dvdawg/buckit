@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useState, useRef, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { useBucket } from '@/hooks/useBucket';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
@@ -39,6 +40,7 @@ export default function BucketDetail() {
     coordinates: { latitude: number; longitude: number };
     address?: string;
   } | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -108,10 +110,33 @@ export default function BucketDetail() {
     setIsEditing(!isEditing);
   };
 
-  const handleSaveChanges = () => {
-    // TODO: Save changes to backend
-    Alert.alert('Changes Saved', 'Your bucket has been updated successfully!');
-    setIsEditing(false);
+  const handleSaveChanges = async () => {
+    try {
+      // Use the secure RPC function to update bucket data
+      const { error } = await supabase.rpc('update_bucket_secure', {
+        p_bucket_id: id,
+        p_title: bucketData.title,
+        p_description: bucketData.description,
+        p_cover_url: bucketData.headerImage
+      });
+
+      if (error) {
+        console.error('Error updating bucket:', error);
+        Alert.alert('Error', `Failed to update bucket: ${error.message}`);
+        return;
+      }
+
+      Alert.alert('Changes Saved', 'Your bucket has been updated successfully!');
+      setIsEditing(false);
+      
+      // Refresh bucket data
+      if (recalculateCount) {
+        recalculateCount();
+      }
+    } catch (error) {
+      console.error('Error updating bucket:', error);
+      Alert.alert('Error', 'Failed to update bucket. Please try again.');
+    }
   };
 
   const handleCancelEdit = () => {
@@ -125,9 +150,93 @@ export default function BucketDetail() {
     setIsEditing(false);
   };
 
-  const handleChangeImage = () => {
-    // TODO: Implement image picker
-    Alert.alert('Change Image', 'Image picker functionality would be implemented here');
+  const handleChangeImage = async () => {
+    try {
+      // Request permission to access media library
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert(
+          'Permission Required', 
+          'Permission to access camera roll is required to change your bucket cover. Please enable it in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Settings', onPress: () => ImagePicker.requestMediaLibraryPermissionsAsync() }
+          ]
+        );
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9], // Good aspect ratio for bucket covers
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadBucketCover(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const uploadBucketCover = async (imageUri: string) => {
+    setIsUploadingImage(true);
+    try {
+      // Create a unique filename
+      const fileExt = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${id}-${Date.now()}.${fileExt}`;
+      const filePath = `bucket-covers/${fileName}`;
+
+      // Map file extensions to proper MIME types
+      const mimeTypeMap: { [key: string]: string } = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp'
+      };
+      
+      const contentType = mimeTypeMap[fileExt] || 'image/jpeg';
+
+      // Convert image to bytes
+      const response = await fetch(imageUri);
+      const arrayBuffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('bucket-covers')
+        .upload(filePath, bytes, {
+          contentType: contentType,
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        Alert.alert('Error', 'Failed to upload image');
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('bucket-covers')
+        .getPublicUrl(filePath);
+
+      // Update bucket data with new cover URL
+      setBucketData(prev => ({ ...prev, headerImage: publicUrl }));
+      
+      Alert.alert('Success', 'Bucket cover updated successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Error', 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const updateBucketData = (field: string, value: string) => {
@@ -484,11 +593,21 @@ export default function BucketDetail() {
         <View style={styles.bucketInfo}>
           {isEditing ? (
             <>
-              <TouchableOpacity style={styles.imageEditButton} onPress={handleChangeImage}>
+              <TouchableOpacity 
+                style={styles.imageEditButton} 
+                onPress={handleChangeImage}
+                disabled={isUploadingImage}
+              >
                 <Image source={{ uri: bucketData.headerImage }} style={styles.editableImage} />
                 <View style={styles.imageEditOverlay}>
-                  <Ionicons name="camera" size={24} color="#fff" />
-                  <Text style={styles.imageEditText}>Change Photo</Text>
+                  {isUploadingImage ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="camera" size={24} color="#fff" />
+                      <Text style={styles.imageEditText}>Change Photo</Text>
+                    </>
+                  )}
                 </View>
               </TouchableOpacity>
               <TextInput

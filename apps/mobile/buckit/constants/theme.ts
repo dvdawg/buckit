@@ -22,12 +22,13 @@ export const Colors = {
     accent: '#EAEAEA',       // Subheaders
   },
   
-  // Accent Colors
+  // Accent Colors - Thematic Blue Scheme
   accent: {
-    primary: '#18357A',      // Primary accent (blue)
-    success: '#FF7954',      // Success (orange)
-    warning: '#f59e0b',      // Warning (orange)
-    error: '#ef4444',        // Error (red)
+    primary: '#18357A',      // Dark blue - for primary buttons and main actions
+    secondary: '#8EC5FC',    // Light blue - for secondary elements and highlights
+    success: '#8EC5FC',      // Light blue (was orange) - for success states
+    warning: '#8EC5FC',      // Light blue (was orange) - for warnings
+    error: '#8EC5FC',        // Light blue (was red) - for errors and alerts
   },
   
   // Legacy support

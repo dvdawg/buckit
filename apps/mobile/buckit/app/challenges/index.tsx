@@ -38,9 +38,9 @@ export default function ChallengesIndex() {
   const getUrgencyInfo = (urgency: string) => {
     switch (urgency) {
       case 'overdue':
-        return { text: 'Overdue', color: '#ef4444' };
+        return { text: 'Overdue', color: '#8EC5FC' };
       case 'due_soon':
-        return { text: 'Due Soon', color: '#f59e0b' };
+        return { text: 'Due Soon', color: '#8EC5FC' };
       default:
         return { text: 'Anytime', color: '#6b7280' };
     }

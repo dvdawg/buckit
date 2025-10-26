@@ -340,7 +340,7 @@ export default function Settings() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>Settings</Text>
         <View style={styles.headerRight} />
@@ -936,7 +936,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signOutButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#8EC5FC',
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,

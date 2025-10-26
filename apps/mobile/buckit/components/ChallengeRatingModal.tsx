@@ -134,7 +134,7 @@ export default function ChallengeRatingModal({
                   <Ionicons 
                     name={star <= tempRating ? "star" : "star-outline"} 
                     size={40} 
-                    color={star <= tempRating ? "#f59e0b" : "#9BA1A6"} 
+                    color={star <= tempRating ? "#8EC5FC" : "#9BA1A6"} 
                   />
                 </TouchableOpacity>
               ))}

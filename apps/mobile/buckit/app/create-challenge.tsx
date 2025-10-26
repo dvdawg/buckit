@@ -199,7 +199,7 @@ export default function CreateChallengeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#8EC5FC" />
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditMode ? 'Edit Challenge' : 'Create Challenge'}</Text>
         <View style={styles.headerSpacer} />

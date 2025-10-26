@@ -117,10 +117,10 @@ export default function ExploreScreen() {
   });
 
   const getApplicabilityColor = (score: number) => {
-    if (score >= 90) return '#4ade80'; // Green
-    if (score >= 80) return '#8EC5FC'; // Blue
-    if (score >= 70) return '#f59e0b'; // Orange
-    return '#ef4444'; // Red
+    if (score >= 90) return '#4ade80'; // Green (keep for high scores)
+    if (score >= 80) return '#8EC5FC'; // Light blue
+    if (score >= 70) return '#8EC5FC'; // Light blue (was orange)
+    return '#8EC5FC'; // Light blue (was red)
   };
 
   const getApplicabilityText = (score: number) => {
@@ -196,11 +196,11 @@ export default function ExploreScreen() {
             <Text style={styles.metaText}>{item.category}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="location" size={14} color="#ef4444" />
+            <Ionicons name="location" size={14} color="#8EC5FC" />
             <Text style={styles.metaText}>{item.location}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="time" size={14} color="#f59e0b" />
+            <Ionicons name="time" size={14} color="#8EC5FC" />
             <Text style={styles.metaText}>{item.estimatedTime}</Text>
           </View>
         </View>
@@ -255,7 +255,7 @@ export default function ExploreScreen() {
           {[
             { name: 'Adventure', icon: '🏔️', color: '#4ade80' },
             { name: 'Learning', icon: '📚', color: '#8EC5FC' },
-            { name: 'Health', icon: '💪', color: '#ef4444' },
+            { name: 'Health', icon: '💪', color: '#8EC5FC' },
           ].map((category, index) => (
             <TouchableOpacity key={index} style={styles.categoryCard}>
               <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
@@ -274,7 +274,7 @@ export default function ExploreScreen() {
         <View style={styles.nicheCategoriesGrid}>
           {[
             { name: 'Photography', icon: '📸', color: '#8b5cf6', confidence: 92 },
-            { name: 'Language Learning', icon: '🗣️', color: '#f59e0b', confidence: 88 },
+            { name: 'Language Learning', icon: '🗣️', color: '#8EC5FC', confidence: 88 },
             { name: 'Digital Art', icon: '🎨', color: '#ec4899', confidence: 85 },
             { name: 'Urban Exploration', icon: '🏙️', color: '#10b981', confidence: 78 },
             { name: 'Sustainable Living', icon: '🌱', color: '#4ade80', confidence: 82 },

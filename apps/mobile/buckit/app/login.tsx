@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
   submitButton: {
-    backgroundColor: '#FF7954',
+    backgroundColor: '#8EC5FC',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchText: {
-    color: '#FF7954',
+    color: '#8EC5FC',
     fontSize: 14,
     fontWeight: '500',
     fontFamily: 'Poppins',

@@ -56,7 +56,7 @@ export default function PerformanceDashboard() {
                     styles.barFill, 
                     { 
                       width: `${bucket.completion * 100}%`,
-                      backgroundColor: index === 0 ? '#4ade80' : index === 1 ? '#3b82f6' : index === 2 ? '#f59e0b' : '#ef4444'
+                      backgroundColor: index === 0 ? '#4ade80' : index === 1 ? '#3b82f6' : index === 2 ? '#8EC5FC' : '#8EC5FC'
                     }
                   ]} 
                 />
@@ -74,7 +74,7 @@ export default function PerformanceDashboard() {
       {/* Section 2 - Streaks & Consistency */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Ionicons name="flame" size={20} color="#f59e0b" />
+          <Ionicons name="flame" size={20} color="#8EC5FC" />
           <Text style={styles.cardTitle}>Streaks & Consistency</Text>
         </View>
         

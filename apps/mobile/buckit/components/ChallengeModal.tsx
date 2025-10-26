@@ -189,7 +189,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                 <View style={[styles.detailRow, styles.completionRow]}>
                   <View style={styles.completionInfo}>
                     <Ionicons name="flag" size={16} color="#4ade80" />
-                    <Text style={[styles.detailText, { color: challenge.is_completed ? '#4ade80' : '#f59e0b' }]}>
+                    <Text style={[styles.detailText, { color: challenge.is_completed ? '#4ade80' : '#8EC5FC' }]}>
                       {challenge.is_completed ? 'Completed' : 'In Progress'}
                     </Text>
                   </View>
@@ -216,7 +216,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                   />
                 </View>
                 <View style={styles.detailRow}>
-                  <Ionicons name="calendar" size={16} color="#f59e0b" />
+                  <Ionicons name="calendar" size={16} color="#8EC5FC" />
                   <Text style={styles.detailText}>
                     {challenge.deadline ? `Due: ${new Date(challenge.deadline).toLocaleDateString()}` : 'None yet!'}
                   </Text>
@@ -241,7 +241,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                         key={star}
                         name={star <= challenge.satisfaction_rating ? "star" : "star-outline"}
                         size={20}
-                        color="#f59e0b"
+                        color="#8EC5FC"
                       />
                     ))}
                   </View>
@@ -250,7 +250,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
             </ScrollView>
           ) : (
             <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={64} color="#ef4444" />
+              <Ionicons name="alert-circle" size={64} color="#8EC5FC" />
               <Text style={styles.errorTitle}>Challenge Not Found</Text>
               <Text style={styles.errorText}>This challenge could not be found or you don't have access to it.</Text>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -281,7 +281,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                       <Ionicons
                         name={star <= tempRating ? "star" : "star-outline"}
                         size={32}
-                        color="#f59e0b"
+                        color="#8EC5FC"
                       />
                     </TouchableOpacity>
                   ))}

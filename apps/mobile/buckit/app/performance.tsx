@@ -85,11 +85,41 @@ export default function PerformancePage() {
   // Calculate momentum (challenges completed in last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const momentum = items.filter(item => {
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  
+  const currentPeriodMomentum = items.filter(item => {
     if (!item.completed_at) return false;
     const completedDate = new Date(item.completed_at);
     return completedDate >= thirtyDaysAgo;
   }).length;
+
+  const previousPeriodMomentum = items.filter(item => {
+    if (!item.completed_at) return false;
+    const completedDate = new Date(item.completed_at);
+    return completedDate >= sixtyDaysAgo && completedDate < thirtyDaysAgo;
+  }).length;
+
+  // Check if user has been active for less than 30 days (first month)
+  const accountCreated = me?.created_at ? new Date(me.created_at) : new Date();
+  const daysSinceAccount = Math.floor((new Date().getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24));
+  const isFirstMonth = daysSinceAccount < 30;
+
+  // Calculate momentum percentage change
+  let momentumDisplay, momentumLabel;
+  if (isFirstMonth) {
+    momentumDisplay = '--';
+    momentumLabel = 'vs last month';
+  } else if (previousPeriodMomentum === 0) {
+    // If no previous data, show current count
+    momentumDisplay = currentPeriodMomentum;
+    momentumLabel = 'vs last month';
+  } else {
+    // Calculate percentage change
+    const percentageChange = ((currentPeriodMomentum - previousPeriodMomentum) / previousPeriodMomentum) * 100;
+    momentumDisplay = `${percentageChange > 0 ? '+' : ''}${Math.round(percentageChange)}%`;
+    momentumLabel = 'vs last month';
+  }
 
   return (
     <View style={styles.container}>
@@ -220,8 +250,8 @@ export default function PerformancePage() {
             <View style={styles.streakMomentumIcon}>
               <Ionicons name="trending-up" size={24} color="#1e40af" />
             </View>
-            <Text style={styles.streakMomentumValue}>{momentum}</Text>
-            <Text style={styles.streakMomentumLabel}>Momentum</Text>
+            <Text style={styles.streakMomentumValue}>{momentumDisplay}</Text>
+            <Text style={styles.streakMomentumLabel}>{momentumLabel}</Text>
           </View>
         </View>
 

@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 export interface VisibilityOption {
-  value: 'manual' | 'friends';
+  value: 'public' | 'private';
   label: string;
   description: string;
   icon: string;
@@ -18,22 +18,22 @@ export interface VisibilityOption {
 
 const visibilityOptions: VisibilityOption[] = [
   {
-    value: 'manual',
-    label: 'Manual Setting',
-    description: 'Only you and invited friends',
-    icon: 'person-add',
+    value: 'public',
+    label: 'Public',
+    description: 'Everyone can see this bucket',
+    icon: 'globe',
   },
   {
-    value: 'friends',
-    label: 'Friends',
-    description: 'Anyone you are friends with',
+    value: 'private',
+    label: 'Private',
+    description: 'Only your friends can see this bucket',
     icon: 'people',
   },
 ];
 
 interface BucketVisibilitySelectorProps {
-  selectedVisibility: 'manual' | 'friends';
-  onVisibilityChange: (visibility: 'manual' | 'friends') => void;
+  selectedVisibility: 'public' | 'private';
+  onVisibilityChange: (visibility: 'public' | 'private') => void;
   disabled?: boolean;
 }
 
@@ -46,7 +46,7 @@ export default function BucketVisibilitySelector({
 
   const selectedOption = visibilityOptions.find(option => option.value === selectedVisibility);
 
-  const handleSelect = (visibility: 'manual' | 'friends') => {
+  const handleSelect = (visibility: 'public' | 'private') => {
     onVisibilityChange(visibility);
     setModalVisible(false);
   };

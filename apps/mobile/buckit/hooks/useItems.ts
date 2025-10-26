@@ -14,7 +14,7 @@ type Item = {
   price_min: number | null;
   price_max: number | null;
   difficulty: number | null;
-  visibility: 'private' | 'friends' | 'public';
+  visibility: 'private' | 'public';
   satisfaction_rating: number | null;
   urgency_level: 'overdue' | 'due_soon' | 'no_rush';
   is_completed: boolean;

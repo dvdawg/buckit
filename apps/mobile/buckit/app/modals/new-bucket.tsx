@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 export default function NewBucketModal() {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
-  const [visibility, setVisibility] = useState<'private'|'friends'|'public'>('private');
+  const [visibility, setVisibility] = useState<'private'|'public'>('private');
 
   async function create() {
     const { data: uid } = await supabase.rpc('me_user_id');
@@ -32,7 +32,7 @@ export default function NewBucketModal() {
         style={{ borderWidth:1, borderColor:'#ddd', borderRadius:10, padding:10 }}
       />
       <View style={{ flexDirection:'row', gap:8 }}>
-        {['private','friends','public'].map(o => (
+        {['private','public'].map(o => (
           <Pressable 
             key={o} 
             onPress={() => setVisibility(o as any)} 

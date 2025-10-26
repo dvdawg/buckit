@@ -177,8 +177,8 @@ export default function UserProfileScreen() {
     // Always show public buckets
     if (bucket.visibility === 'public') return true;
     
-    // Show friends-only buckets if we're friends
-    if (bucket.visibility === 'friends' && friendshipStatus === 'accepted') return true;
+    // Show private buckets if we're friends
+    if (bucket.visibility === 'private' && friendshipStatus === 'accepted') return true;
     
     // Don't show private buckets unless it's the current user (which shouldn't happen in this view)
     return false;
@@ -254,15 +254,23 @@ export default function UserProfileScreen() {
                     <Text style={styles.bucketDescription} numberOfLines={2}>
                       {bucket.description || 'No description'}
                     </Text>
-                    <View style={styles.bucketVisibility}>
-                      <Ionicons 
-                        name={bucket.visibility === 'public' ? 'globe' : bucket.visibility === 'friends' ? 'people' : 'lock-closed'} 
-                        size={12} 
-                        color="#6B7280" 
-                      />
-                      <Text style={styles.bucketVisibilityText}>
-                        {bucket.visibility === 'public' ? 'Public' : bucket.visibility === 'friends' ? 'Friends' : 'Private'}
-                      </Text>
+                    <View style={styles.bucketMeta}>
+                      <View style={styles.bucketVisibility}>
+                        <Ionicons 
+                          name={bucket.visibility === 'public' ? 'globe' : 'people'} 
+                          size={12} 
+                          color="#6B7280" 
+                        />
+                        <Text style={styles.bucketVisibilityText}>
+                          {bucket.visibility === 'public' ? 'Public' : 'Private'}
+                        </Text>
+                      </View>
+                      {bucket.is_collaborator && (
+                        <View style={styles.collaborationIndicator}>
+                          <Ionicons name="people" size={12} color="#8EC5FC" />
+                          <Text style={styles.collaborationText}>Collaborating</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -449,6 +457,11 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginBottom: 4,
   },
+  bucketMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   bucketVisibility: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -459,6 +472,20 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     textTransform: 'uppercase',
     fontWeight: '500',
+  },
+  collaborationIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(142, 197, 252, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  collaborationText: {
+    fontSize: 8,
+    color: '#8EC5FC',
+    fontWeight: '600',
+    marginLeft: 4,
   },
   emptyState: {
     alignItems: 'center',

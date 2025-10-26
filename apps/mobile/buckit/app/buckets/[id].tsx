@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
 import SharedPhotoAlbum from '@/components/SharedPhotoAlbum';
 import CompletionRatingModal from '@/components/CompletionRatingModal';
+import ViewOnlyChallengeCard from '@/components/ViewOnlyChallengeCard';
+import ViewOnlyChallengeModal from '@/components/ViewOnlyChallengeModal';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const { width, height } = Dimensions.get('window');
@@ -116,6 +118,7 @@ export default function BucketDetail() {
         title: bucket.title || '',
         description: bucket.description || '',
         coverUrl: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+        visibility: bucket.visibility || 'private',
       });
       router.push(`/create-bucket?${params.toString()}`);
     }
@@ -199,6 +202,12 @@ export default function BucketDetail() {
   };
 
   const handleEditChallenge = () => {
+    // Only allow editing if user can edit the bucket
+    if (!bucket?.can_edit) {
+      Alert.alert('Access Denied', 'You can only edit challenges in buckets you own or collaborate on.');
+      return;
+    }
+    
     if (selectedChallenge) {
       setIsEditingChallenge(true);
       setEditingData({
@@ -293,6 +302,12 @@ export default function BucketDetail() {
   };
 
   const toggleChallengeCompletion = async (challengeId: string) => {
+    // Only allow challenge completion if user can edit the bucket
+    if (!bucket?.can_edit) {
+      Alert.alert('Access Denied', 'You can only complete challenges in buckets you own or collaborate on.');
+      return;
+    }
+    
     const challenge = challenges.find(c => c.id === challengeId);
     
     if (challenge && !challenge.completed) {
@@ -495,18 +510,22 @@ export default function BucketDetail() {
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerRightButtons}>
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={handleEditToggle}
-            >
-              <Ionicons name="create-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.shareButton}
-              onPress={() => router.push('/invite-friends')}
-            >
-              <Ionicons name="people" size={24} color="#fff" />
-            </TouchableOpacity>
+            {bucket?.can_edit && (
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={handleEditToggle}
+              >
+                <Ionicons name="create-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            )}
+            {bucket?.can_edit && (
+              <TouchableOpacity 
+                style={styles.shareButton}
+                onPress={() => router.push('/invite-friends')}
+              >
+                <Ionicons name="people" size={24} color="#fff" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -514,6 +533,12 @@ export default function BucketDetail() {
         <View style={styles.bucketInfo}>
           <Text style={styles.bucketTitle}>{bucket?.title}</Text>
           <Text style={styles.bucketDescription}>{bucket?.description}</Text>
+          {bucket?.is_collaborator && (
+            <View style={styles.collaborationBadge}>
+              <Ionicons name="people" size={16} color="#8EC5FC" />
+              <Text style={styles.collaborationText}>Collaborating</Text>
+            </View>
+          )}
           <View style={styles.bucketMeta}>
             <Text style={styles.createdDate}>Created {new Date(bucket?.created_at).toLocaleDateString()}</Text>
           </View>
@@ -533,7 +558,10 @@ export default function BucketDetail() {
           />
         }
       >
-        {challenges.map((challenge) => (
+        {challenges.map((challenge) => {
+          if (bucket?.can_edit) {
+            // Use interactive challenge card for collaborators
+            return (
           <TouchableOpacity
             key={challenge.id}
             style={styles.challengeCard}
@@ -541,11 +569,14 @@ export default function BucketDetail() {
           >
             {/* Completion Status & Icon */}
             <TouchableOpacity 
-              style={styles.challengeIcon}
+              style={[styles.challengeIcon, !bucket?.can_edit && styles.challengeIconDisabled]}
               onPress={(e) => {
                 e.stopPropagation();
-                toggleChallengeCompletion(challenge.id);
+                if (bucket?.can_edit) {
+                  toggleChallengeCompletion(challenge.id);
+                }
               }}
+              disabled={!bucket?.can_edit}
             >
               {challenge.completed ? (
                 <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
@@ -626,7 +657,18 @@ export default function BucketDetail() {
             
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
-        ))}
+            );
+          } else {
+            // Use view-only challenge card for non-collaborators
+            return (
+              <ViewOnlyChallengeCard
+                key={challenge.id}
+                challenge={challenge}
+                onPress={() => handleChallengePress(challenge.id)}
+              />
+            );
+          }
+        })}
       </ScrollView>
 
       {/* Shared Photo Album */}
@@ -677,18 +719,21 @@ export default function BucketDetail() {
         </View>
       )}
 
-      {/* Floating Add Button */}
-      <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
-        <Ionicons name="add" size={24} color="#000" />
-      </TouchableOpacity>
+      {/* Floating Add Button - Only show if user can edit */}
+      {bucket?.can_edit && (
+        <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
+          <Ionicons name="add" size={24} color="#000" />
+        </TouchableOpacity>
+      )}
 
-      {/* Challenge Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="none"
-        onRequestClose={handleCloseModal}
-      >
+      {/* Challenge Modal - Conditional rendering based on permissions */}
+      {bucket?.can_edit ? (
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="none"
+          onRequestClose={handleCloseModal}
+        >
         <Animated.View 
           style={[
             styles.blurContainer,
@@ -727,8 +772,13 @@ export default function BucketDetail() {
                         <Text style={styles.modalTitle}>{selectedChallenge.title}</Text>
                       )}
                       <TouchableOpacity 
-                        style={styles.modalCompletionBadge}
-                        onPress={() => toggleChallengeCompletion(selectedChallenge.id)}
+                        style={[styles.modalCompletionBadge, !bucket?.can_edit && styles.modalCompletionBadgeDisabled]}
+                        onPress={() => {
+                          if (bucket?.can_edit) {
+                            toggleChallengeCompletion(selectedChallenge.id);
+                          }
+                        }}
+                        disabled={!bucket?.can_edit}
                       >
                         {selectedChallenge.completed ? (
                           <>
@@ -859,8 +909,8 @@ export default function BucketDetail() {
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             
-            {/* Edit Button */}
-            {!isEditingChallenge && (
+            {/* Edit Button - Only show if user can edit */}
+            {!isEditingChallenge && bucket?.can_edit && (
               <TouchableOpacity 
                 style={styles.modalEditButton}
                 onPress={handleEditChallenge}
@@ -871,7 +921,15 @@ export default function BucketDetail() {
             </Animated.View>
           </BlurView>
         </Animated.View>
-      </Modal>
+        </Modal>
+      ) : (
+        <ViewOnlyChallengeModal
+          visible={modalVisible}
+          challenge={selectedChallenge}
+          bucketTitle={bucket?.title}
+          onClose={handleCloseModal}
+        />
+      )}
 
       {/* Rating Modal */}
       <Modal
@@ -1020,6 +1078,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     lineHeight: 22,
   },
+  collaborationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(142, 197, 252, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  collaborationText: {
+    fontSize: 14,
+    color: '#8EC5FC',
+    fontWeight: '600',
+    marginLeft: 6,
+  },
   bucketMeta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1145,6 +1218,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
+  },
+  challengeIconDisabled: {
+    opacity: 0.5,
   },
   challengeInfo: {
     flex: 1,
@@ -1346,6 +1422,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
+  },
+  modalCompletionBadgeDisabled: {
+    opacity: 0.5,
   },
   modalCompletionText: {
     fontSize: 12,

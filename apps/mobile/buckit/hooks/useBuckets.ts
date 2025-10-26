@@ -11,9 +11,11 @@ type Bucket = {
   color: string;
   challenge_count: number;
   completion_percentage: number;
-  visibility: 'private' | 'friends' | 'public';
+  visibility: 'private' | 'public';
   is_collaborative: boolean;
   created_at: string;
+  is_collaborator?: boolean;
+  can_edit?: boolean;
 };
 
 export function useBuckets() {
@@ -25,7 +27,7 @@ export function useBuckets() {
   const fetchUserBuckets = async (userId: string): Promise<Bucket[]> => {
     try {
       const { data, error } = await supabase.rpc('get_user_buckets', {
-        user_id: userId
+        p_user_id: userId
       });
       
       if (error) {

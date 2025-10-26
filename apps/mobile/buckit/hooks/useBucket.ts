@@ -11,9 +11,11 @@ type Bucket = {
   color: string;
   challenge_count: number;
   completion_percentage: number;
-  visibility: 'private' | 'friends' | 'public';
+  visibility: 'private' | 'public';
   is_collaborative: boolean;
   created_at: string;
+  is_collaborator?: boolean;
+  can_edit?: boolean;
 };
 
 type BucketItem = {
@@ -56,85 +58,42 @@ export function useBucket(bucketId: string) {
       setLoading(true);
       setError(null);
       
-      // First, try to get the bucket using the secure RPC function
+      // Get the bucket using the secure RPC function that respects visibility
       console.log('Fetching bucket with ID:', bucketId);
       
-      const { data: buckets, error: bucketError } = await supabase
-        .rpc('get_user_buckets_secure');
+      const { data: bucketData, error: bucketError } = await supabase
+        .rpc('get_bucket_by_id', {
+          p_bucket_id: bucketId
+        });
 
       if (bucketError) {
-        console.error('Error fetching buckets:', bucketError);
-        // Try fallback method
-        const { data: uid } = await supabase.rpc('me_user_id');
-        if (uid) {
-          const { data: fallbackBuckets, error: fallbackError } = await supabase
-            .from('buckets')
-            .select('*')
-            .eq('owner_id', uid)
-            .eq('id', bucketId)
-            .single();
-            
-          if (!fallbackError && fallbackBuckets) {
-            setBucket(fallbackBuckets as Bucket);
-          } else {
-            setError('Bucket not found');
-            return;
-          }
-        } else {
-          setError('User not authenticated');
-          return;
-        }
-      } else if (buckets) {
-        // Find the specific bucket
-        const foundBucket = buckets.find((b: Bucket) => b.id === bucketId);
-        if (foundBucket) {
-          setBucket(foundBucket);
-        } else {
-          setError('Bucket not found');
-          return;
-        }
+        console.error('Error fetching bucket:', bucketError);
+        setError('Failed to load bucket');
+        return;
+      }
+
+      if (bucketData && bucketData.length > 0) {
+        setBucket(bucketData[0] as Bucket);
+      } else {
+        setError('Bucket not found or you do not have permission to view it');
+        return;
       }
 
       // Now fetch the items for this bucket
       console.log('Fetching items for bucket:', bucketId);
       
       const { data: itemsData, error: itemsError } = await supabase
-        .rpc('get_user_items_secure');
+        .rpc('get_bucket_items', {
+          p_bucket_id: bucketId
+        });
 
       if (itemsError) {
         console.error('Error fetching items:', itemsError);
-        // Try fallback method for items
-        const { data: uid } = await supabase.rpc('me_user_id');
-        if (uid) {
-          const { data: fallbackItems, error: fallbackItemsError } = await supabase
-            .from('items')
-            .select(`
-              *,
-              bucket: buckets!items_bucket_id_fkey (
-                emoji,
-                title,
-                color
-              )
-            `)
-            .eq('owner_id', uid)
-            .eq('bucket_id', bucketId)
-            .order('created_at', { ascending: false });
-            
-          if (!fallbackItemsError && fallbackItems) {
-            // Transform the data to match our expected structure
-            const transformedItems = fallbackItems.map((item: any) => ({
-              ...item,
-              bucket_emoji: item.bucket?.emoji || '📝',
-              bucket_title: item.bucket?.title || 'Unknown',
-              bucket_color: item.bucket?.color || '#8EC5FC'
-            }));
-            setItems(transformedItems);
-          }
-        }
+        setItems([]);
       } else if (itemsData) {
-        // Filter items for this specific bucket
-        const bucketItems = itemsData.filter((item: BucketItem) => item.bucket_id === bucketId);
-        setItems(bucketItems);
+        setItems(itemsData as BucketItem[]);
+      } else {
+        setItems([]);
       }
       
     } catch (error) {
@@ -156,6 +115,12 @@ export function useBucket(bucketId: string) {
 
   const recalculateCount = async () => {
     if (!user || !bucketId) return;
+    
+    // Only allow recalculating count if user can edit the bucket
+    if (!bucket?.can_edit) {
+      console.log('User cannot edit bucket, skipping count recalculation');
+      return;
+    }
     
     try {
       console.log('Recalculating challenge count for bucket:', bucketId);

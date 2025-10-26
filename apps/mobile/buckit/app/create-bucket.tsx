@@ -22,14 +22,14 @@ import BucketVisibilitySelector from '@/components/BucketVisibilitySelector';
 
 export default function CreateBucketScreen() {
   const router = useRouter();
-  const { edit, bucketId, title, description, coverUrl } = useLocalSearchParams();
+  const { edit, bucketId, title, description, coverUrl, visibility } = useLocalSearchParams();
   const isEditMode = edit === 'true';
   
   const [formData, setFormData] = useState({
     title: (title as string) || '',
     description: (description as string) || '',
     photo: (coverUrl as string) || null,
-    visibility: 'manual' as 'manual' | 'friends',
+    visibility: (visibility as 'public' | 'private') || 'private',
     invitedFriends: [] as Array<{id: string, name: string, avatar?: string}>,
   });
   const [loading, setLoading] = useState(false);
@@ -71,7 +71,8 @@ export default function CreateBucketScreen() {
           .update({
             title: formData.title,
             description: formData.description,
-            cover_url: formData.photo
+            cover_url: formData.photo,
+            visibility: formData.visibility
           })
           .eq('id', bucketId);
 

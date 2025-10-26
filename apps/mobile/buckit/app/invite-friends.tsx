@@ -126,13 +126,13 @@ export default function InviteFriendsScreen() {
 
       if (error) {
         console.error('Error adding collaborator:', error);
-        Alert.alert('Error', 'Failed to invite friend as collaborator');
+        Alert.alert('Error', 'Failed to add friend as collaborator');
         return;
       }
 
       setInvitedFriends(prev => [...prev, friendId]);
       const friend = friends.find(f => f.id === friendId);
-      Alert.alert('Invitation Sent', `Invited ${friend?.full_name} to collaborate on this bucket!`);
+      Alert.alert('Collaborator Added', `${friend?.full_name} is now a collaborator on this bucket!`);
     } catch (error) {
       console.error('Unexpected error inviting friend:', error);
       Alert.alert('Error', 'An unexpected error occurred');
@@ -146,8 +146,8 @@ export default function InviteFriendsScreen() {
     }
     
     Alert.alert(
-      'Invitations Sent', 
-      `Sent ${invitedFriends.length} invitation${invitedFriends.length !== 1 ? 's' : ''} to join your Jits bucket!`,
+      'Collaborators Added', 
+      `Added ${invitedFriends.length} collaborator${invitedFriends.length !== 1 ? 's' : ''} to your bucket!`,
       [
         {
           text: 'OK',

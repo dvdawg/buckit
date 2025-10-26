@@ -1,7 +1,4 @@
--- Add RPC functions for challenge count management
--- These can be called from the frontend to ensure challenge counts are accurate
 
--- Function to update challenge count for a specific bucket
 CREATE OR REPLACE FUNCTION update_bucket_challenge_count_secure(p_bucket_id UUID)
 RETURNS VOID AS $$
 DECLARE
@@ -61,7 +58,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to recalculate all challenge counts for the current user
 CREATE OR REPLACE FUNCTION recalculate_user_bucket_counts()
 RETURNS VOID AS $$
 DECLARE

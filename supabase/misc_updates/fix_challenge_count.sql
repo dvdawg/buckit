@@ -1,17 +1,11 @@
--- Fix challenge_count update mechanism
--- This ensures that challenge_count is properly updated when items are added/removed
 
--- First, let's ensure the triggers exist and are working
--- Drop existing triggers if they exist
 DROP TRIGGER IF EXISTS update_bucket_stats_on_item_change ON items;
 DROP TRIGGER IF EXISTS update_progress_on_completion ON items;
 
--- Drop existing functions if they exist
 DROP FUNCTION IF EXISTS trigger_update_bucket_stats();
 DROP FUNCTION IF EXISTS trigger_update_progress();
 DROP FUNCTION IF EXISTS update_bucket_progress(UUID, UUID);
 
--- Recreate the update_bucket_progress function
 CREATE OR REPLACE FUNCTION update_bucket_progress(p_bucket_id UUID, p_user_id UUID)
 RETURNS VOID AS $$
 DECLARE
@@ -47,7 +41,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create function to record activity
 CREATE OR REPLACE FUNCTION record_user_activity(p_user_id UUID, p_completions_count INTEGER DEFAULT 1)
 RETURNS VOID AS $$
 BEGIN
@@ -64,7 +57,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger function for progress updates
 CREATE OR REPLACE FUNCTION trigger_update_progress()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -98,7 +90,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger function for bucket stats updates
 CREATE OR REPLACE FUNCTION trigger_update_bucket_stats()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -130,7 +121,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create the triggers
 CREATE TRIGGER update_progress_on_completion
     BEFORE UPDATE ON items
     FOR EACH ROW
@@ -141,7 +131,6 @@ CREATE TRIGGER update_bucket_stats_on_item_change
     FOR EACH ROW
     EXECUTE FUNCTION trigger_update_bucket_stats();
 
--- Create a function to manually recalculate all bucket challenge counts
 CREATE OR REPLACE FUNCTION recalculate_all_bucket_counts()
 RETURNS VOID AS $$
 DECLARE
@@ -159,10 +148,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Execute the recalculation to fix any existing buckets
 SELECT recalculate_all_bucket_counts();
 
--- Create a function to manually update a specific bucket's count
 CREATE OR REPLACE FUNCTION update_bucket_challenge_count(p_bucket_id UUID)
 RETURNS VOID AS $$
 DECLARE

@@ -1,7 +1,4 @@
--- Final comprehensive fix for registration issues
--- This script addresses both storage upload and user creation problems
 
--- 1. Create a secure function to handle user profile creation
 CREATE OR REPLACE FUNCTION create_user_profile(
   p_auth_id UUID,
   p_full_name TEXT,
@@ -25,10 +22,8 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION create_user_profile(UUID, TEXT, TEXT, TEXT) TO authenticated;
 
--- 2. Fix users table RLS policies
 DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
 DROP POLICY IF EXISTS "Users can view their own profile" ON users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
@@ -44,8 +39,6 @@ CREATE POLICY "Users can update their own profile" ON users
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
--- 3. Fix storage policies - completely reset and create simple ones
--- Drop ALL existing storage policies for avatars
 DROP POLICY IF EXISTS "Users can upload avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Users can update avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete avatars" ON storage.objects;
@@ -62,7 +55,6 @@ DROP POLICY IF EXISTS "Allow authenticated update to avatars" ON storage.objects
 DROP POLICY IF EXISTS "Allow authenticated delete from avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Allow public read from avatars" ON storage.objects;
 
--- Create the simplest possible storage policies
 CREATE POLICY "avatars_upload" ON storage.objects
 FOR INSERT WITH CHECK (bucket_id = 'avatars');
 
@@ -75,7 +67,6 @@ FOR DELETE USING (bucket_id = 'avatars');
 CREATE POLICY "avatars_select" ON storage.objects
 FOR SELECT USING (bucket_id = 'avatars');
 
--- 4. Ensure the avatars bucket exists
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'avatars',
@@ -89,7 +80,6 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 5242880,
   allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
--- 5. Verify everything is working
 SELECT 'User profile function created' as status;
 SELECT 'Users table policies:' as info;
 SELECT policyname, cmd FROM pg_policies WHERE tablename = 'users';

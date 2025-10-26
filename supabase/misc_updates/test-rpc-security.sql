@@ -1,7 +1,4 @@
--- Test RPC function security to verify it's filtering correctly
--- This will help identify if the RPC function is working properly
 
--- 1. Check all buckets in the database
 SELECT 'All buckets in database:' as info;
 SELECT 
     b.id,
@@ -14,7 +11,6 @@ FROM buckets b
 LEFT JOIN users u ON b.owner_id = u.id
 ORDER BY b.created_at DESC;
 
--- 2. Check all users in the database
 SELECT 'All users in database:' as info;
 SELECT 
     u.id,
@@ -27,8 +23,6 @@ LEFT JOIN buckets b ON u.id = b.owner_id
 GROUP BY u.id, u.full_name, u.handle, u.auth_id
 ORDER BY bucket_count DESC;
 
--- 3. Test the RPC function with a specific user ID
--- First, let's create a test function that accepts a user ID parameter
 CREATE OR REPLACE FUNCTION test_get_user_buckets(p_user_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -68,7 +62,6 @@ BEGIN
 END;
 $$;
 
--- 4. Test the function with each user
 SELECT 'Testing RPC function with each user:' as info;
 
 DO $$
@@ -87,11 +80,9 @@ BEGIN
 END;
 $$;
 
--- 5. Check if there are any buckets with NULL owner_id
 SELECT 'Buckets with NULL owner_id:' as info;
 SELECT COUNT(*) as null_owner_count FROM buckets WHERE owner_id IS NULL;
 
--- 6. Clean up test function
 DROP FUNCTION IF EXISTS test_get_user_buckets(UUID);
 
 SELECT 'RPC security test completed' as status;

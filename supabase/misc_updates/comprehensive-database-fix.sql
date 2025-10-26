@@ -1,8 +1,4 @@
--- COMPREHENSIVE DATABASE FIX
--- This script completely redesigns the RLS policies to eliminate recursion
--- while maintaining proper security
 
--- 1. DISABLE RLS TEMPORARILY TO CLEAN UP
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets DISABLE ROW LEVEL SECURITY;
 ALTER TABLE items DISABLE ROW LEVEL SECURITY;
@@ -11,7 +7,6 @@ ALTER TABLE completions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE friendships DISABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_events DISABLE ROW LEVEL SECURITY;
 
--- 2. DROP ALL EXISTING POLICIES (including any that might have been created)
 DROP POLICY IF EXISTS "Users can view their own profile" ON users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
@@ -78,7 +73,6 @@ DROP POLICY IF EXISTS "feed_events_select" ON feed_events;
 DROP POLICY IF EXISTS "feed_events_insert" ON feed_events;
 DROP POLICY IF EXISTS "feed_events_auth" ON feed_events;
 
--- Drop additional policies that depend on me_user_id() function
 DROP POLICY IF EXISTS "friendships_select_participant" ON friendships;
 DROP POLICY IF EXISTS "friendships_insert_self_request" ON friendships;
 DROP POLICY IF EXISTS "friendships_update_recipient" ON friendships;
@@ -96,8 +90,6 @@ DROP POLICY IF EXISTS "items_delete_owner_or_editor" ON items;
 DROP POLICY IF EXISTS "fe_select" ON feed_events;
 DROP POLICY IF EXISTS "fe_insert_self" ON feed_events;
 
--- 3. CREATE HELPER FUNCTIONS FOR SECURE ACCESS
--- These functions bypass RLS and provide secure access patterns
 
 CREATE OR REPLACE FUNCTION get_current_user_db_id()
 RETURNS UUID
@@ -204,10 +196,7 @@ BEGIN
 END;
 $$;
 
--- 4. CREATE SIMPLE, NON-RECURSIVE RLS POLICIES
--- These policies only check authentication, not cross-table relationships
 
--- Re-enable RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
@@ -216,7 +205,6 @@ ALTER TABLE completions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_events ENABLE ROW LEVEL SECURITY;
 
--- Users policies (simple auth check)
 CREATE POLICY "users_select_own" ON users
     FOR SELECT USING (auth.uid() = auth_id);
 
@@ -226,7 +214,6 @@ CREATE POLICY "users_update_own" ON users
 CREATE POLICY "users_insert_own" ON users
     FOR INSERT WITH CHECK (auth.uid() = auth_id);
 
--- Buckets policies (simple auth check - no cross-table queries)
 CREATE POLICY "buckets_select_auth" ON buckets
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
@@ -239,7 +226,6 @@ CREATE POLICY "buckets_update_auth" ON buckets
 CREATE POLICY "buckets_delete_auth" ON buckets
     FOR DELETE USING (auth.uid() IS NOT NULL);
 
--- Items policies (simple auth check - no cross-table queries)
 CREATE POLICY "items_select_auth" ON items
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
@@ -252,7 +238,6 @@ CREATE POLICY "items_update_auth" ON items
 CREATE POLICY "items_delete_auth" ON items
     FOR DELETE USING (auth.uid() IS NOT NULL);
 
--- Other tables (simple auth check)
 CREATE POLICY "bucket_collaborators_auth" ON bucket_collaborators
     FOR ALL USING (auth.uid() IS NOT NULL);
 
@@ -265,7 +250,6 @@ CREATE POLICY "friendships_auth" ON friendships
 CREATE POLICY "feed_events_auth" ON feed_events
     FOR ALL USING (auth.uid() IS NOT NULL);
 
--- 5. DROP EXISTING FUNCTIONS FIRST TO AVOID PARAMETER CONFLICTS
 DROP FUNCTION IF EXISTS me_user_id();
 DROP FUNCTION IF EXISTS create_bucket(TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS create_bucket(TEXT, TEXT);
@@ -274,7 +258,6 @@ DROP FUNCTION IF EXISTS create_item(UUID, TEXT, TEXT);
 DROP FUNCTION IF EXISTS get_user_buckets_safe(UUID);
 DROP FUNCTION IF EXISTS get_user_items_safe(UUID);
 
--- 6. CREATE/UPDATE RPC FUNCTIONS TO USE HELPER FUNCTIONS
 CREATE OR REPLACE FUNCTION me_user_id()
 RETURNS UUID
 LANGUAGE plpgsql
@@ -341,5 +324,4 @@ BEGIN
 END;
 $$;
 
--- 6. VERIFY THE FIX
 SELECT 'Database RLS policies have been completely redesigned to prevent recursion' as status;

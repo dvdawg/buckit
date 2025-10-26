@@ -1,5 +1,3 @@
--- Create a secure function to handle user profile creation
--- This function runs with SECURITY DEFINER to bypass RLS for the specific operation
 
 CREATE OR REPLACE FUNCTION create_user_profile(
   p_auth_id UUID,
@@ -24,8 +22,6 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION create_user_profile(UUID, TEXT, TEXT, TEXT) TO authenticated;
 
--- Test the function
 SELECT 'User profile creation function created successfully' as status;

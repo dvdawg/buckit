@@ -1,7 +1,4 @@
--- Fix column ambiguity issue in RPC functions
--- The problem is naming conflict between function parameters and table columns
 
--- 1. Fix the debug function with proper column qualification
 CREATE OR REPLACE FUNCTION debug_get_user_buckets(p_user_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -48,7 +45,6 @@ BEGIN
 END;
 $$;
 
--- 2. Fix the main RPC functions with proper column qualification
 CREATE OR REPLACE FUNCTION get_user_buckets_secure()
 RETURNS TABLE (
     id UUID,
@@ -113,7 +109,6 @@ BEGIN
 END;
 $$;
 
--- 3. Fix the items RPC function as well
 CREATE OR REPLACE FUNCTION get_user_items_secure()
 RETURNS TABLE (
     id UUID,
@@ -188,7 +183,6 @@ BEGIN
 END;
 $$;
 
--- 4. Test the debug function with proper parameter naming
 SELECT 'Testing debug function with first user ID:' as info;
 
 DO $$
@@ -214,7 +208,6 @@ BEGIN
 END;
 $$;
 
--- 5. Show all users and their bucket counts
 SELECT 'Users and their bucket counts:' as info;
 SELECT 
     u.id as user_id,
@@ -226,7 +219,6 @@ LEFT JOIN buckets b ON u.id = b.owner_id
 GROUP BY u.id, u.full_name, u.handle
 ORDER BY bucket_count DESC;
 
--- 6. Clean up debug function
 DROP FUNCTION IF EXISTS debug_get_user_buckets(UUID);
 
 SELECT 'Column ambiguity issues fixed - RPC functions should now work correctly' as status;

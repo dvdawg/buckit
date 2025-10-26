@@ -1,7 +1,4 @@
--- Fix Database RLS Policies - Run this in your Supabase SQL Editor
--- This will fix the infinite recursion error in RLS policies
 
--- Step 1: Drop all existing problematic policies
 DROP POLICY IF EXISTS "Users can view their own buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view friend's buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can create buckets" ON buckets;
@@ -15,14 +12,12 @@ DROP POLICY IF EXISTS "Users can create items" ON items;
 DROP POLICY IF EXISTS "Users can update their own items" ON items;
 DROP POLICY IF EXISTS "Users can delete their own items" ON items;
 
--- Step 2: Create simple, non-recursive policies for buckets
 CREATE POLICY "bucket_owner_all" ON buckets
     FOR ALL USING (owner_id = (SELECT id FROM users WHERE auth_id = auth.uid()));
 
 CREATE POLICY "bucket_public_view" ON buckets
     FOR SELECT USING (visibility = 'public');
 
--- Step 3: Create simple, non-recursive policies for items
 CREATE POLICY "item_owner_all" ON items
     FOR ALL USING (owner_id = (SELECT id FROM users WHERE auth_id = auth.uid()));
 

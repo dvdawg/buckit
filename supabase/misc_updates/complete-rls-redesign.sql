@@ -1,8 +1,4 @@
--- COMPLETE RLS REDESIGN
--- This script completely redesigns the RLS policies to eliminate circular dependencies
--- and security issues while maintaining proper data isolation
 
--- 1. DISABLE RLS TEMPORARILY TO CLEAN UP
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets DISABLE ROW LEVEL SECURITY;
 ALTER TABLE items DISABLE ROW LEVEL SECURITY;
@@ -15,8 +11,6 @@ ALTER TABLE performance_metrics DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_activity DISABLE ROW LEVEL SECURITY;
 ALTER TABLE weekly_progress DISABLE ROW LEVEL SECURITY;
 
--- 2. DROP ALL EXISTING POLICIES
--- Drop all possible policy names that might exist
 DROP POLICY IF EXISTS "users_select_own" ON users;
 DROP POLICY IF EXISTS "users_update_own" ON users;
 DROP POLICY IF EXISTS "users_insert_own" ON users;
@@ -72,14 +66,11 @@ DROP POLICY IF EXISTS "feed_events_insert" ON feed_events;
 DROP POLICY IF EXISTS "feed_events_auth" ON feed_events;
 DROP POLICY IF EXISTS "feed_events_auth_only" ON feed_events;
 
--- Drop any other policies that might exist
 DROP POLICY IF EXISTS "bucket_progress_auth_only" ON bucket_progress;
 DROP POLICY IF EXISTS "performance_metrics_auth_only" ON performance_metrics;
 DROP POLICY IF EXISTS "user_activity_auth_only" ON user_activity;
 DROP POLICY IF EXISTS "weekly_progress_auth_only" ON weekly_progress;
 
--- 3. CREATE SECURE HELPER FUNCTIONS
--- These functions will handle all data access securely without triggering RLS recursion
 
 CREATE OR REPLACE FUNCTION get_current_user_db_id()
 RETURNS UUID
@@ -104,8 +95,6 @@ BEGIN
 END;
 $$;
 
--- 4. CREATE SECURE RPC FUNCTIONS FOR DATA ACCESS
--- These functions bypass RLS entirely and handle security at the function level
 
 CREATE OR REPLACE FUNCTION get_user_buckets_secure()
 RETURNS TABLE (
@@ -222,7 +211,6 @@ BEGIN
 END;
 $$;
 
--- 5. CREATE SECURE CRUD FUNCTIONS
 CREATE OR REPLACE FUNCTION create_bucket_secure(
     p_title TEXT,
     p_description TEXT,
@@ -279,11 +267,7 @@ BEGIN
 END;
 $$;
 
--- 6. CREATE MINIMAL RLS POLICIES
--- These policies are extremely simple and only check authentication
--- All actual data filtering is handled by the RPC functions
 
--- Re-enable RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
@@ -296,7 +280,6 @@ ALTER TABLE performance_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE weekly_progress ENABLE ROW LEVEL SECURITY;
 
--- Create extremely simple policies that only check authentication
 CREATE POLICY "users_auth_check" ON users
     FOR ALL USING (auth.uid() IS NOT NULL);
 
@@ -330,7 +313,6 @@ CREATE POLICY "user_activity_auth_check" ON user_activity
 CREATE POLICY "weekly_progress_auth_check" ON weekly_progress
     FOR ALL USING (auth.uid() IS NOT NULL);
 
--- 7. UPDATE EXISTING RPC FUNCTIONS TO USE NEW HELPER
 CREATE OR REPLACE FUNCTION me_user_id()
 RETURNS UUID
 LANGUAGE plpgsql
@@ -341,7 +323,6 @@ BEGIN
 END;
 $$;
 
--- 8. VERIFY THE SETUP
 SELECT 'Complete RLS redesign applied successfully' as status;
 SELECT 'All data access should now go through secure RPC functions' as note;
 SELECT 'RLS policies are minimal and only check authentication' as security_note;

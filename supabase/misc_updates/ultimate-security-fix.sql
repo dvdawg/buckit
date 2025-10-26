@@ -1,8 +1,4 @@
--- ULTIMATE SECURITY FIX
--- This approach completely bypasses RLS for data access and uses RPC functions exclusively
--- This prevents recursion while maintaining security
 
--- 1. DISABLE RLS TEMPORARILY TO CLEAN UP
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets DISABLE ROW LEVEL SECURITY;
 ALTER TABLE items DISABLE ROW LEVEL SECURITY;
@@ -11,7 +7,6 @@ ALTER TABLE completions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE friendships DISABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_events DISABLE ROW LEVEL SECURITY;
 
--- 2. DROP ALL EXISTING POLICIES
 DROP POLICY IF EXISTS "users_select_own" ON users;
 DROP POLICY IF EXISTS "users_update_own" ON users;
 DROP POLICY IF EXISTS "users_insert_own" ON users;
@@ -28,8 +23,6 @@ DROP POLICY IF EXISTS "completions_auth" ON completions;
 DROP POLICY IF EXISTS "friendships_auth" ON friendships;
 DROP POLICY IF EXISTS "feed_events_auth" ON feed_events;
 
--- 3. CREATE SECURE HELPER FUNCTIONS
--- These functions will handle all data access securely
 
 CREATE OR REPLACE FUNCTION get_current_user_db_id()
 RETURNS UUID
@@ -156,10 +149,7 @@ BEGIN
 END;
 $$;
 
--- 4. CREATE MINIMAL RLS POLICIES THAT DON'T CAUSE RECURSION
--- These policies are very simple and only check authentication
 
--- Re-enable RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
@@ -168,7 +158,6 @@ ALTER TABLE completions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_events ENABLE ROW LEVEL SECURITY;
 
--- Create very simple policies that only check authentication
 CREATE POLICY "users_auth_only" ON users
     FOR ALL USING (auth.uid() IS NOT NULL);
 
@@ -190,7 +179,6 @@ CREATE POLICY "friendships_auth_only" ON friendships
 CREATE POLICY "feed_events_auth_only" ON feed_events
     FOR ALL USING (auth.uid() IS NOT NULL);
 
--- 5. UPDATE EXISTING RPC FUNCTIONS
 CREATE OR REPLACE FUNCTION me_user_id()
 RETURNS UUID
 LANGUAGE plpgsql
@@ -257,5 +245,4 @@ BEGIN
 END;
 $$;
 
--- 6. VERIFY THE FIX
 SELECT 'Ultimate security fix applied - RPC functions handle all data access securely' as status;

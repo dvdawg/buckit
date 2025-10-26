@@ -1,5 +1,3 @@
--- Create a safe RPC function to get user buckets without RLS recursion
--- This function uses SECURITY DEFINER to bypass RLS policies entirely
 
 CREATE OR REPLACE FUNCTION get_user_buckets_safe(user_id UUID)
 RETURNS TABLE (

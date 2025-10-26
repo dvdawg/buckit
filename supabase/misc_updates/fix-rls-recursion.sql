@@ -1,7 +1,4 @@
--- Fix RLS infinite recursion by removing cross-table references
--- This script drops all problematic policies and creates simple ones
 
--- 1. Drop ALL existing RLS policies to eliminate recursion
 DROP POLICY IF EXISTS "Users can view their own profile" ON users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
@@ -35,9 +32,7 @@ DROP POLICY IF EXISTS "Users can update their friendships" ON friendships;
 DROP POLICY IF EXISTS "Users can view relevant feed events" ON feed_events;
 DROP POLICY IF EXISTS "Users can create feed events" ON feed_events;
 
--- 2. Create simple, non-recursive RLS policies
 
--- Users policies (simple auth check only)
 CREATE POLICY "users_select_own" ON users
     FOR SELECT USING (auth.uid() = auth_id);
 
@@ -47,7 +42,6 @@ CREATE POLICY "users_update_own" ON users
 CREATE POLICY "users_insert_own" ON users
     FOR INSERT WITH CHECK (auth.uid() = auth_id);
 
--- Buckets policies (use helper function to avoid recursion)
 CREATE POLICY "buckets_select_own" ON buckets
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
@@ -60,7 +54,6 @@ CREATE POLICY "buckets_update_own" ON buckets
 CREATE POLICY "buckets_delete_own" ON buckets
     FOR DELETE USING (auth.uid() IS NOT NULL);
 
--- Items policies (use helper function to avoid recursion)
 CREATE POLICY "items_select_own" ON items
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
@@ -73,14 +66,12 @@ CREATE POLICY "items_update_own" ON items
 CREATE POLICY "items_delete_own" ON items
     FOR DELETE USING (auth.uid() IS NOT NULL);
 
--- Bucket collaborators policies (simple auth check only)
 CREATE POLICY "bucket_collaborators_select" ON bucket_collaborators
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "bucket_collaborators_all" ON bucket_collaborators
     FOR ALL USING (auth.uid() IS NOT NULL);
 
--- Completions policies (simple auth check only)
 CREATE POLICY "completions_select" ON completions
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
@@ -90,7 +81,6 @@ CREATE POLICY "completions_insert" ON completions
 CREATE POLICY "completions_update" ON completions
     FOR UPDATE USING (auth.uid() IS NOT NULL);
 
--- Friendships policies (simple auth check only)
 CREATE POLICY "friendships_select" ON friendships
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
@@ -100,14 +90,12 @@ CREATE POLICY "friendships_insert" ON friendships
 CREATE POLICY "friendships_update" ON friendships
     FOR UPDATE USING (auth.uid() IS NOT NULL);
 
--- Feed events policies (simple auth check only)
 CREATE POLICY "feed_events_select" ON feed_events
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "feed_events_insert" ON feed_events
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
--- 3. Create helper functions for complex logic (bypasses RLS)
 CREATE OR REPLACE FUNCTION get_user_buckets_safe(user_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -189,5 +177,4 @@ BEGIN
 END;
 $$;
 
--- 4. Verify the fix
 SELECT 'RLS policies have been simplified to prevent recursion' as status;

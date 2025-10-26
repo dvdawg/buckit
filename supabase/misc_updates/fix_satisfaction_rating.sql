@@ -1,8 +1,4 @@
--- Fix satisfaction rating update issues
--- This ensures that satisfaction_rating updates work properly
 
--- 1. First, let's create a secure RPC function to update satisfaction ratings
--- This bypasses RLS policies entirely
 CREATE OR REPLACE FUNCTION update_item_satisfaction_rating(
     p_item_id UUID,
     p_satisfaction_rating INTEGER,
@@ -57,7 +53,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2. Create a function to uncomplete an item
 CREATE OR REPLACE FUNCTION uncomplete_item(p_item_id UUID)
 RETURNS VOID AS $$
 DECLARE
@@ -105,20 +100,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Ensure the items table has proper RLS policies that allow updates
--- Drop existing problematic policies
 DROP POLICY IF EXISTS "items_update_own_only" ON items;
 DROP POLICY IF EXISTS "Users can update their own items" ON items;
 DROP POLICY IF EXISTS "items_update_auth" ON items;
 DROP POLICY IF EXISTS "items_update_own" ON items;
 
--- Create a simple policy that allows authenticated users to update items
--- This is more permissive but should work
 CREATE POLICY "items_update_authenticated" ON items
     FOR UPDATE USING (auth.uid() IS NOT NULL)
     WITH CHECK (auth.uid() IS NOT NULL);
 
--- 4. Test the functions by creating a simple test
 CREATE OR REPLACE FUNCTION test_satisfaction_rating_update()
 RETURNS TEXT AS $$
 DECLARE

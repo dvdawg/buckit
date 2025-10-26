@@ -1,12 +1,8 @@
--- Comprehensive database fix for missing functions
--- Run this SQL in your Supabase SQL editor to fix all missing functions
 
--- Drop existing functions first to avoid conflicts
 DROP FUNCTION IF EXISTS update_item_secure(UUID, TEXT, TEXT, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS update_item_satisfaction_rating(UUID, INTEGER, BOOLEAN);
 DROP FUNCTION IF EXISTS uncomplete_item(UUID);
 
--- 1. Fix update_item_secure function
 CREATE OR REPLACE FUNCTION update_item_secure(
     p_item_id UUID,
     p_title TEXT DEFAULT NULL,
@@ -57,7 +53,6 @@ BEGIN
 END;
 $$;
 
--- 2. Ensure update_item_satisfaction_rating function exists
 CREATE OR REPLACE FUNCTION update_item_satisfaction_rating(
     p_item_id UUID,
     p_satisfaction_rating INTEGER,
@@ -99,7 +94,6 @@ BEGIN
 END;
 $$;
 
--- 3. Ensure uncomplete_item function exists
 CREATE OR REPLACE FUNCTION uncomplete_item(p_item_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -128,7 +122,6 @@ BEGIN
 END;
 $$;
 
--- 4. Grant necessary permissions
 GRANT EXECUTE ON FUNCTION update_item_secure(UUID, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION update_item_satisfaction_rating(UUID, INTEGER, BOOLEAN) TO authenticated;
 GRANT EXECUTE ON FUNCTION uncomplete_item(UUID) TO authenticated;

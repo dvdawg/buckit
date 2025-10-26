@@ -1,7 +1,4 @@
--- Create essential RPC functions for bucket and item creation
--- Run this in your Supabase SQL Editor
 
--- Function to get current user's ID
 CREATE OR REPLACE FUNCTION me_user_id()
 RETURNS UUID
 LANGUAGE SQL
@@ -10,7 +7,6 @@ AS $$
     SELECT id FROM users WHERE auth_id = auth.uid();
 $$;
 
--- Function to create a bucket
 CREATE OR REPLACE FUNCTION create_bucket(
     p_title TEXT,
     p_description TEXT DEFAULT NULL,
@@ -37,7 +33,6 @@ BEGIN
 END;
 $$;
 
--- Function to create an item
 CREATE OR REPLACE FUNCTION create_item(
     p_bucket_id UUID,
     p_title TEXT,

@@ -1,5 +1,3 @@
--- Manual fix for update_item_secure function
--- Run this SQL in your Supabase SQL editor to fix the missing function
 
 CREATE OR REPLACE FUNCTION update_item_secure(
     p_item_id UUID,

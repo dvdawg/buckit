@@ -1,5 +1,3 @@
--- Create a secure function to handle avatar uploads
--- This function can be used as a fallback if storage policies continue to fail
 
 CREATE OR REPLACE FUNCTION upload_avatar(
   p_file_name TEXT,
@@ -37,8 +35,6 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION upload_avatar(TEXT, BYTEA, TEXT) TO authenticated;
 
--- Test the function
 SELECT 'Avatar upload function created successfully' as status;

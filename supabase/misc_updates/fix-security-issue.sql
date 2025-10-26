@@ -1,7 +1,4 @@
--- Fix security issue: users can see all buckets instead of just their own
--- The problem is that the simplified RLS policies are too permissive
 
--- 1. Drop the overly permissive policies
 DROP POLICY IF EXISTS "buckets_select_auth" ON buckets;
 DROP POLICY IF EXISTS "buckets_insert_auth" ON buckets;
 DROP POLICY IF EXISTS "buckets_update_auth" ON buckets;
@@ -12,7 +9,6 @@ DROP POLICY IF EXISTS "items_insert_auth" ON items;
 DROP POLICY IF EXISTS "items_update_auth" ON items;
 DROP POLICY IF EXISTS "items_delete_auth" ON items;
 
--- 2. Create proper restrictive policies that filter by owner
 CREATE POLICY "buckets_select_own_only" ON buckets
     FOR SELECT USING (
         auth.uid() IS NOT NULL AND 
@@ -61,7 +57,6 @@ CREATE POLICY "items_delete_own_only" ON items
         owner_id = (SELECT id FROM users WHERE auth_id = auth.uid() LIMIT 1)
     );
 
--- 3. Ensure the RPC functions exist and work correctly
 CREATE OR REPLACE FUNCTION get_user_buckets(user_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -159,5 +154,4 @@ BEGIN
 END;
 $$;
 
--- 4. Test the functions
 SELECT 'Security policies updated to only show user-owned data' as status;

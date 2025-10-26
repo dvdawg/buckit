@@ -1,14 +1,9 @@
--- Fix bucket security to only show user's own buckets
--- This script creates proper RLS policies that filter by owner without recursion
 
--- 1. Drop the overly permissive bucket policies
 DROP POLICY IF EXISTS "buckets_select_own" ON buckets;
 DROP POLICY IF EXISTS "buckets_insert_own" ON buckets;
 DROP POLICY IF EXISTS "buckets_update_own" ON buckets;
 DROP POLICY IF EXISTS "buckets_delete_own" ON buckets;
 
--- 2. Create proper bucket policies that filter by owner
--- These policies use a simple approach that doesn't cause recursion
 CREATE POLICY "buckets_select_own" ON buckets
     FOR SELECT USING (
         auth.uid() IS NOT NULL AND 
@@ -33,7 +28,6 @@ CREATE POLICY "buckets_delete_own" ON buckets
         owner_id = (SELECT id FROM users WHERE auth_id = auth.uid())
     );
 
--- 3. Also fix items policies to be more restrictive
 DROP POLICY IF EXISTS "items_select_own" ON items;
 DROP POLICY IF EXISTS "items_insert_own" ON items;
 DROP POLICY IF EXISTS "items_update_own" ON items;
@@ -63,7 +57,6 @@ CREATE POLICY "items_delete_own" ON items
         owner_id = (SELECT id FROM users WHERE auth_id = auth.uid())
     );
 
--- 4. Ensure the helper function exists and works correctly
 CREATE OR REPLACE FUNCTION get_user_buckets_safe(user_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -103,5 +96,4 @@ BEGIN
 END;
 $$;
 
--- 5. Test the function
 SELECT 'Bucket security policies updated to filter by owner' as status;

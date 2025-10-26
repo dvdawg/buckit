@@ -1,6 +1,3 @@
--- Create test users for friends feed testing
--- This migration creates the test users that will be used in subsequent migrations
-
 INSERT INTO users (id, auth_id, full_name, handle, avatar_url, points, location, current_streak, longest_streak, total_completions)
 VALUES 
     ('0104e50a-53f4-4ae8-bf93-d15c6b65d262', gen_random_uuid(), 'John Smith', 'johnsmith266', null, 0, 'San Francisco, CA', 0, 0, 0),
@@ -20,7 +17,6 @@ VALUES
     ('20ce621f-1a1c-479f-944c-9127d051ab7d', gen_random_uuid(), 'Amy Martin', 'amymartin344', null, 0, 'Dallas, TX', 0, 0, 0)
 ON CONFLICT (id) DO NOTHING;
 
--- Create some test buckets for these users
 INSERT INTO buckets (id, owner_id, title, description, visibility, emoji, color)
 VALUES 
     (gen_random_uuid(), '0104e50a-53f4-4ae8-bf93-d15c6b65d262', 'Fitness Goals', 'My fitness journey', 'public', '💪', '#FF6B6B'),
@@ -30,7 +26,6 @@ VALUES
     (gen_random_uuid(), '07c3cbfc-ca35-449e-847b-fa09c87bc650', 'Tech Projects', 'Coding challenges', 'public', '💻', '#FECA57')
 ON CONFLICT (id) DO NOTHING;
 
--- Create some test items for these buckets
 INSERT INTO items (id, bucket_id, owner_id, title, description, visibility, difficulty, price_min, price_max)
 SELECT 
     gen_random_uuid(),
@@ -58,7 +53,6 @@ WHERE b.owner_id IN (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Create some friendships between users
 INSERT INTO friendships (user_id, friend_id, status, created_at)
 VALUES 
     ('0104e50a-53f4-4ae8-bf93-d15c6b65d262', '01efb100-3292-4ee8-80cb-359d4339a236', 'accepted', NOW()),
@@ -68,7 +62,6 @@ VALUES
     ('07a522aa-08b1-4331-a625-5e5a98d5f48d', '08d94a6e-8a04-4d13-8330-b9cc9ffbe5e0', 'accepted', NOW())
 ON CONFLICT (user_id, friend_id) DO NOTHING;
 
--- Create some completions for the items
 INSERT INTO completions (id, item_id, user_id, verified, created_at)
 SELECT 
     gen_random_uuid(),
@@ -86,4 +79,3 @@ WHERE i.owner_id IN (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Note: Items will be marked as completed by the mark_users_challenges_completed migration

@@ -653,14 +653,16 @@ export default function RegisterScreen() {
             <Ionicons name="calendar-outline" size={20} color="#9BA1A6" />
           </TouchableOpacity>
           {showDatePicker && (
-            <DateTimePicker
-              value={formData.birthday ? new Date(formData.birthday) : new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-              minimumDate={new Date(1900, 0, 1)}
-            />
+            <View style={styles.datePickerContainer}>
+              <DateTimePicker
+                value={formData.birthday ? new Date(formData.birthday) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+                minimumDate={new Date(1900, 0, 1)}
+              />
+            </View>
           )}
           {errors.birthday && <Text style={styles.errorText}>{errors.birthday}</Text>}
         </View>
@@ -725,7 +727,7 @@ export default function RegisterScreen() {
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
           <View style={styles.logoContainer}>
-            <BucketLogo size={24} color="#fff" />
+            <BucketLogo size={18} color="#fff" />
             <Text style={styles.buckitText}>Buckit</Text>
           </View>
           <View style={styles.headerSpacer} />
@@ -804,7 +806,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: '#4ade80',
+    color: '#FF7954',
     fontWeight: '500',
   },
   logoContainer: {
@@ -832,7 +834,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#4ade80',
+    backgroundColor: '#FF7954',
     borderRadius: 2,
   },
   progressText: {
@@ -877,6 +879,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     marginBottom: 12,
+    fontFamily: 'Poppins',
   },
   textInput: {
     backgroundColor: '#1a1a1a',
@@ -887,19 +890,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
+    fontFamily: 'Poppins',
   },
   dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  datePickerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
   dateText: {
     fontSize: 16,
     color: '#fff',
     flex: 1,
+    fontFamily: 'Poppins',
   },
   placeholderText: {
     color: '#9BA1A6',
+    fontFamily: 'Poppins',
   },
   textInputError: {
     borderColor: '#ef4444',
@@ -909,6 +920,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     marginLeft: 4,
+    fontFamily: 'Poppins',
   },
   profilePictureContainer: {
     backgroundColor: '#1a1a1a',
@@ -924,16 +936,19 @@ const styles = StyleSheet.create({
   profilePictureText: {
     fontSize: 48,
     marginBottom: 12,
+    fontFamily: 'Poppins',
   },
   profilePictureLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 4,
+    fontFamily: 'Poppins',
   },
   profilePictureSubtext: {
     fontSize: 14,
     color: '#9BA1A6',
+    fontFamily: 'Poppins',
   },
   profilePicturePreview: {
     width: 120,
@@ -953,13 +968,14 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: 'Poppins',
   },
   navigationContainer: {
     paddingVertical: 20,
     paddingBottom: 40,
   },
   nextButton: {
-    backgroundColor: '#4ade80',
+    backgroundColor: '#FF7954',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -971,6 +987,7 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Poppins',
   },
   phoneInputWrapper: {
     position: 'relative',
@@ -1000,6 +1017,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginRight: 4,
+    fontFamily: 'Poppins',
   },
   phoneTextInput: {
     flex: 1,
@@ -1009,6 +1027,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
+    fontFamily: 'Poppins',
   },
   modalOverlay: {
     flex: 1,
@@ -1046,6 +1065,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+    fontFamily: 'Poppins',
   },
   closeButton: {
     padding: 4,
@@ -1069,9 +1089,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: 'Poppins',
   },
   countryOptionCountry: {
     color: '#9BA1A6',
     fontSize: 14,
+    fontFamily: 'Poppins',
   },
 });

@@ -24,8 +24,8 @@ export const Colors = {
   
   // Accent Colors
   accent: {
-    primary: '#8EC5FC',      // Primary accent (blue)
-    success: '#4ade80',      // Success (green)
+    primary: '#18357A',      // Primary accent (blue)
+    success: '#FF7954',      // Success (orange)
     warning: '#f59e0b',      // Warning (orange)
     error: '#ef4444',        // Error (red)
   },
@@ -34,10 +34,10 @@ export const Colors = {
   light: {
     text: '#11181C',
     background: '#fff',
-    tint: '#0a7ea4',
+    tint: '#18357A',
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: '#0a7ea4',
+    tabIconSelected: '#18357A',
   },
   dark: {
     text: '#ECEDEE',

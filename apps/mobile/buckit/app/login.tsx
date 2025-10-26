@@ -229,6 +229,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 1,
     marginLeft: 12,
+    fontFamily: 'Poppins',
   },
   welcomeSection: {
     alignItems: 'center',
@@ -238,6 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
+    fontFamily: 'Poppins',
   },
   formContainer: {
     width: '100%',
@@ -251,6 +253,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     marginBottom: 12,
+    fontFamily: 'Poppins',
   },
   textInput: {
     backgroundColor: '#1a1a1a',
@@ -261,9 +264,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
+    fontFamily: 'Poppins',
   },
   submitButton: {
-    backgroundColor: '#4ade80',
+    backgroundColor: '#FF7954',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -276,21 +280,23 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Poppins',
   },
   switchButton: {
     alignItems: 'center',
   },
   switchText: {
-    color: '#4ade80',
+    color: '#FF7954',
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: 'Poppins',
   },
   developerSection: {
     alignItems: 'center',
     marginTop: 40,
   },
   developerButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#18357A',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -301,5 +307,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'Poppins',
   },
 });

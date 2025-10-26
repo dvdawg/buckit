@@ -261,20 +261,32 @@ export default function Settings() {
   const uploadImage = async (imageUri: string) => {
     setIsUploadingImage(true);
     try {
-      // Create a unique filename
+      // Create a unique filename and determine proper MIME type
       const fileExt = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${me?.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // Convert image to blob
+      // Map file extensions to proper MIME types
+      const mimeTypeMap: { [key: string]: string } = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp'
+      };
+      
+      const contentType = mimeTypeMap[fileExt] || 'image/jpeg';
+
+      // For React Native, we can use the imageUri directly with fetch
       const response = await fetch(imageUri);
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('avatars')
-        .upload(filePath, blob, {
-          contentType: `image/${fileExt}`,
+        .upload(filePath, bytes, {
+          contentType: contentType,
           upsert: true
         });
 

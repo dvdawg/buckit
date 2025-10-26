@@ -191,12 +191,28 @@ export default function Profile() {
   // Monitor session validity
   useSessionMonitor();
 
-  // Refresh data when profile page comes into focus (e.g., returning from settings)
+  // Track if we need to refresh when coming back from settings
+  const [shouldRefresh, setShouldRefresh] = useState(false);
+
+  // Track navigation state to determine when to refresh
+  const [lastNavigationTime, setLastNavigationTime] = useState(0);
+
+  // Only refresh when we actually need to (not on every focus)
   useFocusEffect(
     useCallback(() => {
-      console.log('Profile: Page focused, refreshing data');
-      refresh();
-    }, [refresh])
+      const now = Date.now();
+      const timeSinceLastNavigation = now - lastNavigationTime;
+      
+      // Only refresh if:
+      // 1. We explicitly set shouldRefresh (returning from settings)
+      // 2. It's been more than 5 seconds since last navigation (fresh tab switch)
+      if (shouldRefresh || timeSinceLastNavigation > 5000) {
+        console.log('Profile: Refreshing data after navigation');
+        refresh();
+        setShouldRefresh(false);
+        setLastNavigationTime(now);
+      }
+    }, [shouldRefresh, refresh, lastNavigationTime])
   );
 
   // Debug logging for user data
@@ -276,7 +292,10 @@ export default function Profile() {
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.settingsButton}
-                onPress={() => router.push('/settings')}
+                onPress={() => {
+                  setShouldRefresh(true);
+                  router.push('/settings');
+                }}
               >
                 <Ionicons name="settings-outline" size={24} color="#fff" />
               </TouchableOpacity>

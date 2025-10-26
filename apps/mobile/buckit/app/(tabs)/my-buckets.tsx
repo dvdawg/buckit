@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useBuckets } from '@/hooks/useBuckets';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useBucketCollaborators } from '@/hooks/useBucketCollaborators';
+import { useState, useEffect } from 'react';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2; // 2 columns with padding
@@ -11,12 +13,53 @@ const cardWidth = (width - 60) / 2; // 2 columns with padding
 export default function MyBuckets() {
   const router = useRouter();
   const { buckets, loading, refresh } = useBuckets();
+  const { getCollaborators } = useBucketCollaborators();
+  const [bucketCollaborators, setBucketCollaborators] = useState<{[key: string]: any[]}>({});
+
+  // Fetch collaborators for all buckets
+  useEffect(() => {
+    const fetchAllCollaborators = async () => {
+      if (buckets.length > 0) {
+        const collaboratorsMap: {[key: string]: any[]} = {};
+        
+        for (const bucket of buckets) {
+          try {
+            const collaborators = await getCollaborators(bucket.id);
+            collaboratorsMap[bucket.id] = collaborators;
+          } catch (error) {
+            console.error(`Error fetching collaborators for bucket ${bucket.id}:`, error);
+            collaboratorsMap[bucket.id] = [];
+          }
+        }
+        
+        setBucketCollaborators(collaboratorsMap);
+      }
+    };
+    
+    fetchAllCollaborators();
+  }, [buckets, getCollaborators]);
 
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
       // Refresh buckets data
       refresh();
+      // Also refresh collaborators
+      if (buckets.length > 0) {
+        const collaboratorsMap: {[key: string]: any[]} = {};
+        
+        for (const bucket of buckets) {
+          try {
+            const collaborators = await getCollaborators(bucket.id);
+            collaboratorsMap[bucket.id] = collaborators;
+          } catch (error) {
+            console.error(`Error fetching collaborators for bucket ${bucket.id}:`, error);
+            collaboratorsMap[bucket.id] = [];
+          }
+        }
+        
+        setBucketCollaborators(collaboratorsMap);
+      }
     },
     minDuration: 1000, // 1 second minimum for smooth transition
   });
@@ -35,6 +78,9 @@ export default function MyBuckets() {
       ? { uri: bucket.cover_url }
       : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
 
+    const collaborators = bucketCollaborators[bucket.id] || [];
+    const hasCollaborators = collaborators.length > 0;
+
     return (
       <TouchableOpacity
         key={bucket.id}
@@ -46,6 +92,36 @@ export default function MyBuckets() {
           colors={['transparent', 'rgba(0,0,0,0.7)']}
           style={styles.bucketGradient}
         />
+        
+        {/* Collaborators Section */}
+        {hasCollaborators && (
+          <View style={styles.collaboratorsSection}>
+            <View style={styles.collaboratorsHeader}>
+              <Ionicons name="people" size={14} color="#8EC5FC" />
+              <Text style={styles.collaboratorsCount}>{collaborators.length}</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.collaboratorsList}>
+              {collaborators.slice(0, 3).map((collaborator) => (
+                <View key={collaborator.id} style={styles.collaboratorAvatar}>
+                  {collaborator.avatar_url ? (
+                    <Image source={{ uri: collaborator.avatar_url }} style={styles.collaboratorAvatarImage} />
+                  ) : (
+                    <View style={styles.collaboratorAvatarPlaceholder}>
+                      <Text style={styles.collaboratorAvatarText}>
+                        {collaborator.full_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+              {collaborators.length > 3 && (
+                <View style={styles.moreCollaborators}>
+                  <Text style={styles.moreCollaboratorsText}>+{collaborators.length - 3}</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        )}
         
         {/* Bucket Info */}
         <View style={styles.bucketInfo}>
@@ -102,6 +178,12 @@ export default function MyBuckets() {
           />
         }
       >
+        {/* Debug Section */}
+        <View style={styles.debugSection}>
+          <Text style={styles.debugTitle}>🔍 DEBUG: Collaborator Data</Text>
+          <Text style={styles.debugText}>Total Buckets: {buckets.length}</Text>
+          <Text style={styles.debugText}>Collaborator Data: {JSON.stringify(bucketCollaborators, null, 2)}</Text>
+        </View>
         {loading ? (
           renderLoadingState()
         ) : buckets.length === 0 ? (
@@ -257,5 +339,87 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  // Collaborator styles
+  collaboratorsSection: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    padding: 8,
+  },
+  collaboratorsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  collaboratorsCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8EC5FC',
+    marginLeft: 4,
+  },
+  collaboratorsList: {
+    flexDirection: 'row',
+  },
+  collaboratorAvatar: {
+    marginRight: 6,
+  },
+  collaboratorAvatarImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  collaboratorAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#8EC5FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  collaboratorAvatarText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#000',
+  },
+  moreCollaborators: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(142, 197, 252, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreCollaboratorsText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#8EC5FC',
+  },
+  // Debug styles
+  debugSection: {
+    backgroundColor: '#1a1a1a',
+    margin: 20,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#8EC5FC',
+    minHeight: 100,
+  },
+  debugTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#8EC5FC',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#fff',
+    fontFamily: 'monospace',
+    marginBottom: 6,
+    lineHeight: 16,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import BucketVisibilitySelector from '@/components/BucketVisibilitySelector';
 import FriendsSelectionModal from '@/components/FriendsSelectionModal';
+import { useBucketCollaborators } from '@/hooks/useBucketCollaborators';
 
 export default function CreateBucketScreen() {
   const router = useRouter();
@@ -35,7 +36,43 @@ export default function CreateBucketScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const { getCollaborators, removeCollaborator } = useBucketCollaborators();
+  const [existingCollaborators, setExistingCollaborators] = useState<any[]>([]);
 
+  // Fetch existing collaborators when in edit mode
+  useEffect(() => {
+    const fetchExistingCollaborators = async () => {
+      if (isEditMode && bucketId) {
+        try {
+          const collaborators = await getCollaborators(bucketId as string);
+          setExistingCollaborators(collaborators);
+        } catch (error) {
+          console.error('Error fetching existing collaborators:', error);
+        }
+      }
+    };
+    fetchExistingCollaborators();
+  }, [isEditMode, bucketId, getCollaborators]);
+
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
+    if (!bucketId) return;
+    
+    try {
+      const success = await removeCollaborator(bucketId as string, collaboratorId);
+      if (success) {
+        // Remove from local state
+        setExistingCollaborators(prev => 
+          prev.filter(collab => collab.user_id !== collaboratorId)
+        );
+        Alert.alert('Success', 'Collaborator removed successfully');
+      } else {
+        Alert.alert('Error', 'Failed to remove collaborator');
+      }
+    } catch (error) {
+      console.error('Error removing collaborator:', error);
+      Alert.alert('Error', 'Failed to remove collaborator');
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.title) {
@@ -299,6 +336,57 @@ export default function CreateBucketScreen() {
               </View>
             )}
           </View>
+
+          {/* Debug Section (Edit Mode Only) */}
+          {isEditMode && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Debug Info</Text>
+              <View style={styles.debugContainer}>
+                <Text style={styles.debugText}>Bucket ID: {bucketId}</Text>
+                <Text style={styles.debugText}>Collaborators Count: {existingCollaborators.length}</Text>
+                <Text style={styles.debugText}>Raw Data: {JSON.stringify(existingCollaborators, null, 2)}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Existing Collaborators Section (Edit Mode Only) */}
+          {isEditMode && existingCollaborators.length > 0 && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Current Collaborators</Text>
+              <View style={styles.collaboratorsContainer}>
+                {existingCollaborators.map((collaborator) => (
+                  <View key={collaborator.id} style={styles.collaboratorItem}>
+                    <View style={styles.collaboratorInfo}>
+                      {collaborator.avatar_url ? (
+                        <Image 
+                          source={{ uri: collaborator.avatar_url }} 
+                          style={styles.collaboratorAvatar} 
+                        />
+                      ) : (
+                        <View style={styles.collaboratorAvatarPlaceholder}>
+                          <Text style={styles.collaboratorAvatarText}>
+                            {collaborator.full_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.collaboratorDetails}>
+                        <Text style={styles.collaboratorName}>{collaborator.full_name}</Text>
+                        <Text style={styles.collaboratorHandle}>@{collaborator.handle}</Text>
+                        <Text style={styles.collaboratorRole}>Role: {collaborator.role}</Text>
+                        <Text style={styles.collaboratorStatus}>✓ Active Collaborator</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => handleRemoveCollaborator(collaborator.user_id)}
+                      style={styles.removeCollaboratorButton}
+                    >
+                      <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Save Button */}
@@ -582,5 +670,87 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+  },
+  // Collaborator styles
+  collaboratorsContainer: {
+    marginTop: 8,
+  },
+  collaboratorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(142, 197, 252, 0.1)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 197, 252, 0.2)',
+  },
+  collaboratorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  collaboratorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  collaboratorAvatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#8EC5FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  collaboratorAvatarText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+  },
+  collaboratorDetails: {
+    flex: 1,
+  },
+  collaboratorName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  collaboratorHandle: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    marginBottom: 2,
+  },
+  collaboratorRole: {
+    fontSize: 12,
+    color: '#8EC5FC',
+    marginBottom: 2,
+  },
+  collaboratorStatus: {
+    fontSize: 12,
+    color: '#10B981',
+    fontWeight: '600',
+  },
+  removeCollaboratorButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+  },
+  // Debug styles
+  debugContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    fontFamily: 'monospace',
+    marginBottom: 4,
   },
 });

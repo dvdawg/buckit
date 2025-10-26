@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Button } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import PerformancePreview from '@/components/PerformancePreview';
 import ChallengeModal from '@/components/ChallengeModal';
 import { useEffect, useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 // Dummy data
 const dummyUser = {
@@ -194,6 +195,16 @@ export default function Profile() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
+
+  // Pull to refresh functionality
+  const { refreshing, onRefresh } = usePullToRefresh({
+    onRefresh: async () => {
+      // Refresh all data
+      await refresh();
+      await refreshBuckets();
+    },
+    minDuration: 1000, // 1 second minimum for smooth transition
+  });
   
   // Monitor session validity
   useSessionMonitor();
@@ -270,11 +281,7 @@ export default function Profile() {
   };
 
   return (
-    <ScrollView 
-      style={styles.container} 
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
       {/* Profile Header with Full-Width Image */}
       <View style={styles.headerContainer}>
         <Image 
@@ -333,8 +340,22 @@ export default function Profile() {
         </View>
           </View>
 
-      {/* Performance Preview */}
-      <PerformancePreview />
+      {/* Scrollable Content */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8EC5FC"
+            colors={["#8EC5FC"]}
+          />
+        }
+      >
+        {/* Performance Preview */}
+        <PerformancePreview />
 
       {/* Buckets Section */}
       <View style={styles.section}>
@@ -459,14 +480,14 @@ export default function Profile() {
       </View>
 
       
-      {/* Challenge Modal */}
-      <ChallengeModal
-        visible={challengeModalVisible}
-        challengeId={selectedChallengeId}
-        onClose={handleCloseChallengeModal}
-      />
-      
-    </ScrollView>
+        {/* Challenge Modal */}
+        <ChallengeModal
+          visible={challengeModalVisible}
+          challengeId={selectedChallengeId}
+          onClose={handleCloseChallengeModal}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -474,6 +495,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: 100, // Space for floating tab bar

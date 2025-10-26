@@ -8,10 +8,12 @@ import {
   TextInput,
   Dimensions,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const { width } = Dimensions.get('window');
 
@@ -88,6 +90,20 @@ const recommendedContent = [
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [content, setContent] = useState(recommendedContent);
+
+  // Pull to refresh functionality
+  const { refreshing, onRefresh } = usePullToRefresh({
+    onRefresh: async () => {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, you would fetch fresh content here
+      // For now, we'll just shuffle the existing content to simulate new recommendations
+      setContent(prevContent => [...prevContent].sort(() => Math.random() - 0.5));
+    },
+    minDuration: 1200, // 1.2 seconds minimum for smooth transition
+  });
 
   const getApplicabilityColor = (score: number) => {
     if (score >= 90) return '#4ade80'; // Green
@@ -210,6 +226,15 @@ export default function ExploreScreen() {
         style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8EC5FC"
+            colors={["#8EC5FC"]}
+            progressViewOffset={0}
+          />
+        }
       >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Browse Categories</Text>
@@ -276,7 +301,7 @@ export default function ExploreScreen() {
 
         {/* Content Grid */}
         <View style={styles.contentGrid}>
-          {recommendedContent.map((item) => (
+          {content.map((item) => (
             item.type === 'bucket' ? renderBucketCard(item) : renderChallengeCard(item)
           ))}
         </View>

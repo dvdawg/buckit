@@ -469,7 +469,6 @@ export default function Profile() {
                   >
                   <View style={styles.challengePreviewHeader}>
                     <View style={styles.challengeBucketInfo}>
-                      <Text style={styles.challengeBucketEmoji}>{item.bucket?.emoji || '📝'}</Text>
                       <Text style={styles.challengeBucketName} numberOfLines={1} ellipsizeMode="tail">{item.bucket?.title || 'Unknown Bucket'}</Text>
                     </View>
                     <View style={[styles.urgencyBadge, { backgroundColor: urgencyInfo.color }]}>
@@ -480,9 +479,6 @@ export default function Profile() {
                   <View style={styles.challengePreviewFooter}>
                     <Text style={styles.challengeLocation} numberOfLines={1} ellipsizeMode="tail">
                       📍 {item.location_name || 'No location'}
-                    </Text>
-                    <Text style={styles.dueDateText} numberOfLines={1} ellipsizeMode="tail">
-                      {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -685,10 +681,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  challengeBucketEmoji: {
-    fontSize: 16,
-    marginRight: 6,
-  },
   challengeBucketName: {
     fontSize: 12,
     color: '#9BA1A6',
@@ -731,11 +723,6 @@ const styles = StyleSheet.create({
     color: '#4ade80',
     marginLeft: 4,
     fontWeight: '600',
-  },
-  dueDateText: {
-    fontSize: 12,
-    color: '#9BA1A6',
-    flexShrink: 0,
   },
   loadingContainer: {
     padding: 20,

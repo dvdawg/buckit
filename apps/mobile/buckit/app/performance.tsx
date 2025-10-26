@@ -31,11 +31,15 @@ export default function PerformancePage() {
     );
   }
 
-  const bucketData = buckets.map((bucket, index) => ({
-    bucket: bucket.title,
-    completion: (bucket.completion_percentage || 0) / 100,
-    color: bucket.color || '#4ade80'
-  }));
+  // Dummy data for demonstration
+  const bucketData = [
+    { bucket: "Fitness", completion: 0.8, color: '#1e40af' },
+    { bucket: "Travel", completion: 0.6, color: '#1e40af' },
+    { bucket: "Food", completion: 0.4, color: '#1e40af' },
+    { bucket: "Art", completion: 0.9, color: '#1e40af' },
+    { bucket: "Music", completion: 0.3, color: '#1e40af' },
+    { bucket: "Family", completion: 0.7, color: '#1e40af' },
+  ];
 
   const totalCompletion = bucketData.length > 0 
     ? bucketData.reduce((sum, bucket) => sum + bucket.completion, 0) / bucketData.length 
@@ -76,106 +80,92 @@ export default function PerformancePage() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Overview</Text>
+        <Text style={styles.headerTitle}>Analytics</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Subtitle */}
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>Reflect on your experiences across all your buckets.</Text>
-        </View>
-
-        {/* Section 1 - Progress by Bucket */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
-            <Text style={styles.cardTitle}>Moments Lived by Bucket</Text>
-          </View>
-          
-          <View style={styles.chartContainer}>
-            {bucketData.length > 0 ? bucketData.map((bucket, index) => (
-              <View key={index} style={styles.barContainer}>
-                <Text style={styles.barLabel}>{bucket.bucket}</Text>
-                <View style={styles.barBackground}>
-                  <View 
-                    style={[
-                      styles.barFill, 
-                      { 
-                        width: `${bucket.completion * 100}%`,
-                        backgroundColor: bucket.color
-                      }
-                    ]} 
-                  />
-                  <Text style={styles.barPercentage}>{Math.round(bucket.completion * 100)}%</Text>
+        {/* Overview Cards */}
+        <View style={styles.overviewCardsContainer}>
+          {/* Total Completion Percentage */}
+          <View style={styles.overviewCard}>
+            <View style={styles.radialChartContainer}>
+              <View style={styles.radialChart}>
+                <View style={styles.radialChartBackground} />
+                <View style={styles.radialChartProgress} />
+                <View style={styles.radialChartCenter}>
+                  <Text style={styles.radialChartValue}>68%</Text>
+                  <Text style={styles.radialChartLabel}>Completed</Text>
                 </View>
               </View>
-            )) : (
+            </View>
+            <Text style={styles.overviewCardTitle}>Total Progress</Text>
+          </View>
+
+          {/* Last Month Challenges */}
+          <View style={styles.overviewCard}>
+            <View style={styles.numberCard}>
+              <Text style={styles.numberCardValue}>24</Text>
+              <Text style={styles.numberCardLabel}>This Month</Text>
+            </View>
+            <Text style={styles.overviewCardTitle}>Challenges Done</Text>
+          </View>
+        </View>
+
+        {/* Section 1 - Challenges by Bucket */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Challenges by Bucket</Text>
+          </View>
+          
+          <View style={styles.stackedChartContainer}>
+            {bucketData.length > 0 ? bucketData.map((bucket, index) => {
+              const completedChallenges = Math.round(bucket.completion * 10); // Assuming 10 total challenges per bucket
+              const totalChallenges = 10;
+              const remainingChallenges = totalChallenges - completedChallenges;
+              
+              return (
+                <View key={index} style={styles.stackedBarContainer}>
+                  <Text style={styles.barLabel}>{bucket.bucket}</Text>
+                  <View style={styles.stackedBarBackground}>
+                    <View style={styles.stackedBarRow}>
+                      <View 
+                        style={[
+                          styles.stackedBarSegment,
+                          { 
+                            width: `${(completedChallenges / totalChallenges) * 100}%`,
+                            backgroundColor: '#dbeafe',
+                            borderTopLeftRadius: 4,
+                            borderBottomLeftRadius: 4,
+                          }
+                        ]} 
+                      >
+                        <Text style={styles.barNumberLabelLight}>{completedChallenges}</Text>
+                      </View>
+                      <View 
+                        style={[
+                          styles.stackedBarSegment,
+                          { 
+                            width: `${(remainingChallenges / totalChallenges) * 100}%`,
+                            backgroundColor: '#1e40af',
+                            borderTopRightRadius: 4,
+                            borderBottomRightRadius: 4,
+                          }
+                        ]} 
+                      >
+                        <Text style={styles.barNumberLabelDark}>{totalChallenges}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            }) : (
               <Text style={styles.emptyStateText}>No buckets found. Create your first bucket to start tracking progress!</Text>
             )}
           </View>
-          
-          <Text style={styles.cardFooter}>
-            You've lived {Math.round(totalCompletion * 100)}% of your total bucket moments.
-          </Text>
         </View>
 
-        {/* Section 2 - Streaks & Consistency */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="flame" size={20} color="#f59e0b" />
-            <Text style={styles.cardTitle}>Streaks & Consistency</Text>
-          </View>
-          
-          <View style={styles.streakContainer}>
-            <View style={styles.streakCenter}>
-              <Text style={styles.streakIcon}>🔥</Text>
-              <Text style={styles.streakText}>{currentStreak}-Day Streak</Text>
-            </View>
-            <View style={styles.streakRing}>
-              <View style={styles.streakRingBackground} />
-              <View style={[styles.streakRingProgress, { 
-                transform: [{ rotate: `${Math.min((currentStreak / 30) * 360, 360)}deg` }] 
-              }]} />
-            </View>
-          </View>
-          
-          <Text style={styles.cardFooter}>
-            You've completed {totalCompletions} challenges with a {currentStreak}-day streak.
-          </Text>
-        </View>
 
-        {/* Section 3 - Total Challenges Completed */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="trending-up" size={20} color="#3b82f6" />
-            <Text style={styles.cardTitle}>Experiences Over Time</Text>
-          </View>
-          
-          <View style={styles.lineChartContainer}>
-            <View style={styles.lineChart}>
-              {progressData.map((point, index) => (
-                <View key={index} style={styles.linePoint}>
-                  <View 
-                    style={[
-                      styles.lineDot,
-                      { 
-                        backgroundColor: '#3b82f6',
-                        bottom: `${(point.completed / 14) * 100}%`
-                      }
-                    ]} 
-                  />
-                  <Text style={styles.lineLabel}>{point.week}</Text>
-                  <Text style={styles.lineValue}>{point.completed}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-          
-          <Text style={styles.cardFooter}>
-            Your momentum increased by {Math.round(calculatedGrowthRate)}% this month.
-          </Text>
-        </View>
       </ScrollView>
     </View>
   );
@@ -213,13 +203,97 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  subtitleContainer: {
+  overviewCardsContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
+    gap: 12,
   },
-  subtitle: {
-    fontSize: 16,
+  overviewCard: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+    minHeight: 160,
+  },
+  overviewCardTitle: {
+    fontSize: 14,
     color: '#9BA1A6',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  radialChartContainer: {
+    width: 100,
+    height: 100,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radialChart: {
+    width: 100,
+    height: 100,
+    position: 'relative',
+  },
+  radialChartBackground: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 8,
+    borderColor: '#374151',
+  },
+  radialChartProgress: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 8,
+    borderColor: '#1e40af',
+    borderTopColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
+    transform: [{ rotate: '-90deg' }],
+  },
+  radialChartCenter: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radialChartValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  radialChartLabel: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  numberCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  numberCardValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  numberCardLabel: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    textAlign: 'center',
+    marginTop: 8,
   },
   card: {
     backgroundColor: '#1a1a1a',
@@ -231,43 +305,48 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 20,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-    marginLeft: 8,
+    textAlign: 'left',
   },
-  chartContainer: {
+  stackedChartContainer: {
     marginBottom: 16,
   },
-  barContainer: {
-    marginBottom: 16,
+  stackedBarContainer: {
+    marginBottom: 8,
   },
   barLabel: {
     fontSize: 14,
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 4,
+    fontWeight: '500',
   },
-  barBackground: {
-    height: 24,
-    backgroundColor: '#374151',
-    borderRadius: 12,
-    position: 'relative',
+  stackedBarBackground: {
+    marginBottom: 4,
+  },
+  stackedBarRow: {
+    height: 16,
+    flexDirection: 'row',
+    borderRadius: 4,
     overflow: 'hidden',
+    marginBottom: 4,
   },
-  barFill: {
+  stackedBarSegment: {
     height: '100%',
-    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  barPercentage: {
-    position: 'absolute',
-    right: 8,
-    top: 4,
-    fontSize: 12,
+  barNumberLabelLight: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#000',
+  },
+  barNumberLabelDark: {
+    fontSize: 11,
     fontWeight: '600',
     color: '#fff',
   },
@@ -321,36 +400,54 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   lineChartContainer: {
-    height: 120,
+    height: 200,
     marginBottom: 16,
+    paddingHorizontal: 8,
   },
   lineChart: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    height: '100%',
+    position: 'relative',
+  },
+  chartArea: {
+    flex: 1,
+    position: 'relative',
+    paddingBottom: 30, // Space for labels
+    paddingTop: 20, // Space for values
+  },
+  dataPointContainer: {
+    position: 'absolute',
+    width: '100%',
     height: '100%',
   },
-  linePoint: {
-    flex: 1,
-    alignItems: 'center',
-    position: 'relative',
+  lineToNext: {
+    position: 'absolute',
+    height: 2,
+    backgroundColor: '#1e40af',
+    opacity: 0.6,
+    transform: [{ translateY: -1 }], // Center the line on the dot
   },
   lineDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     position: 'absolute',
+    borderWidth: 2,
+    borderColor: '#fff',
+    transform: [{ translateX: -4 }, { translateY: -4 }], // Center the dot
   },
   lineLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#9BA1A6',
-    marginTop: 8,
+    position: 'absolute',
+    bottom: -25,
+    transform: [{ translateX: -15 }], // Center the label
   },
   lineValue: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#fff',
     fontWeight: '600',
-    marginTop: 4,
+    position: 'absolute',
+    transform: [{ translateX: -8 }], // Center the value
   },
   loadingContainer: {
     flex: 1,

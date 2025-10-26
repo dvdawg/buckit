@@ -32,7 +32,7 @@ export default function CreateBucketScreen() {
     description: (description as string) || '',
     photo: (coverUrl as string) || null,
     visibility: (visibility as 'public' | 'private') || 'private',
-    invitedFriends: [] as Array<{id: string, full_name: string, handle: string, avatar_url?: string}>,
+    invitedFriends: [] as Array<{id: string, full_name: string, handle: string, avatar_url?: string, isSelected: boolean}>,
   });
   const [loading, setLoading] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
@@ -94,7 +94,6 @@ export default function CreateBucketScreen() {
     try {
       if (isEditMode && bucketId) {
         // Update existing bucket
-        console.log('Updating bucket using direct update...');
         
         const { error } = await supabase
           .from('buckets')
@@ -112,12 +111,10 @@ export default function CreateBucketScreen() {
           return;
         }
 
-        console.log('Bucket updated successfully');
         Alert.alert('Success', 'Bucket updated successfully!');
         router.back();
       } else {
         // Create new bucket
-        console.log('Creating bucket using RPC function...');
         
         const { data, error } = await supabase.rpc('create_bucket_secure', {
           p_title: formData.title,
@@ -144,11 +141,9 @@ export default function CreateBucketScreen() {
           }
         }
 
-        console.log('Bucket created successfully with ID:', data);
         
         // Add collaborators if any were selected
         if (formData.invitedFriends.length > 0 && data) {
-          console.log('Adding collaborators...');
           for (const friend of formData.invitedFriends) {
             try {
               const { error: collaboratorError } = await supabase.rpc('add_bucket_collaborator', {
@@ -160,7 +155,6 @@ export default function CreateBucketScreen() {
                 console.error('Error adding collaborator:', friend.full_name, collaboratorError);
                 // Don't fail the whole operation, just log the error
               } else {
-                console.log('Added collaborator:', friend.full_name);
               }
             } catch (error) {
               console.error('Unexpected error adding collaborator:', friend.full_name, error);
@@ -202,7 +196,7 @@ export default function CreateBucketScreen() {
     }
   };
 
-  const handleFriendsSelected = (selectedFriends: Array<{id: string, full_name: string, handle: string, avatar_url?: string}>) => {
+  const handleFriendsSelected = (selectedFriends: Array<{id: string, full_name: string, handle: string, avatar_url?: string, isSelected: boolean}>) => {
     setFormData(prev => ({
       ...prev,
       invitedFriends: selectedFriends
@@ -337,17 +331,6 @@ export default function CreateBucketScreen() {
             )}
           </View>
 
-          {/* Debug Section (Edit Mode Only) */}
-          {isEditMode && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Debug Info</Text>
-              <View style={styles.debugContainer}>
-                <Text style={styles.debugText}>Bucket ID: {bucketId}</Text>
-                <Text style={styles.debugText}>Collaborators Count: {existingCollaborators.length}</Text>
-                <Text style={styles.debugText}>Raw Data: {JSON.stringify(existingCollaborators, null, 2)}</Text>
-              </View>
-            </View>
-          )}
 
           {/* Existing Collaborators Section (Edit Mode Only) */}
           {isEditMode && existingCollaborators.length > 0 && (
@@ -739,18 +722,5 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 107, 107, 0.1)',
-  },
-  // Debug styles
-  debugContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#9BA1A6',
-    fontFamily: 'monospace',
-    marginBottom: 4,
   },
 });

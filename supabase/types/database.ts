@@ -24,6 +24,7 @@ export interface Database {
           longest_streak: number
           total_completions: number
           last_activity_date: string | null
+          preferences_completed: boolean
           created_at: string
         }
         Insert: {
@@ -40,6 +41,7 @@ export interface Database {
           longest_streak?: number
           total_completions?: number
           last_activity_date?: string | null
+          preferences_completed?: boolean
           created_at?: string
         }
         Update: {
@@ -56,6 +58,7 @@ export interface Database {
           longest_streak?: number
           total_completions?: number
           last_activity_date?: string | null
+          preferences_completed?: boolean
           created_at?: string
         }
       }

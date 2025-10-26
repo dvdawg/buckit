@@ -62,25 +62,34 @@ function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: s
       // Compute UCB scores for exploration candidates
       const ucbCandidates = await Promise.all(
         pool.map(async (candidate) => {
-          const features = [
-            candidate.reasons.appeal || 0,
-            candidate.reasons.trait || 0,
-            candidate.reasons.state || 0,
-            candidate.reasons.social || 0,
-            candidate.reasons.cost || 0,
-            candidate.reasons.poprec || 0
-          ];
-          
-          const { data: ucbScore } = await supabase.rpc('compute_ucb_score', {
-            p_user_id: userId,
-            p_item_id: candidate.id,
-            p_features: features
-          });
-          
-          return {
-            ...candidate,
-            ucbScore: ucbScore || 0
-          };
+          try {
+            const features = [
+              candidate.reasons.appeal || 0,
+              candidate.reasons.trait || 0,
+              candidate.reasons.state || 0,
+              candidate.reasons.social || 0,
+              candidate.reasons.cost || 0,
+              candidate.reasons.poprec || 0
+            ];
+            
+            const { data: ucbScore } = await supabase.rpc('compute_ucb_score', {
+              p_user_id: userId,
+              p_item_id: candidate.id,
+              p_features: features
+            });
+            
+            return {
+              ...candidate,
+              ucbScore: ucbScore || 0
+            };
+          } catch (error) {
+            console.error('Error computing UCB score for item:', candidate.id, error);
+            // Return original candidate with default UCB score if computation fails
+            return {
+              ...candidate,
+              ucbScore: 0
+            };
+          }
         })
       );
       
@@ -137,18 +146,31 @@ export const handler = serve(async (req) => {
                     '127.0.0.1';
 
     // Check rate limit
-    const { data: rateLimitCheck } = await supabase.rpc('check_rate_limit', {
-      p_user_id: body.userId,
-      p_ip_address: clientIP,
-      p_limit: 30,
-      p_window_minutes: 10
-    });
+    let rateLimitCheck = null;
+    try {
+      const { data: rateLimitData, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        p_user_id: body.userId,
+        p_ip_address: clientIP,
+        p_limit: 30,
+        p_window_minutes: 10
+      });
+      
+      if (rateLimitError) {
+        console.error('Rate limit check error:', rateLimitError);
+        // Continue without rate limiting if the RPC fails
+      } else {
+        rateLimitCheck = rateLimitData;
+      }
+    } catch (error) {
+      console.error('Rate limit check failed:', error);
+      // Continue without rate limiting if the check fails
+    }
 
-    if (rateLimitCheck && rateLimitCheck.length > 0 && !rateLimitCheck[0].allowed) {
+    if (rateLimitCheck && Array.isArray(rateLimitCheck) && rateLimitCheck.length > 0 && !(rateLimitCheck[0] as any).allowed) {
       return new Response(JSON.stringify({ 
         error: "Rate limit exceeded",
-        remaining: rateLimitCheck[0].remaining,
-        reset_at: rateLimitCheck[0].reset_at
+        remaining: (rateLimitCheck[0] as any).remaining,
+        reset_at: (rateLimitCheck[0] as any).reset_at
       }), {
         status: 429,
         headers: { 
@@ -159,34 +181,92 @@ export const handler = serve(async (req) => {
     }
 
     // Get A/B test parameters
-    const { data: abParams } = await supabase.rpc('get_experiment_params', {
-      p_user_id: body.userId,
-      p_experiment_name: 'social_weight_test'
-    });
-
-    const experimentParams = abParams || {};
-    const experimentId = experimentParams.experiment_id;
-    const variant = experimentParams.variant;
+    let experimentParams: any = {};
+    let experimentId: string | null = null;
+    let variant: string | null = null;
+    
+    try {
+      // First, try to get existing assignment
+      const { data: abParams, error: abError } = await supabase.rpc('get_user_experiment_variant', {
+        p_user_id: body.userId,
+        p_experiment_name: 'social_weight_test'
+      });
+      
+      if (abError) {
+        console.error('A/B test params error:', abError);
+        // Continue with default parameters
+      } else if (abParams && abParams.length > 0) {
+        const exp = abParams[0];
+        experimentParams = exp.params || {};
+        experimentId = exp.experiment_id;
+        variant = exp.variant;
+      } else {
+        // No assignment yet, assign user to experiment
+        const { data: assignedVariant, error: assignError } = await supabase.rpc('assign_user_to_experiment', {
+          p_user_id: body.userId,
+          p_experiment_name: 'social_weight_test'
+        });
+        
+        if (assignError) {
+          console.error('Error assigning user to experiment:', assignError);
+        } else {
+          variant = assignedVariant;
+          // Get the experiment params now
+          const { data: newParams } = await supabase.rpc('get_user_experiment_variant', {
+            p_user_id: body.userId,
+            p_experiment_name: 'social_weight_test'
+          });
+          
+          if (newParams && newParams.length > 0) {
+            const exp = newParams[0];
+            experimentParams = exp.params || {};
+            experimentId = exp.experiment_id;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('A/B test params failed:', error);
+      // Continue with default parameters
+    }
 
     // Check cache first (include experiment variant in cache key)
     const cacheKey = `${body.userId}_${body.lat}_${body.lon}_${variant || 'control'}`;
-    const { data: cachedResult } = await supabase.rpc('get_cached_recommendations', {
-      p_user_id: body.userId,
-      p_lat: body.lat,
-      p_lon: body.lon
-    });
+    let cachedResult = null;
+    
+    try {
+      const { data: cacheData, error: cacheError } = await supabase.rpc('get_cached_recommendations', {
+        p_user_id: body.userId,
+        p_lat: body.lat,
+        p_lon: body.lon
+      });
+      
+      if (cacheError) {
+        console.error('Cache check error:', cacheError);
+        // Continue without cache
+      } else {
+        cachedResult = cacheData;
+      }
+    } catch (error) {
+      console.error('Cache check failed:', error);
+      // Continue without cache
+    }
 
     if (cachedResult) {
       // Increment rate limit counter
-      await supabase.rpc('increment_rate_limit', {
-        p_user_id: body.userId,
-        p_ip_address: clientIP
-      });
+      try {
+        await supabase.rpc('increment_rate_limit', {
+          p_user_id: body.userId,
+          p_ip_address: clientIP
+        });
+      } catch (error) {
+        console.error('Error incrementing rate limit for cached result:', error);
+        // Don't fail the request if rate limit increment fails
+      }
 
       return new Response(JSON.stringify({ 
-        items: cachedResult.items,
+        items: (cachedResult as any).items,
         cached: true,
-        remaining: rateLimitCheck?.[0]?.remaining || 0,
+        remaining: (rateLimitCheck && Array.isArray(rateLimitCheck) && rateLimitCheck[0]) ? (rateLimitCheck[0] as any).remaining : 0,
         experiment: { id: experimentId, variant }
       }), {
         status: 200,
@@ -195,26 +275,69 @@ export const handler = serve(async (req) => {
     }
 
     // Trait vector
-    const { data: uv } = await supabase
-      .from("user_vectors")
-      .select("emb")
-      .eq("user_id", body.userId)
-      .maybeSingle();
+    let uv: any = null;
+    try {
+      const { data: userVectorData, error: userVectorError } = await supabase
+        .from("user_vectors")
+        .select("emb")
+        .eq("user_id", body.userId)
+        .maybeSingle();
+      
+      if (userVectorError) {
+        console.error('User vector error:', userVectorError);
+        // Continue without user vector
+      } else {
+        uv = userVectorData;
+      }
+    } catch (error) {
+      console.error('User vector fetch failed:', error);
+      // Continue without user vector
+    }
 
     // Candidates via schema-aligned RPC
-    const { data: candidates, error: candErr } = await supabase.rpc("get_recommendation_candidates", {
-      p_user_id: body.userId,
-      p_lat: body.lat,
-      p_lon: body.lon,
-      p_radius_km: radiusKm,
-      p_limit: 300
-    });
+    let candidates = [];
+    try {
+      const { data: candidatesData, error: candErr } = await supabase.rpc("get_recommendation_candidates", {
+        p_user_id: body.userId,
+        p_lat: body.lat,
+        p_lon: body.lon,
+        p_radius_km: radiusKm,
+        p_limit: 300
+      });
 
-    if (candErr) throw candErr;
+      if (candErr) {
+        console.error("Error fetching candidates:", candErr);
+        throw new Error(`Failed to fetch candidates: ${candErr.message}`);
+      }
+      
+      candidates = candidatesData || [];
+      
+      if (candidates.length === 0) {
+        console.warn("No candidates found for user:", body.userId);
+        return new Response(JSON.stringify({ 
+          items: [],
+          cached: false,
+          remaining: (rateLimitCheck && Array.isArray(rateLimitCheck) && rateLimitCheck[0]) ? (rateLimitCheck[0] as any).remaining : 0,
+          experiment: { id: experimentId, variant }
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    } catch (error) {
+      console.error("Candidates fetch failed:", error);
+      throw new Error(`Failed to fetch candidates: ${error.message}`);
+    }
 
-    const stateVec = await computeStateVector(supabase, body.userId, EMBED_DIM);
+    let stateVec: number[] | null = null;
+    try {
+      stateVec = await computeStateVector(supabase, body.userId, EMBED_DIM);
+    } catch (error) {
+      console.error('State vector computation failed:', error);
+      // Continue without state vector
+    }
 
-    const enriched = (candidates ?? []).map((c: any) => {
+    const enriched = candidates.map((c: any) => {
       const emb = (c.embedding as number[] | null) ?? null;
       const trait = dot(uv?.emb ?? null, emb);
       const state = dot(stateVec, emb);
@@ -253,13 +376,27 @@ export const handler = serve(async (req) => {
         id: c.id, 
         score, 
         reasons: { appeal, trait, state, social, cost, poprec }, 
-        embedding: emb 
+        embedding: emb || undefined
       };
     });
 
     // Apply diversity constraints and exposure dampening before MMR
-    const diversityFiltered = await applyDiversityConstraints(supabase, body.userId, enriched, k);
-    const exposureFiltered = await applyExposureDampening(supabase, body.userId, diversityFiltered);
+    let diversityFiltered = enriched;
+    let exposureFiltered = enriched;
+    
+    try {
+      diversityFiltered = await applyDiversityConstraints(supabase, body.userId, enriched, k);
+    } catch (error) {
+      console.error('Diversity constraints failed:', error);
+      // Continue with original enriched data
+    }
+    
+    try {
+      exposureFiltered = await applyExposureDampening(supabase, body.userId, diversityFiltered);
+    } catch (error) {
+      console.error('Exposure dampening failed:', error);
+      // Continue with diversity filtered data
+    }
     
     // Use A/B test parameters for MMR and exploration
     const mmrLambda = experimentParams.mmr_lambda || 0.7;
@@ -267,41 +404,67 @@ export const handler = serve(async (req) => {
     
     const diversified = mmrSelect(exposureFiltered, k, mmrLambda);
 
-    const bandit = createLinUCBBandit(supabase, body.userId);
-    const final = await bandit.injectExplore(diversified, enriched, exploreSlots);
+    let final = diversified;
+    try {
+      const bandit = createLinUCBBandit(supabase, body.userId);
+      final = await bandit.injectExplore(diversified, enriched, exploreSlots);
+    } catch (error) {
+      console.error('Bandit exploration failed:', error);
+      // Continue with diversified results
+    }
 
-    await logImpressions(supabase, body.userId, final.map(x => x.id), body.lat, body.lon, experimentId, variant);
+    try {
+      await logImpressions(supabase, body.userId, final.map(x => x.id), body.lat, body.lon, experimentId, variant);
+    } catch (error) {
+      console.error('Log impressions failed:', error);
+      // Don't fail the request if logging fails
+    }
 
     const responseData = { 
       items: final.map(({ embedding, ...rest }) => rest),
       cached: false,
-      remaining: rateLimitCheck?.[0]?.remaining || 0,
+      remaining: (rateLimitCheck && Array.isArray(rateLimitCheck) && rateLimitCheck[0]) ? (rateLimitCheck[0] as any).remaining : 0,
       experiment: { id: experimentId, variant }
     };
 
     // Cache the results
-    await supabase.rpc('cache_recommendations', {
-      p_user_id: body.userId,
-      p_lat: body.lat,
-      p_lon: body.lon,
-      p_payload: responseData,
-      p_ttl_minutes: 5
-    });
+    try {
+      await supabase.rpc('cache_recommendations', {
+        p_user_id: body.userId,
+        p_lat: body.lat,
+        p_lon: body.lon,
+        p_payload: responseData,
+        p_ttl_minutes: 5
+      });
+    } catch (error) {
+      console.error('Error caching recommendations:', error);
+      // Don't fail the request if caching fails
+    }
 
     // Increment rate limit counter
-    await supabase.rpc('increment_rate_limit', {
-      p_user_id: body.userId,
-      p_ip_address: clientIP
-    });
+    try {
+      await supabase.rpc('increment_rate_limit', {
+        p_user_id: body.userId,
+        p_ip_address: clientIP
+      });
+    } catch (error) {
+      console.error('Error incrementing rate limit:', error);
+      // Don't fail the request if rate limit increment fails
+    }
 
     // Log performance metrics
     const duration = Date.now() - startTime;
-    await supabase.rpc('log_performance_metric', {
-      p_user_id: userId,
-      p_function_name: 'recommend',
-      p_duration_ms: duration,
-      p_success: true
-    });
+    try {
+      await supabase.rpc('log_performance_metric', {
+        p_user_id: userId,
+        p_function_name: 'recommend',
+        p_duration_ms: duration,
+        p_success: true
+      });
+    } catch (error) {
+      console.error('Error logging performance metrics:', error);
+      // Don't fail the request if logging fails
+    }
 
     return new Response(JSON.stringify(responseData), {
       status: 200,
@@ -312,13 +475,22 @@ export const handler = serve(async (req) => {
     
     // Log error performance metrics
     const duration = Date.now() - startTime;
-    await supabase.rpc('log_performance_metric', {
-      p_user_id: userId,
-      p_function_name: 'recommend',
-      p_duration_ms: duration,
-      p_success: false,
-      p_error_message: error.message
-    }).catch(() => {}); // Don't fail on logging errors
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      await supabase.rpc('log_performance_metric', {
+        p_user_id: userId,
+        p_function_name: 'recommend',
+        p_duration_ms: duration,
+        p_success: false,
+        p_error_message: error.message
+      });
+    } catch (logError) {
+      console.error('Error logging performance metrics for error:', logError);
+      // Don't fail on logging errors
+    }
 
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
@@ -404,12 +576,21 @@ function popularityBoost(completes?: number|null, created_at?: string|null){
 }
 
 async function applyDiversityConstraints(supabase: any, userId: string, candidates: any[], k: number): Promise<any[]> {
+  // Get bucket information for candidates
+  const itemIds = candidates.map(c => c.id);
+  const { data: items } = await supabase
+    .from('items')
+    .select('id, bucket_id')
+    .in('id', itemIds);
+  
+  const itemToBucket = new Map(items?.map((item: any) => [item.id, item.bucket_id]) || []);
+  
   // Per-bucket cap: max 3 items from same bucket
   const bucketCounts = new Map<string, number>();
   const maxPerBucket = 3;
   
   const filtered = candidates.filter(candidate => {
-    const bucketId = candidate.bucket_id || 'default';
+    const bucketId = itemToBucket.get(candidate.id) || 'default';
     const currentCount = bucketCounts.get(bucketId) || 0;
     
     if (currentCount < maxPerBucket) {
@@ -426,17 +607,23 @@ async function applyDiversityConstraints(supabase: any, userId: string, candidat
 async function applyExposureDampening(supabase: any, userId: string, candidates: any[]): Promise<any[]> {
   const dampened = await Promise.all(
     candidates.map(async (candidate) => {
-      const { data: dampeningFactor } = await supabase.rpc('get_exposure_dampening', {
-        p_user_id: userId,
-        p_item_id: candidate.id,
-        p_max_exposures: 5,
-        p_dampening_days: 7
-      });
-      
-      return {
-        ...candidate,
-        score: candidate.score * (dampeningFactor || 1.0)
-      };
+      try {
+        const { data: dampeningFactor } = await supabase.rpc('get_exposure_dampening', {
+          p_user_id: userId,
+          p_item_id: candidate.id,
+          p_max_exposures: 5,
+          p_dampening_days: 7
+        });
+        
+        return {
+          ...candidate,
+          score: candidate.score * (dampeningFactor || 1.0)
+        };
+      } catch (error) {
+        console.error('Error getting exposure dampening for item:', candidate.id, error);
+        // Return original candidate if dampening fails
+        return candidate;
+      }
     })
   );
   
@@ -450,32 +637,40 @@ async function logImpressions(
   itemIds:string[], 
   lat:number, 
   lon:number,
-  experimentId?: string,
-  variant?: string
+  experimentId?: string | null,
+  variant?: string | null
 ){
   if (!itemIds.length) return;
   
-  // Log to events table with experiment context
-  const eventRows = itemIds.map(id => ({
-    user_id: userId,
-    item_id: id,
-    event_type: 'impression',
-    strength: 0.0,
-    context: { 
-      lat, 
-      lon,
-      experiment_id: experimentId,
-      variant: variant
-    }
-  }));
-  await supabase.from('events').insert(eventRows);
+  try {
+    // Log to events table with experiment context
+    const eventRows = itemIds.map(id => ({
+      user_id: userId,
+      item_id: id,
+      event_type: 'impression',
+      strength: 0.0,
+      context: { 
+        lat, 
+        lon,
+        experiment_id: experimentId,
+        variant: variant
+      }
+    }));
+    await supabase.from('events').insert(eventRows);
+  } catch (error) {
+    console.error('Error logging impressions to events table:', error);
+  }
   
   // Update exposure tracking
   for (const itemId of itemIds) {
-    await supabase.rpc('update_exposure_tracking', {
-      p_user_id: userId,
-      p_item_id: itemId,
-      p_action_type: 'impression'
-    });
+    try {
+      await supabase.rpc('update_exposure_tracking', {
+        p_user_id: userId,
+        p_item_id: itemId,
+        p_action_type: 'impression'
+      });
+    } catch (error) {
+      console.error('Error updating exposure tracking for item:', itemId, error);
+    }
   }
 }

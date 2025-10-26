@@ -178,12 +178,6 @@ export default function MyBuckets() {
           />
         }
       >
-        {/* Debug Section */}
-        <View style={styles.debugSection}>
-          <Text style={styles.debugTitle}>🔍 DEBUG: Collaborator Data</Text>
-          <Text style={styles.debugText}>Total Buckets: {buckets.length}</Text>
-          <Text style={styles.debugText}>Collaborator Data: {JSON.stringify(bucketCollaborators, null, 2)}</Text>
-        </View>
         {loading ? (
           renderLoadingState()
         ) : buckets.length === 0 ? (
@@ -397,29 +391,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#8EC5FC',
-  },
-  // Debug styles
-  debugSection: {
-    backgroundColor: '#1a1a1a',
-    margin: 20,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#8EC5FC',
-    minHeight: 100,
-  },
-  debugTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#8EC5FC',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#fff',
-    fontFamily: 'monospace',
-    marginBottom: 6,
-    lineHeight: 16,
   },
 });

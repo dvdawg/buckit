@@ -14,6 +14,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useRecommendations } from '@/hooks/use-recommendations';
+import { useLocation } from '@/hooks/useLocation';
 import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -101,17 +103,29 @@ const recommendedContent = [
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [content, setContent] = useState(recommendedContent);
+  const { location, loading: locationLoading } = useLocation();
+
+  // Get real recommendations
+  const { 
+    items: recommendations, 
+    loading: recommendationsLoading, 
+    error: recommendationsError,
+    refetch: refetchRecommendations,
+    logEvent,
+    logView,
+    logCompletion
+  } = useRecommendations({
+    lat: location?.latitude || 0,
+    lon: location?.longitude || 0,
+    radiusKm: 15,
+    k: 20,
+    enabled: !!location
+  });
 
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you would fetch fresh content here
-      // For now, we'll just shuffle the existing content to simulate new recommendations
-      setContent(prevContent => [...prevContent].sort(() => Math.random() - 0.5));
+      await refetchRecommendations();
     },
     minDuration: 1200, // 1.2 seconds minimum for smooth transition
   });
@@ -304,9 +318,61 @@ export default function ExploreScreen() {
 
         {/* Content Grid */}
         <View style={styles.contentGrid}>
-          {content.filter(item => item.type === 'challenge').map((item) => (
-            renderChallengeCard(item)
-          ))}
+          {recommendationsLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading recommendations...</Text>
+            </View>
+          ) : recommendationsError ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Failed to load recommendations</Text>
+              <TouchableOpacity onPress={refetchRecommendations} style={styles.retryButton}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : recommendations.length > 0 ? (
+            recommendations.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.challengeCard}
+                onPress={() => {
+                  logView(item.id);
+                  // Navigate to item details
+                  router.push(`/buckets/${item.id}`);
+                }}
+              >
+                {/* Score Badge - Top Right Corner */}
+                <View style={[styles.challengeApplicabilityBadge, { backgroundColor: getApplicabilityColor(Math.round(item.score * 100)) }]}>
+                  <Text style={styles.applicabilityScore}>{Math.round(item.score * 100)}%</Text>
+                </View>
+
+                <View style={styles.challengeHeader}>
+                  <Text style={styles.challengeTitle}>Recommended Item</Text>
+                  <Text style={styles.challengeDescription}>Score: {item.score.toFixed(2)}</Text>
+                </View>
+
+                <View style={styles.challengeDetails}>
+                  <View style={styles.challengeMeta}>
+                    <View style={styles.metaItem}>
+                      <BucketIcon size={14} color="#8EC5FC" />
+                      <Text style={styles.metaText}>Recommendation</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="location" size={14} color="#ef4444" />
+                      <Text style={styles.metaText}>Nearby</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="time" size={14} color="#f59e0b" />
+                      <Text style={styles.metaText}>Available</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No recommendations found</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -604,5 +670,45 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Poppins',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    fontFamily: 'Poppins',
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    fontFamily: 'Poppins',
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: '#8EC5FC',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    fontSize: 14,
+    color: '#000',
+    fontFamily: 'Poppins',
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    fontFamily: 'Poppins',
   },
 });

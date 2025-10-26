@@ -20,6 +20,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import BucketLogo from '@/components/BucketLogo';
+import ColdStartModal from '@/components/ColdStartModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -44,6 +45,7 @@ export default function RegisterScreen() {
   const [countryCode, setCountryCode] = useState('+1');
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
   
   const countryCodes = [
     { code: '+1', country: 'US/CA' },
@@ -428,9 +430,9 @@ export default function RegisterScreen() {
         throw new Error(`Failed to create user profile: ${profileError.message}`);
       }
 
-      // Step 4: Navigate directly to app (email verification disabled)
-      console.log('Registration successful, navigating to app...');
-      router.replace('/(tabs)/home');
+      // Step 4: Show preferences modal for new users
+      console.log('Registration successful, showing preferences...');
+      setShowPreferences(true);
 
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -780,6 +782,19 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
       </Animated.View>
+      
+      {/* Cold Start Modal for preferences */}
+      <ColdStartModal
+        visible={showPreferences}
+        onComplete={(preferences) => {
+          setShowPreferences(false);
+          router.replace('/(tabs)/home');
+        }}
+        onSkip={() => {
+          setShowPreferences(false);
+          router.replace('/(tabs)/home');
+        }}
+      />
     </View>
   );
 }

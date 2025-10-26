@@ -201,73 +201,26 @@ export default function ColdStartModal({ visible, onComplete, onSkip }: ColdStar
 }
 
 async function initializeUserPreferences(preferences: ColdStartPreferences) {
-  // Get prototype vectors for selected themes
-  const prototypeVectors = await getPrototypeVectors(preferences.selectedThemes);
-  
-  // Create initial user vector by averaging prototype vectors
-  const initialVector = averageVectors(prototypeVectors);
-  
-  // Store in user_vectors table
+  // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
+  // Store preferences in user profile and mark as completed
   const { error } = await supabase
-    .from('user_vectors')
-    .upsert({
-      user_id: user.id,
-      emb: initialVector
-    });
-
-  if (error) throw error;
-
-  // Store preferences in user profile or separate table
-  await supabase
     .from('users')
     .update({
       preferences: {
         themes: preferences.selectedThemes,
         price_comfort: preferences.priceComfort,
         max_distance: preferences.maxDistance
-      }
+      },
+      preferences_completed: true
     })
     .eq('auth_id', user.id);
+
+  if (error) throw error;
 }
 
-async function getPrototypeVectors(themes: string[]): Promise<number[][]> {
-  // Get items that match the selected themes
-  const { data: items } = await supabase
-    .from('items')
-    .select('embedding, embedding_vec')
-    .in('bucket_id', themes) // Assuming themes map to bucket IDs
-    .not('embedding', 'is', null)
-    .limit(50);
-
-  if (!items || items.length === 0) {
-    // Fallback: return default vectors
-    return [new Array(1536).fill(0.1)];
-  }
-
-  return items.map(item => item.embedding_vec || item.embedding).filter(Boolean);
-}
-
-function averageVectors(vectors: number[][]): number[] {
-  if (vectors.length === 0) return new Array(1536).fill(0);
-  
-  const dim = vectors[0].length;
-  const result = new Array(dim).fill(0);
-  
-  for (const vector of vectors) {
-    for (let i = 0; i < dim; i++) {
-      result[i] += vector[i];
-    }
-  }
-  
-  for (let i = 0; i < dim; i++) {
-    result[i] /= vectors.length;
-  }
-  
-  return result;
-}
 
 const styles = StyleSheet.create({
   container: {

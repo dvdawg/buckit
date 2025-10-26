@@ -1,5 +1,5 @@
-import { serve } from "https:
-import { createClient } from "https:
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
 
@@ -88,7 +88,7 @@ async function getTextEmbedding(text: string): Promise<number[]> {
   
   if (claudeApiKey) {
     try {
-      const response = await fetch("https:
+      const response = await fetch("https://api.anthropic.com/v1/messages",
         method: "POST",
         headers: {
           "x-api-key": claudeApiKey,
@@ -123,7 +123,7 @@ async function getTextEmbedding(text: string): Promise<number[]> {
   
   if (openaiApiKey) {
     try {
-      const response = await fetch("https:
+      const response = await fetch("https://api.anthropic.com/v1/messages",
         method: "POST",
         headers: {
           "Authorization": `Bearer ${openaiApiKey}`,

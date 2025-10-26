@@ -71,7 +71,7 @@ export default function MyBuckets() {
   const renderBucketCard = (bucket: any) => {
     const imageSource = bucket.cover_url 
       ? { uri: bucket.cover_url }
-      : { uri: 'https:
+      : { uri: 'https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop' }
 
     const collaborators = bucketCollaborators[bucket.id] || [];
     const hasCollaborators = collaborators.length > 0;

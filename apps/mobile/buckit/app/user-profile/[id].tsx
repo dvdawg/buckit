@@ -243,7 +243,7 @@ export default function UserProfileScreen() {
                   onPress={() => router.push(`/buckets/${bucket.id}`)}
                 >
                   <Image
-                    source={{ uri: bucket.cover_url || 'https:
+                    source={{ uri: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop' }}
                     style={styles.bucketImage}
                   />
                   <View style={styles.bucketInfo}>

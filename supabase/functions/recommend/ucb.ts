@@ -1,4 +1,4 @@
-import { createClient } from "https:
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 export function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: string) {
   return {

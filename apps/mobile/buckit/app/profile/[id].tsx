@@ -20,7 +20,7 @@ const userProfiles = {
     id: '1',
     username: 'alex_adventures',
     fullName: 'Alex Johnson',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     location: 'San Francisco, CA',
     bio: 'Adventure seeker and outdoor enthusiast. Always looking for the next mountain to climb! 🏔️',
     points: 2847,
@@ -28,19 +28,19 @@ const userProfiles = {
       {
         id: "1",
         title: "Adventure",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 12,
       },
       {
         id: "2",
         title: "Photography",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 8,
       },
       {
         id: "3",
         title: "Fitness",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 15,
       },
     ],
@@ -73,7 +73,7 @@ const userProfiles = {
     id: '2',
     username: 'sarah_explorer',
     fullName: 'Sarah Chen',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     location: 'Berkeley, CA',
     bio: 'Foodie, traveler, and coffee enthusiast. Exploring the world one cup at a time ☕',
     points: 1923,
@@ -81,19 +81,19 @@ const userProfiles = {
       {
         id: "1",
         title: "Food",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 20,
       },
       {
         id: "2",
         title: "Travel",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 14,
       },
       {
         id: "3",
         title: "Coffee",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 6,
       },
     ],
@@ -126,7 +126,7 @@ const userProfiles = {
     id: '3',
     username: 'mike_fitness',
     fullName: 'Mike Rodriguez',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     location: 'Oakland, CA',
     bio: 'Fitness coach and wellness advocate. Helping others achieve their health goals 💪',
     points: 3456,
@@ -134,19 +134,19 @@ const userProfiles = {
       {
         id: "1",
         title: "Fitness",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 25,
       },
       {
         id: "2",
         title: "Nutrition",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 18,
       },
       {
         id: "3",
         title: "Wellness",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 12,
       },
     ],
@@ -179,7 +179,7 @@ const userProfiles = {
     id: '4',
     username: 'emma_travels',
     fullName: 'Emma Wilson',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     location: 'Palo Alto, CA',
     bio: 'Digital nomad and culture enthusiast. Collecting memories from around the world 🌍',
     points: 2156,
@@ -187,19 +187,19 @@ const userProfiles = {
       {
         id: "1",
         title: "Travel",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 16,
       },
       {
         id: "2",
         title: "Culture",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 9,
       },
       {
         id: "3",
         title: "Languages",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 7,
       },
     ],
@@ -232,7 +232,7 @@ const userProfiles = {
     id: '5',
     username: 'david_foodie',
     fullName: 'David Kim',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     location: 'San Jose, CA',
     bio: 'Chef and food blogger. Sharing my culinary adventures and recipes 🍳',
     points: 1789,
@@ -240,19 +240,19 @@ const userProfiles = {
       {
         id: "1",
         title: "Cooking",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 22,
       },
       {
         id: "2",
         title: "Restaurants",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 13,
       },
       {
         id: "3",
         title: "Baking",
-        cover: "https:
+        cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
         challenges: 8,
       },
     ],

@@ -57,7 +57,7 @@ export default function Buckets() {
           buckets.map((bucket) => {
             const imageSource = bucket.cover_url 
               ? { uri: bucket.cover_url }
-              : { uri: 'https:
+              : { uri: 'https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop' }
 
             return (
               <TouchableOpacity

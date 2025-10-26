@@ -6,7 +6,7 @@ export async function getHuggingFaceEmbedding(text: string): Promise<number[]> {
   }
 
   try {
-    const response = await fetch("https:
+    const response = await fetch("https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
       method: "POST",
       headers: {
         "Authorization": `Bearer ${hfApiKey}`,

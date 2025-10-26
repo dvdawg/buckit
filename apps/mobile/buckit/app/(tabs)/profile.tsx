@@ -18,54 +18,54 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 const dummyUser = {
   name: "Brandon",
   location: "Berkeley, CA",
-  profileImage: "https:
+  profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
   buckets: [
     {
       id: "1",
       title: "Jits",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 6,
     },
     {
       id: "2",
       title: "Family",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 3,
     },
     {
       id: "3",
       title: "Cafes",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 9,
     },
     {
       id: "4",
       title: "Travel",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 12,
     },
     {
       id: "5",
       title: "Fitness",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 8,
     },
     {
       id: "6",
       title: "Food",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 15,
     },
     {
       id: "7",
       title: "Art",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 5,
     },
     {
       id: "8",
       title: "Music",
-      cover: "https:
+      cover: "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
       challenges: 7,
     },
   ],
@@ -393,7 +393,7 @@ export default function Profile() {
             buckets.slice(0, 6).map((bucket) => {
               const imageSource = bucket.cover_url 
                 ? { uri: bucket.cover_url }
-                : { uri: 'https:
+                : { uri: 'https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop' }
 
               return (
                 <TouchableOpacity

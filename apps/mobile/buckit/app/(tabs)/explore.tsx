@@ -39,7 +39,7 @@ const recommendedContent = [
     description: 'Capture stunning moments and improve your photography skills',
     category: 'Creative',
     applicabilityScore: 95,
-    cover: 'https:
+    cover: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=300&fit=crop',
     challenges: 8,
     participants: 1247,
   },
@@ -61,7 +61,7 @@ const recommendedContent = [
     description: 'Complete fitness journey with workout routines and nutrition plans',
     category: 'Health',
     applicabilityScore: 92,
-    cover: 'https:
+    cover: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
     challenges: 12,
     participants: 2156,
   },
@@ -83,7 +83,7 @@ const recommendedContent = [
     description: 'Build skills and experiences for remote work and travel',
     category: 'Lifestyle',
     applicabilityScore: 78,
-    cover: 'https:
+    cover: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop',
     challenges: 15,
     participants: 892,
   },

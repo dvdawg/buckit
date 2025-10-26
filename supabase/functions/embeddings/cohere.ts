@@ -6,7 +6,7 @@ export async function getCohereEmbedding(text: string): Promise<number[]> {
   }
 
   try {
-    const response = await fetch("https:
+    const response = await fetch("https://api.cohere.ai/v1/embed",
       method: "POST",
       headers: {
         "Authorization": `Bearer ${cohereApiKey}`,

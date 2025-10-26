@@ -104,12 +104,12 @@ export default function BucketDetail() {
     date: "12/18/2025",
     description: "Go to the Mill Valley Library, do some light gardening, and wander around.",
     photos: [
-      "https:
-      "https:
-      "https:
-      "https:
-      "https:
-      "https:
+      "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop",
     ],
   };
 
@@ -129,7 +129,7 @@ export default function BucketDetail() {
         bucketId: bucket.id,
         title: bucket.title || '',
         description: bucket.description || '',
-        coverUrl: bucket.cover_url || 'https:
+        coverUrl: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop',
         visibility: bucket.visibility || 'private',
       });
       router.push(`/create-bucket?${params.toString()}`);
@@ -307,7 +307,10 @@ export default function BucketDetail() {
     <View style={styles.container}>
       {}
       <View style={styles.headerSection}>
-        <Image source={{ uri: bucket?.cover_url || 'https:
+        <Image 
+          source={{ uri: bucket?.cover_url || 'https://images.unsplash.com/photo-1506905925346-14bda5d4c4b0?w=400&h=300&fit=crop' }}
+          style={styles.headerImage}
+        />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}

@@ -146,9 +146,9 @@ RETURNS TABLE (
 LANGUAGE SQL
 SECURITY DEFINER
 AS $$
-    SELECT 'manual'::TEXT as value, 'Manual Setting'::TEXT as label, 'Only you can see it, but you can add specific people'::TEXT as description
+    SELECT 'manual'::TEXT as value, 'Manual Setting'::TEXT as label, 'Only you and invited friends'::TEXT as description
     UNION ALL
-    SELECT 'friends'::TEXT as value, 'Friends'::TEXT as label, 'Anyone you are friends with can see this bucket'::TEXT as description;
+    SELECT 'friends'::TEXT as value, 'Friends'::TEXT as label, 'Anyone you are friends with'::TEXT as description;
 $$;
 
 -- Update create_bucket_secure function to use new visibility options

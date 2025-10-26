@@ -20,13 +20,13 @@ const visibilityOptions: VisibilityOption[] = [
   {
     value: 'manual',
     label: 'Manual Setting',
-    description: 'Only you can see it, but you can add specific people',
+    description: 'Only you and invited friends',
     icon: 'person-add',
   },
   {
     value: 'friends',
     label: 'Friends',
-    description: 'Anyone you are friends with can see this bucket',
+    description: 'Anyone you are friends with',
     icon: 'people',
   },
 ];

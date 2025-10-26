@@ -22,7 +22,7 @@ const dummyFriends = [
     id: '1',
     username: 'alex_adventures',
     fullName: 'Alex Johnson',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     location: 'San Francisco, CA',
     isInvited: false,
   },
@@ -30,7 +30,7 @@ const dummyFriends = [
     id: '2',
     username: 'sarah_explorer',
     fullName: 'Sarah Chen',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
     location: 'Berkeley, CA',
     isInvited: false,
   },
@@ -38,7 +38,7 @@ const dummyFriends = [
     id: '3',
     username: 'mike_fitness',
     fullName: 'Mike Rodriguez',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     location: 'Oakland, CA',
     isInvited: false,
   },
@@ -46,7 +46,7 @@ const dummyFriends = [
     id: '4',
     username: 'emma_travels',
     fullName: 'Emma Wilson',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
     location: 'Palo Alto, CA',
     isInvited: false,
   },
@@ -54,7 +54,7 @@ const dummyFriends = [
     id: '5',
     username: 'david_foodie',
     fullName: 'David Kim',
-    avatar: 'https:
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
     location: 'San Jose, CA',
     isInvited: false,
   },

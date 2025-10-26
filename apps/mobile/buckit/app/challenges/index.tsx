@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useItems } from '@/hooks/useItems';
-import ChallengeModal from '@/components/ChallengeModal';
+import ChallengeDetailModal from '@/components/ChallengeDetailModal';
 
 export default function ChallengesIndex() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function ChallengesIndex() {
     setChallengeModalVisible(false);
     setSelectedChallengeId(null);
   };
+
 
   const getUrgencyInfo = (urgency: string) => {
     switch (urgency) {
@@ -83,13 +84,11 @@ export default function ChallengesIndex() {
                   style={styles.challengeCard}
                   onPress={() => handleChallengePress(item)}
                 >
-                  <View style={styles.challengeHeader}>
-                    <View style={styles.challengeBucketInfo}>
-                      <Text style={styles.challengeBucketEmoji}>{item.bucket?.emoji || '📝'}</Text>
-                      <Text style={styles.challengeBucketName} numberOfLines={1} ellipsizeMode="tail">
-                        {item.bucket?.title || 'Unknown Bucket'}
-                      </Text>
-                    </View>
+                  {/* Bucket Name at Top */}
+                  <View style={styles.bucketNameContainer}>
+                    <Text style={styles.bucketName} numberOfLines={1} ellipsizeMode="tail">
+                      {item.bucket?.title || 'Unknown Bucket'}
+                    </Text>
                     <View style={[styles.urgencyBadge, { backgroundColor: urgencyInfo.color }]}>
                       <Text style={styles.urgencyText}>{urgencyInfo.text}</Text>
                     </View>
@@ -101,7 +100,7 @@ export default function ChallengesIndex() {
                   
                   <View style={styles.challengeFooter}>
                     <Text style={styles.challengeLocation} numberOfLines={1} ellipsizeMode="tail">
-                      📍 {item.location_name || 'No location set'}
+                      📍 {item.location_name || 'No location'}
                     </Text>
                     <Text style={styles.dueDateText} numberOfLines={1} ellipsizeMode="tail">
                       {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}
@@ -114,8 +113,8 @@ export default function ChallengesIndex() {
         )}
       </ScrollView>
 
-      {/* Challenge Modal */}
-      <ChallengeModal
+      {/* Challenge Detail Modal */}
+      <ChallengeDetailModal
         visible={challengeModalVisible}
         challengeId={selectedChallengeId}
         onClose={handleCloseChallengeModal}
@@ -206,29 +205,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   challengeCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#333',
   },
-  challengeHeader: {
+  bucketNameContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  challengeBucketInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 8,
-  },
-  challengeBucketEmoji: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  challengeBucketName: {
+  bucketName: {
     fontSize: 12,
     color: '#9BA1A6',
     fontWeight: '500',
@@ -236,34 +226,64 @@ const styles = StyleSheet.create({
   },
   urgencyBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   urgencyText: {
     fontSize: 10,
     color: '#fff',
     fontWeight: '600',
   },
+  challengeContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  challengeIcon: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  challengeInfo: {
+    flex: 1,
+  },
   challengeTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  challengeFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  challengeDescription: {
+    fontSize: 13,
+    color: '#B0B0B0',
+    lineHeight: 18,
+    marginBottom: 6,
   },
   challengeLocation: {
-    fontSize: 12,
-    color: '#9BA1A6',
-    flex: 1,
-    marginRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  dueDateText: {
+  locationPin: {
     fontSize: 12,
+    marginRight: 4,
+  },
+  locationText: {
+    fontSize: 14,
     color: '#9BA1A6',
-    flexShrink: 0,
+  },
+  challengeTargetDate: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  targetDatePin: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  targetDateText: {
+    fontSize: 14,
+    color: '#9BA1A6',
   },
 });

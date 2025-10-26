@@ -52,7 +52,7 @@ export default function ViewOnlyChallengeModal({
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>{challenge.title}</Text>
                     <View style={styles.modalCompletionBadge}>
-                      {challenge.completed ? (
+                      {challenge.is_completed ? (
                         <>
                           <Ionicons name="checkmark-circle" size={14} color="#4ade80" />
                           <Text style={styles.modalCompletionText}>Completed</Text>
@@ -86,11 +86,11 @@ export default function ViewOnlyChallengeModal({
                         {challenge.targetDate ? `Target: ${new Date(challenge.targetDate).toLocaleDateString()}` : 'No target date set'}
                       </Text>
                     </View>
-                    {challenge.completed && challenge.satisfaction && (
+                    {challenge.is_completed && challenge.satisfaction_rating && (
                       <View style={styles.modalDetailRow}>
                         <Text style={styles.modalLocationPin}>⭐</Text>
                         <Text style={styles.modalDetailText}>
-                          Rated {challenge.satisfaction} star{challenge.satisfaction !== 1 ? 's' : ''}
+                          Rated {challenge.satisfaction_rating} star{challenge.satisfaction_rating !== 1 ? 's' : ''}
                         </Text>
                       </View>
                     )}

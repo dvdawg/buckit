@@ -31,20 +31,31 @@ const BucketIcon = ({ size = 20, color = '#8EC5FC' }) => (
 
 export default function CreateChallengeScreen() {
   const router = useRouter();
-  const { bucketId } = useLocalSearchParams();
+  const { bucketId, edit, challengeId, title, description, location, targetDate } = useLocalSearchParams();
+  const isEditMode = edit === 'true';
   const { buckets, loading: bucketsLoading } = useBuckets();
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    location: '',
-    targetDate: null as Date | null,
-    bucketId: bucketId as string || '',
+    title: (title as string) || '',
+    description: (description as string) || '',
+    location: (location as string) || '',
+    targetDate: targetDate ? new Date(targetDate as string) : null as Date | null,
+    bucketId: (bucketId as string) || '',
   });
   const [selectedLocation, setSelectedLocation] = useState<{
     name: string;
     coordinates: { latitude: number; longitude: number };
     address?: string;
-  } | null>(null);
+  } | null>(() => {
+    // Initialize with location data if in edit mode
+    if (isEditMode && location) {
+      return {
+        name: location as string,
+        coordinates: { latitude: 0, longitude: 0 }, // Default coordinates
+        address: location as string
+      };
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(false);
   const [showBucketModal, setShowBucketModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -67,43 +78,80 @@ export default function CreateChallengeScreen() {
     
     setLoading(true);
     try {
-      // Use the existing RPC function instead of direct table insert
-      // This bypasses RLS policies by using a SECURITY DEFINER function
-      console.log('Creating challenge using RPC function...');
-      
-      const { data, error } = await supabase.rpc('create_item_secure', {
-        p_bucket_id: formData.bucketId,
-        p_title: formData.title,
-        p_description: formData.description,
-        p_category: null,
-        p_location: selectedLocation?.name || formData.location
-      });
-
-      // If we have a target date, update the item with the deadline
-      if (data && formData.targetDate) {
-        const { error: updateError } = await supabase
-          .from('items')
-          .update({ deadline: formData.targetDate.toISOString().split('T')[0] })
-          .eq('id', data);
+      if (isEditMode && challengeId) {
+        // Edit mode - update existing challenge
+        console.log('Updating challenge using RPC function...');
         
-        if (updateError) {
-          console.error('Error updating deadline:', updateError);
-          // Don't fail the whole operation, just log the error
+        const { error } = await supabase.rpc('update_item_secure', {
+          p_item_id: challengeId as string,
+          p_title: formData.title,
+          p_description: formData.description,
+          p_location_name: selectedLocation?.name || formData.location,
+          p_location_point: selectedLocation ? 
+            `POINT(${selectedLocation.coordinates.longitude} ${selectedLocation.coordinates.latitude})` : null,
+          p_category: null,
+        });
+
+        if (error) {
+          console.error('Error updating challenge:', error);
+          Alert.alert('Error', `Failed to update challenge: ${error.message}`);
+          return;
         }
-      }
 
-      if (error) {
-        console.error('Error creating challenge:', error);
-        Alert.alert('Error', `Failed to create challenge: ${error.message}`);
-        return;
-      }
+        // Update the target date separately if provided
+        if (formData.targetDate) {
+          const { error: dateError } = await supabase
+            .from('items')
+            .update({ deadline: formData.targetDate.toISOString().split('T')[0] })
+            .eq('id', challengeId as string);
+          
+          if (dateError) {
+            console.error('Error updating deadline:', dateError);
+            // Don't fail the whole operation, just log the error
+          }
+        }
 
-      console.log('Challenge created successfully with ID:', data);
-      Alert.alert('Success', 'Challenge created successfully!');
+        console.log('Challenge updated successfully');
+        Alert.alert('Success', 'Challenge updated successfully!');
+      } else {
+        // Create mode - create new challenge
+        console.log('Creating challenge using RPC function...');
+        
+        const { data, error } = await supabase.rpc('create_item_secure', {
+          p_bucket_id: formData.bucketId,
+          p_title: formData.title,
+          p_description: formData.description,
+          p_category: null,
+          p_location: selectedLocation?.name || formData.location
+        });
+
+        // If we have a target date, update the item with the deadline
+        if (data && formData.targetDate) {
+          const { error: updateError } = await supabase
+            .from('items')
+            .update({ deadline: formData.targetDate.toISOString().split('T')[0] })
+            .eq('id', data);
+          
+          if (updateError) {
+            console.error('Error updating deadline:', updateError);
+            // Don't fail the whole operation, just log the error
+          }
+        }
+
+        if (error) {
+          console.error('Error creating challenge:', error);
+          Alert.alert('Error', `Failed to create challenge: ${error.message}`);
+          return;
+        }
+
+        console.log('Challenge created successfully with ID:', data);
+        Alert.alert('Success', 'Challenge created successfully!');
+      }
+      
       router.back();
     } catch (error) {
-      console.error('Error creating challenge:', error);
-      Alert.alert('Error', 'Failed to create challenge. Please try again.');
+      console.error('Error saving challenge:', error);
+      Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'create'} challenge. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -153,7 +201,7 @@ export default function CreateChallengeScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#8EC5FC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Challenge</Text>
+        <Text style={styles.headerTitle}>{isEditMode ? 'Edit Challenge' : 'Create Challenge'}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -179,7 +227,7 @@ export default function CreateChallengeScreen() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Bucket *</Text>
-            {bucketId ? (
+            {(bucketId || isEditMode) ? (
               <View style={[styles.bucketButton, styles.bucketButtonDisabled]}>
                 <BucketIcon size={20} color="#8EC5FC" />
                 <Text style={styles.bucketButtonText}>
@@ -284,13 +332,13 @@ export default function CreateChallengeScreen() {
           {loading ? (
             <ActivityIndicator color="#000" />
           ) : (
-            <Text style={styles.saveButtonText}>Create Challenge</Text>
+            <Text style={styles.saveButtonText}>{isEditMode ? 'Update Challenge' : 'Create Challenge'}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Bucket Selection Modal - Only show if no bucket pre-selected */}
-      {!bucketId && (
+      {/* Bucket Selection Modal - Only show if no bucket pre-selected and not in edit mode */}
+      {!bucketId && !isEditMode && (
         <Modal
           visible={showBucketModal}
           transparent={true}

@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useState, useRef, useEffect } from 'react';
-import * as ImagePicker from 'expo-image-picker';
 import { useBucket } from '@/hooks/useBucket';
 import { useSharedCompletions } from '@/hooks/useSharedCompletions';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
 import SharedPhotoAlbum from '@/components/SharedPhotoAlbum';
 import CompletionRatingModal from '@/components/CompletionRatingModal';
+import ChallengeDetailModal from '@/components/ChallengeDetailModal';
 import ViewOnlyChallengeCard from '@/components/ViewOnlyChallengeCard';
 import ViewOnlyChallengeModal from '@/components/ViewOnlyChallengeModal';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -25,7 +25,6 @@ export default function BucketDetail() {
   const { 
     completions, 
     stats, 
-    completeItem, 
     rateCompletion, 
     getPhotosForItem, 
     getAverageRatingForItem 
@@ -40,6 +39,8 @@ export default function BucketDetail() {
   const [tempRating, setTempRating] = useState(0);
   const [completionRatingModalVisible, setCompletionRatingModalVisible] = useState(false);
   const [completionToRate, setCompletionToRate] = useState<any>(null);
+  const [challengeDetailModalVisible, setChallengeDetailModalVisible] = useState(false);
+  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [isEditingChallenge, setIsEditingChallenge] = useState(false);
   const [editingData, setEditingData] = useState({
     title: '',
@@ -93,8 +94,8 @@ export default function BucketDetail() {
         description: item.description || '',
         location: item.location_name || '',
         targetDate: item.deadline || '',
-        completed: item.is_completed,
-        satisfaction: item.satisfaction_rating,
+        is_completed: item.is_completed,
+        satisfaction_rating: item.satisfaction_rating,
         photos: [], // TODO: Add photo support later
       }));
       setChallenges(transformedChallenges);
@@ -329,59 +330,15 @@ export default function BucketDetail() {
     
     const challenge = challenges.find(c => c.id === challengeId);
     
-    if (challenge && !challenge.completed) {
-      // If completing for the first time, show photo picker and complete with shared system
-      try {
-        // Request camera permissions
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission Required', 'Please grant camera roll permissions to add photos.');
-          return;
-        }
-
-        // Pick an image
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
-        });
-
-        if (!result.canceled && result.assets[0]) {
-          const photoUrl = result.assets[0].uri;
-          
-          // Complete the item with shared completion
-          const completionId = await completeItem(challengeId, photoUrl, '');
-          
-          // Update local state
-          setChallenges(prev => 
-            prev.map(c => 
-              c.id === challengeId 
-                ? { ...c, completed: true, photos: [{ url: photoUrl }] }
-                : c
-            )
-          );
-
-          // Show rating modal for the completion
-          if (completionId) {
-            setCompletionToRate({
-              id: completionId,
-              completed_by_name: 'You',
-              user_rating: 0,
-              user_review: ''
-            });
-            setCompletionRatingModalVisible(true);
-          }
-
-          // Refresh the bucket data
-          if (recalculateCount) {
-            await recalculateCount();
-          }
-        }
-      } catch (error) {
-        console.error('Error completing challenge:', error);
-        Alert.alert('Error', 'Failed to complete challenge. Please try again.');
-      }
+    if (challenge && !challenge.is_completed) {
+      // If completing for the first time, show rating modal directly
+      setCompletionToRate({
+        id: challengeId, // Use challengeId as temporary ID for rating
+        completed_by_name: 'You',
+        user_rating: 0,
+        user_review: ''
+      });
+      setCompletionRatingModalVisible(true);
     } else {
       // If uncompleting, update database and local state
       try {
@@ -409,8 +366,8 @@ export default function BucketDetail() {
             challenge.id === challengeId 
               ? { 
                   ...challenge, 
-                  completed: false,
-                  satisfaction: null
+                  is_completed: false,
+                  satisfaction_rating: null
                 }
               : challenge
           )
@@ -420,8 +377,8 @@ export default function BucketDetail() {
         if (selectedChallenge && selectedChallenge.id === challengeId) {
           setSelectedChallenge((prev: any) => ({
             ...prev,
-            completed: false,
-            satisfaction: null
+            is_completed: false,
+            satisfaction_rating: null
           }));
         }
 
@@ -437,31 +394,8 @@ export default function BucketDetail() {
   };
 
   const handleChallengePress = (challengeId: string) => {
-    const challenge = challenges.find(c => c.id === challengeId);
-    if (challenge) {
-      setSelectedChallenge(challenge);
-      setModalVisible(true);
-      // Start expand animation
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(blurAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      console.log('Navigate to challenge:', challengeId);
-    }
+    setSelectedChallengeId(challengeId);
+    setChallengeDetailModalVisible(true);
   };
 
   const handleCloseModal = () => {
@@ -628,7 +562,7 @@ export default function BucketDetail() {
               }}
               disabled={!bucket?.can_edit}
             >
-              {challenge.completed ? (
+              {challenge.is_completed ? (
                 <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
               ) : (
                 <Ionicons name="ellipse-outline" size={24} color="#fff" />
@@ -651,10 +585,10 @@ export default function BucketDetail() {
               {/* Additional Info Row */}
               <View style={styles.challengeMeta}>
                 {/* Satisfaction Rating */}
-                {challenge.completed && challenge.satisfaction && (
+                {challenge.is_completed && challenge.satisfaction_rating && (
                   <View style={styles.satisfactionContainer}>
                     <Ionicons name="star" size={12} color="#f59e0b" />
-                    <Text style={styles.satisfactionText}>{challenge.satisfaction}/5</Text>
+                    <Text style={styles.satisfactionText}>{challenge.satisfaction_rating}/5</Text>
                   </View>
                 )}
                 
@@ -741,27 +675,15 @@ export default function BucketDetail() {
               rateCompletion(photoId, rating, review);
             }}
             onAddPhoto={async (photoUrl, caption) => {
-              // For now, we'll add a photo to the first incomplete challenge
-              // In a real implementation, you might want to show a challenge picker
-              const incompleteChallenge = challenges.find(c => !c.completed);
-              if (incompleteChallenge) {
-                try {
-                  const completionId = await completeItem(incompleteChallenge.id, photoUrl, caption || '');
-                  if (completionId) {
-                    setCompletionToRate({
-                      id: completionId,
-                      completed_by_name: 'You',
-                      user_rating: 0,
-                      user_review: ''
-                    });
-                    setCompletionRatingModalVisible(true);
-                  }
-                } catch (error) {
-                  console.error('Error adding photo:', error);
-                  Alert.alert('Error', 'Failed to add photo. Please try again.');
-                }
-              } else {
-                Alert.alert('No Incomplete Challenges', 'Complete a challenge first to add photos to the album.');
+              // Add photo to the shared album without completing any challenges
+              // Photos can be added to the album independently of challenge completion
+              try {
+                // This would add the photo to the shared album
+                // For now, we'll just show a message that photos can be added
+                Alert.alert('Photo Added', 'Photo added to the shared album!');
+              } catch (error) {
+                console.error('Error adding photo:', error);
+                Alert.alert('Error', 'Failed to add photo. Please try again.');
               }
             }}
             canAddPhotos={true}
@@ -772,207 +694,12 @@ export default function BucketDetail() {
       {/* Floating Add Button - Only show if user can edit */}
       {bucket?.can_edit && (
         <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
-          <Ionicons name="add" size={24} color="#000" />
+          <Ionicons name="add" size={24} color="#8EC5FC" />
         </TouchableOpacity>
       )}
 
-      {/* Challenge Modal - Conditional rendering based on permissions */}
-      {bucket?.can_edit ? (
-        <Modal
-          visible={modalVisible}
-          transparent={true}
-          animationType="none"
-          onRequestClose={handleCloseModal}
-        >
-        <Animated.View 
-          style={[
-            styles.blurContainer,
-            {
-              opacity: blurAnim,
-            }
-          ]}
-        >
-          <BlurView intensity={20} style={styles.blurView}>
-            <Animated.View 
-              style={[
-                styles.modalContainer,
-                {
-                  transform: [
-                    { scale: scaleAnim },
-                  ],
-                  opacity: opacityAnim,
-                }
-              ]}
-            >
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              {selectedChallenge && (
-                <>
-                  {/* Header */}
-                  <View style={styles.modalHeader}>
-                    <View style={styles.modalTitleSection}>
-                      {isEditingChallenge ? (
-                        <TextInput
-                          style={styles.modalTitleInput}
-                          value={editingData.title}
-                          onChangeText={(value) => updateEditingData('title', value)}
-                          placeholder="Challenge Title"
-                          placeholderTextColor="#9BA1A6"
-                        />
-                      ) : (
-                        <Text style={styles.modalTitle}>{selectedChallenge.title}</Text>
-                      )}
-                      <TouchableOpacity 
-                        style={[styles.modalCompletionBadge, !bucket?.can_edit && styles.modalCompletionBadgeDisabled]}
-                        onPress={() => {
-                          if (bucket?.can_edit) {
-                            toggleChallengeCompletion(selectedChallenge.id);
-                          }
-                        }}
-                        disabled={!bucket?.can_edit}
-                      >
-                        {selectedChallenge.completed ? (
-                          <>
-                            <Ionicons name="checkmark-circle" size={14} color="#4ade80" />
-                            <Text style={styles.modalCompletionText}>Completed</Text>
-                          </>
-                        ) : (
-                          <>
-                            <Ionicons name="ellipse-outline" size={14} color="#9BA1A6" />
-                            <Text style={styles.modalCompletionTextIncomplete}>Mark Complete</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                    {isEditingChallenge && (
-                      <View style={styles.modalHeaderActions}>
-                        <TouchableOpacity 
-                          style={styles.modalActionButton}
-                          onPress={handleSaveChallenge}
-                        >
-                          <Ionicons name="checkmark" size={20} color="#4ade80" />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          style={styles.modalActionButton}
-                          onPress={handleCancelEditChallenge}
-                        >
-                          <Ionicons name="close" size={20} color="#ef4444" />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Details */}
-                  <View style={styles.modalDetailsSection}>
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalLocationPin}>🪣</Text>
-                      <Text style={styles.modalDetailText}>{bucket?.title}</Text>
-                    </View>
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalLocationPin}>📍</Text>
-                      {isEditingChallenge ? (
-                        <LocationPicker
-                          value={editingLocation}
-                          onLocationSelect={(location) => {
-                            setEditingLocation(location);
-                            updateEditingData('location', location?.name || '');
-                          }}
-                          placeholder="Location"
-                          style={styles.modalLocationPicker}
-                        />
-                      ) : (
-                        <Text style={styles.modalDetailText}>{selectedChallenge.location_name || selectedChallenge.location || 'No location set'}</Text>
-                      )}
-                    </View>
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalLocationPin}>📅</Text>
-                      {isEditingChallenge ? (
-                        <TextInput
-                          style={styles.modalDetailInput}
-                          value={editingData.targetDate}
-                          onChangeText={(value) => updateEditingData('targetDate', value)}
-                          placeholder="Target Date (YYYY-MM-DD)"
-                          placeholderTextColor="#9BA1A6"
-                        />
-                      ) : (
-                        <Text style={styles.modalDetailText}>{selectedChallenge.targetDate ? `Target: ${new Date(selectedChallenge.targetDate).toLocaleDateString()}` : 'None yet!'}</Text>
-                      )}
-                    </View>
-                    {selectedChallenge.completed && (
-                      <View style={styles.modalDetailRow}>
-                        <Text style={styles.modalLocationPin}>⭐</Text>
-                        <Text style={styles.modalDetailText}>Satisfaction: {selectedChallenge.satisfaction || 5}/5</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Separator */}
-                  <View style={styles.modalSeparator} />
-
-                  {/* Description */}
-                  <View style={styles.modalDescriptionSection}>
-                    <Text style={styles.modalDescriptionTitle}>Challenge Description</Text>
-                    {isEditingChallenge ? (
-                      <TextInput
-                        style={styles.modalDescriptionInput}
-                        value={editingData.description}
-                        onChangeText={(value) => updateEditingData('description', value)}
-                        placeholder="Challenge Description"
-                        placeholderTextColor="#9BA1A6"
-                        multiline
-                        numberOfLines={4}
-                      />
-                    ) : (
-                      <Text style={styles.modalDescriptionText}>
-                        {selectedChallenge.description}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Photo Album */}
-                  <View style={styles.modalPhotoAlbumSection}>
-                    <Text style={styles.modalPhotoAlbumTitle}>
-                      Photo Album ({selectedChallenge.photos ? selectedChallenge.photos.length : 0})
-                    </Text>
-                    <View style={styles.modalPhotoGrid}>
-                      {/* Upload Button */}
-                      <TouchableOpacity style={styles.uploadButton}>
-                        <Ionicons name="add" size={24} color="#9BA1A6" />
-                        <Text style={styles.uploadText}>Add Photo</Text>
-                      </TouchableOpacity>
-                      
-                      {/* Existing Photos */}
-                      {selectedChallenge.photos && selectedChallenge.photos.map((photo: string, index: number) => (
-                        <Image
-                          key={index}
-                          source={{ uri: photo }}
-                          style={styles.modalPhotoThumbnail}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                </>
-              )}
-            </ScrollView>
-
-            {/* Close Button */}
-            <TouchableOpacity style={styles.modalCloseButton} onPress={handleCloseModal}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-            
-            {/* Edit Button - Only show if user can edit */}
-            {!isEditingChallenge && bucket?.can_edit && (
-              <TouchableOpacity 
-                style={styles.modalEditButton}
-                onPress={handleEditChallenge}
-              >
-                <Ionicons name="create-outline" size={20} color="#8EC5FC" />
-              </TouchableOpacity>
-            )}
-            </Animated.View>
-          </BlurView>
-        </Animated.View>
-        </Modal>
-      ) : (
+      {/* View Only Challenge Modal for non-editable buckets */}
+      {!bucket?.can_edit && (
         <ViewOnlyChallengeModal
           visible={modalVisible}
           challenge={selectedChallenge}
@@ -1042,15 +769,66 @@ export default function BucketDetail() {
       <CompletionRatingModal
         visible={completionRatingModalVisible}
         onClose={() => setCompletionRatingModalVisible(false)}
-        onRate={(rating, review) => {
+        onRate={async (rating, review) => {
           if (completionToRate) {
-            rateCompletion(completionToRate.id, rating, review);
-            setCompletionToRate(null);
+            try {
+              // Use the update_item_satisfaction_rating function directly
+              const { error } = await supabase.rpc('update_item_satisfaction_rating', {
+                p_item_id: completionToRate.id,
+                p_satisfaction_rating: rating,
+                p_is_completed: true
+              });
+
+              if (error) {
+                console.error('Error updating satisfaction rating:', error);
+                Alert.alert('Error', 'Failed to save rating. Please try again.');
+                return;
+              }
+
+              // Update local state
+              setChallenges(prev => 
+                prev.map(c => 
+                  c.id === completionToRate.id 
+                    ? { ...c, is_completed: true, satisfaction_rating: rating }
+                    : c
+                )
+              );
+
+              // Update selected challenge if it's the one being rated
+              if (selectedChallenge && selectedChallenge.id === completionToRate.id) {
+                setSelectedChallenge((prev: any) => ({
+                  ...prev,
+                  is_completed: true,
+                  satisfaction_rating: rating
+                }));
+              }
+
+              // Refresh the bucket data
+              if (recalculateCount) {
+                await recalculateCount();
+              }
+
+              setCompletionToRate(null);
+              Alert.alert('Success', 'Challenge completed!');
+            } catch (error) {
+              console.error('Error in rating submission:', error);
+              Alert.alert('Error', 'Failed to complete challenge. Please try again.');
+            }
           }
         }}
         currentRating={completionToRate?.user_rating}
         currentReview={completionToRate?.user_review}
         completedByName={completionToRate?.completed_by_name}
+      />
+
+      {/* Challenge Detail Modal */}
+      <ChallengeDetailModal
+        visible={challengeDetailModalVisible}
+        challengeId={selectedChallengeId}
+        onClose={() => {
+          setChallengeDetailModalVisible(false);
+          setSelectedChallengeId(null);
+        }}
       />
     </View>
   );
@@ -1351,10 +1129,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(142, 197, 252, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

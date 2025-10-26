@@ -23,7 +23,7 @@ export default function ViewOnlyChallengeCard({ challenge, onPress }: ViewOnlyCh
     >
       {/* Completion Status - View Only */}
       <View style={styles.challengeIcon}>
-        {challenge.completed ? (
+        {challenge.is_completed ? (
           <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
         ) : (
           <Ionicons name="ellipse-outline" size={24} color="#6B7280" />
@@ -45,10 +45,10 @@ export default function ViewOnlyChallengeCard({ challenge, onPress }: ViewOnlyCh
             {challenge.location_name || challenge.location || 'No location set'}
           </Text>
         </View>
-        {challenge.completed && challenge.satisfaction && (
+        {challenge.is_completed && challenge.satisfaction_rating && (
           <View style={styles.satisfactionRating}>
             <Text style={styles.satisfactionText}>
-              {challenge.satisfaction} star{challenge.satisfaction !== 1 ? 's' : ''}
+              {challenge.satisfaction_rating} star{challenge.satisfaction_rating !== 1 ? 's' : ''}
             </Text>
           </View>
         )}

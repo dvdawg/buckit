@@ -5,6 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
 import { useSessionMonitor } from '@/hooks/useSessionMonitor';
+import { useBuckets } from '@/hooks/useBuckets';
+import { useItems } from '@/hooks/useItems';
 import PerformancePreview from '@/components/PerformancePreview';
 import { useEffect, useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -186,6 +188,8 @@ export default function Profile() {
   const router = useRouter();
   const { signOut, user, isSessionValid } = useSession();
   const { me, loading, refresh } = useMe();
+  const { buckets, loading: bucketsLoading, refresh: refreshBuckets } = useBuckets();
+  const { items, loading: itemsLoading } = useItems();
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Monitor session validity
@@ -209,10 +213,11 @@ export default function Profile() {
       if (shouldRefresh || timeSinceLastNavigation > 5000) {
         console.log('Profile: Refreshing data after navigation');
         refresh();
+        refreshBuckets();
         setShouldRefresh(false);
         setLastNavigationTime(now);
       }
-    }, [shouldRefresh, refresh, lastNavigationTime])
+    }, [shouldRefresh, refresh, refreshBuckets, lastNavigationTime])
   );
 
   // Debug logging for user data
@@ -286,6 +291,7 @@ export default function Profile() {
                   console.log('Profile: Manual refresh triggered');
                   setIsRefreshing(true);
                   await refresh();
+                  await refreshBuckets();
                   setIsRefreshing(false);
                 }}
                 disabled={isRefreshing}
@@ -330,23 +336,36 @@ export default function Profile() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.bucketsContainer}
         >
-          {dummyUser.buckets.slice(0, 6).map((bucket) => (
-            <TouchableOpacity
-              key={bucket.id}
-              style={styles.bucketCard}
-              onPress={() => handleBucketPress(bucket.id)}
-            >
-              <Image source={{ uri: bucket.cover }} style={styles.bucketImage} />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.7)']}
-                style={styles.bucketGradient}
-              />
-              <View style={styles.bucketInfo}>
-                <Text style={styles.bucketTitle}>{bucket.title}</Text>
-                <Text style={styles.bucketChallenges}>{bucket.challenges} Challenges</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {bucketsLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading buckets...</Text>
+            </View>
+          ) : buckets.length === 0 ? (
+            <View style={styles.emptyContainerHorizontal}>
+              <Text style={styles.emptyText}>No buckets yet</Text>
+              <Text style={styles.emptySubtext}>Create your first bucket to get started!</Text>
+            </View>
+          ) : (
+            buckets.slice(0, 6).map((bucket) => (
+              <TouchableOpacity
+                key={bucket.id}
+                style={styles.bucketCard}
+                onPress={() => handleBucketPress(bucket.id)}
+              >
+                <View style={[styles.bucketImagePlaceholder, { backgroundColor: bucket.color }]}>
+                  <Text style={styles.bucketEmoji}>{bucket.emoji}</Text>
+                </View>
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.bucketGradient}
+                />
+                <View style={styles.bucketInfo}>
+                  <Text style={styles.bucketTitle}>{bucket.title}</Text>
+                  <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       </View>
 
@@ -362,24 +381,54 @@ export default function Profile() {
         
         {/* Challenges Preview Grid */}
         <View style={styles.challengesGrid}>
-          {allChallenges.slice(0, 10).map((challenge) => (
-            <TouchableOpacity key={challenge.id} style={styles.challengePreviewCard}>
-              <View style={styles.challengePreviewHeader}>
-                <View style={styles.challengeBucketInfo}>
-                  <Text style={styles.challengeBucketEmoji}>{challenge.bucket.emoji}</Text>
-                  <Text style={styles.challengeBucketName}>{challenge.bucket.name}</Text>
-                </View>
-                <View style={[styles.urgencyBadge, { backgroundColor: challenge.urgencyColor }]}>
-                  <Text style={styles.urgencyText}>{challenge.urgency}</Text>
-                </View>
-              </View>
-              <Text style={styles.challengePreviewTitle}>{challenge.title}</Text>
-              <View style={styles.challengePreviewFooter}>
-                <Text style={styles.challengeLocation}>📍 {challenge.location}</Text>
-                <Text style={styles.dueDateText}>{challenge.dueDate}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {itemsLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading challenges...</Text>
+            </View>
+          ) : items.length === 0 ? (
+            <View style={styles.emptyContainerHorizontal}>
+              <Text style={styles.emptyText}>No challenges yet</Text>
+              <Text style={styles.emptySubtext}>Create your first challenge to get started!</Text>
+            </View>
+          ) : (
+            items.slice(0, 10).map((item) => {
+              const getUrgencyInfo = (urgency: string) => {
+                switch (urgency) {
+                  case 'overdue':
+                    return { text: 'Overdue', color: '#ef4444' };
+                  case 'due_soon':
+                    return { text: 'Due Soon', color: '#f59e0b' };
+                  default:
+                    return { text: 'Anytime', color: '#6b7280' };
+                }
+              };
+              
+              const urgencyInfo = getUrgencyInfo(item.urgency_level);
+              
+              return (
+                <TouchableOpacity key={item.id} style={styles.challengePreviewCard}>
+                  <View style={styles.challengePreviewHeader}>
+                    <View style={styles.challengeBucketInfo}>
+                      <Text style={styles.challengeBucketEmoji}>{item.bucket?.emoji || '📝'}</Text>
+                      <Text style={styles.challengeBucketName}>{item.bucket?.title || 'Unknown Bucket'}</Text>
+                    </View>
+                    <View style={[styles.urgencyBadge, { backgroundColor: urgencyInfo.color }]}>
+                      <Text style={styles.urgencyText}>{urgencyInfo.text}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.challengePreviewTitle}>{item.title}</Text>
+                  <View style={styles.challengePreviewFooter}>
+                    <Text style={styles.challengeLocation}>
+                      📍 {item.location_name || 'No location'}
+                    </Text>
+                    <Text style={styles.dueDateText}>
+                      {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'No deadline'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
       </View>
 
@@ -509,6 +558,15 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  bucketImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bucketEmoji: {
+    fontSize: 48,
+  },
   bucketGradient: {
     position: 'absolute',
     bottom: 0,
@@ -619,5 +677,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#9BA1A6',
+    fontSize: 14,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  emptyContainerHorizontal: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: width - 40, // Full width minus horizontal padding
+    height: 200, // Same height as bucket cards
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    color: '#9BA1A6',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

@@ -2,74 +2,16 @@ import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Dummy data with participant counts
-const buckets = [
-  {
-    id: "1",
-    title: "Jits",
-    cover: "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-    challenges: 13,
-    participants: 5,
-  },
-  {
-    id: "2",
-    title: "Cafes",
-    cover: "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
-    challenges: 9,
-    participants: 1,
-  },
-  {
-    id: "3",
-    title: "Family",
-    cover: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-    challenges: 3,
-    participants: 8,
-  },
-  {
-    id: "4",
-    title: "Travel",
-    cover: "https://images.unsplash.com/photo-1488646953014-85cb44e25828",
-    challenges: 12,
-    participants: 3,
-  },
-  {
-    id: "5",
-    title: "Fitness",
-    cover: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
-    challenges: 8,
-    participants: 12,
-  },
-  {
-    id: "6",
-    title: "Food",
-    cover: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b",
-    challenges: 15,
-    participants: 7,
-  },
-  {
-    id: "7",
-    title: "Art",
-    cover: "https://images.unsplash.com/photo-1541961017774-22349e4a1262",
-    challenges: 5,
-    participants: 4,
-  },
-  {
-    id: "8",
-    title: "Music",
-    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f",
-    challenges: 7,
-    participants: 9,
-  },
-];
+import { useBuckets } from '@/hooks/useBuckets';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2; // 2 columns with padding
 
 export default function Buckets() {
   const router = useRouter();
+  const { buckets, loading } = useBuckets();
 
-  console.log('Buckets page rendering');
+  console.log('Buckets page rendering with real data:', buckets);
 
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);
@@ -96,31 +38,38 @@ export default function Buckets() {
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
       >
-        {buckets.map((bucket) => (
-          <TouchableOpacity
-            key={bucket.id}
-            style={styles.bucketCard}
-            onPress={() => handleBucketPress(bucket.id)}
-          >
-            <Image source={{ uri: bucket.cover }} style={styles.bucketImage} />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.7)']}
-              style={styles.bucketGradient}
-            />
-            
-            {/* Participant Icon and Count */}
-            <View style={styles.participantInfo}>
-              <Ionicons name="people" size={16} color="#fff" />
-              <Text style={styles.participantCount}>{bucket.participants}</Text>
-            </View>
-            
-            {/* Bucket Info */}
-            <View style={styles.bucketInfo}>
-              <Text style={styles.bucketTitle}>{bucket.title}</Text>
-              <Text style={styles.bucketChallenges}>{bucket.challenges} Challenges</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading buckets...</Text>
+          </View>
+        ) : buckets.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No buckets yet</Text>
+            <Text style={styles.emptySubtext}>Create your first bucket to get started!</Text>
+          </View>
+        ) : (
+          buckets.map((bucket) => (
+            <TouchableOpacity
+              key={bucket.id}
+              style={styles.bucketCard}
+              onPress={() => handleBucketPress(bucket.id)}
+            >
+              <View style={[styles.bucketImage, { backgroundColor: bucket.color }]}>
+                <Text style={styles.bucketEmoji}>{bucket.emoji}</Text>
+              </View>
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.bucketGradient}
+              />
+              
+              {/* Bucket Info */}
+              <View style={styles.bucketInfo}>
+                <Text style={styles.bucketTitle}>{bucket.title}</Text>
+                <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -174,6 +123,11 @@ const styles = StyleSheet.create({
   bucketImage: {
     width: '100%',
     height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bucketEmoji: {
+    fontSize: 48,
   },
   bucketGradient: {
     position: 'absolute',
@@ -214,5 +168,32 @@ const styles = StyleSheet.create({
   bucketChallenges: {
     fontSize: 14,
     color: '#9BA1A6',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });

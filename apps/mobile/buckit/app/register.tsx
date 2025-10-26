@@ -12,10 +12,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import BucketLogo from '@/components/BucketLogo';
 
@@ -31,15 +33,17 @@ export default function RegisterScreen() {
     confirmPassword: '',
     firstName: '',
     lastName: '',
+    handle: '',
     city: '',
     birthday: '',
-    profilePicture: null,
+    profilePicture: null as string | null,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [countryCode, setCountryCode] = useState('+1');
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const countryCodes = [
     { code: '+1', country: 'US/CA' },
@@ -119,6 +123,87 @@ export default function RegisterScreen() {
     setShowDatePicker(false);
   };
 
+  const pickImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera roll permissions to upload a profile picture.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setFormData(prev => ({ ...prev, profilePicture: result.assets[0].uri }));
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const uploadImage = async (imageUri: string) => {
+    setIsUploadingImage(true);
+    try {
+      // Create a unique filename
+      const fileExt = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `temp-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Map file extensions to proper MIME types
+      const mimeTypeMap: { [key: string]: string } = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp'
+      };
+      
+      const contentType = mimeTypeMap[fileExt] || 'image/jpeg';
+
+      // Convert image to bytes
+      const response = await fetch(imageUri);
+      const arrayBuffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, bytes, {
+          contentType: contentType,
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        console.error('Upload error details:', {
+          message: error.message,
+          name: error.name
+        });
+        throw new Error(`Failed to upload image: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -153,13 +238,63 @@ export default function RegisterScreen() {
     return actualAge >= 13 && actualAge <= 120;
   };
 
-  const validateForm = () => {
+  const validateHandle = (handle: string) => {
+    if (!handle.trim()) return false;
+    
+    // Handle must be 3-20 characters, alphanumeric and underscores only
+    const handleRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    return handleRegex.test(handle);
+  };
+
+  const checkHandleAvailability = async (handle: string) => {
+    try {
+      const { data, error } = await supabase.rpc('check_handle_availability', {
+        p_handle: handle
+      });
+      
+      if (error) {
+        console.error('Error checking handle availability:', error);
+        return false; // Assume not available if there's an error
+      }
+      
+      return data; // Returns true if available, false if taken
+    } catch (error) {
+      console.error('Error checking handle availability:', error);
+      return false; // Assume not available if there's an error
+    }
+  };
+
+  const checkEmailAvailability = async (email: string) => {
+    try {
+      const { data, error } = await supabase.rpc('check_email_availability', {
+        p_email: email
+      });
+      
+      if (error) {
+        console.error('Error checking email availability:', error);
+        return false; // Assume not available if there's an error
+      }
+      
+      return data; // Returns true if available, false if taken
+    } catch (error) {
+      console.error('Error checking email availability:', error);
+      return false; // Assume not available if there's an error
+    }
+  };
+
+  const validateForm = async () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    } else {
+      // Check if email is available
+      const isEmailAvailable = await checkEmailAvailability(formData.email);
+      if (!isEmailAvailable) {
+        newErrors.email = 'This email is already registered';
+      }
     }
 
     if (formData.phone && !validatePhone(formData.phone)) {
@@ -186,6 +321,18 @@ export default function RegisterScreen() {
       newErrors.lastName = 'Last name is required';
     }
 
+    if (!formData.handle.trim()) {
+      newErrors.handle = 'Handle is required';
+    } else if (!validateHandle(formData.handle)) {
+      newErrors.handle = 'Handle must be 3-20 characters, letters, numbers, and underscores only';
+    } else {
+      // Check if handle is available
+      const isAvailable = await checkHandleAvailability(formData.handle);
+      if (!isAvailable) {
+        newErrors.handle = 'This handle is already taken';
+      }
+    }
+
     // City is now optional - no validation needed
 
     if (!formData.birthday) {
@@ -198,9 +345,10 @@ export default function RegisterScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 2) {
-      if (validateForm()) {
+      const isValid = await validateForm();
+      if (isValid) {
         setCurrentStep(currentStep + 1);
       }
     } else {
@@ -231,7 +379,8 @@ export default function RegisterScreen() {
             phone: formData.phone,
             city: formData.city,
             birthday: formData.birthday,
-          }
+          },
+          emailRedirectTo: undefined, // Disable email verification
         }
       });
 
@@ -243,40 +392,45 @@ export default function RegisterScreen() {
         throw new Error('Failed to create user account');
       }
 
-      // Step 2: Create user profile in our database
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          auth_id: authData.user.id,
-          full_name: `${formData.firstName} ${formData.lastName}`,
-          handle: formData.email.split('@')[0], // Use email prefix as handle
-          avatar_url: formData.profilePicture,
-        });
+      // Step 2: Upload profile picture if provided
+      let avatarUrl = null;
+      if (formData.profilePicture) {
+        try {
+          avatarUrl = await uploadImage(formData.profilePicture);
+          console.log('Profile picture uploaded successfully:', avatarUrl);
+        } catch (error) {
+          console.error('Profile picture upload failed:', error);
+          console.log('Continuing registration without profile picture...');
+          // Continue with registration even if image upload fails
+          // The user will just not have a profile picture initially
+          avatarUrl = null;
+        }
+      }
+
+      // Step 3: Create user profile in our database using a secure function
+      const { data: profileData, error: profileError } = await supabase.rpc('create_user_profile', {
+        p_auth_id: authData.user.id,
+        p_full_name: `${formData.firstName} ${formData.lastName}`,
+        p_handle: formData.handle, // Use custom handle
+        p_avatar_url: avatarUrl,
+      });
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
+        console.error('Profile creation error details:', {
+          message: profileError.message,
+          code: profileError.code,
+          details: profileError.details,
+          hint: profileError.hint
+        });
         // If profile creation fails, we should clean up the auth user
         // But for now, we'll just show an error
-        throw new Error('Failed to create user profile');
+        throw new Error(`Failed to create user profile: ${profileError.message}`);
       }
 
-      // Step 3: Check if email confirmation is required
-      if (authData.user.email_confirmed_at) {
-        // User is immediately confirmed, navigate to app
-        router.replace('/(tabs)/home');
-      } else {
-        // Show confirmation message
-        Alert.alert(
-          'Check your email',
-          'We sent you a confirmation link. Please check your email and click the link to activate your account.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/login')
-            }
-          ]
-        );
-      }
+      // Step 4: Navigate directly to app (email verification disabled)
+      console.log('Registration successful, navigating to app...');
+      router.replace('/(tabs)/home');
 
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -303,7 +457,7 @@ export default function RegisterScreen() {
     switch (currentStep) {
       case 1:
         return formData.email && formData.password && formData.confirmPassword && 
-               formData.firstName && formData.lastName && formData.birthday;
+               formData.firstName && formData.lastName && formData.handle && formData.birthday;
       case 2:
         return true; // Profile picture is optional
       default:
@@ -459,6 +613,21 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Handle *</Text>
+          <TextInput
+            style={[styles.textInput, errors.handle && styles.textInputError]}
+            placeholder="Choose a unique handle"
+            placeholderTextColor="#9BA1A6"
+            value={formData.handle}
+            onChangeText={(value) => updateFormData('handle', value)}
+            autoCapitalize="none"
+            autoCorrect={false}
+            onFocus={closeDatePicker}
+          />
+          {errors.handle && <Text style={styles.errorText}>{errors.handle}</Text>}
+        </View>
+
+        <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>City (Optional)</Text>
           <TextInput
             style={[styles.textInput, errors.city && styles.textInputError]}
@@ -505,11 +674,35 @@ export default function RegisterScreen() {
       <Text style={styles.stepSubtitle}>Add a photo to personalize your profile</Text>
       
       <View style={styles.formContainer}>
-        <TouchableOpacity style={styles.profilePictureContainer}>
-          <Text style={styles.profilePictureText}>📷</Text>
-          <Text style={styles.profilePictureLabel}>Add Profile Picture</Text>
-          <Text style={styles.profilePictureSubtext}>Optional</Text>
+        <TouchableOpacity 
+          style={styles.profilePictureContainer}
+          onPress={pickImage}
+          disabled={isUploadingImage}
+        >
+          {formData.profilePicture ? (
+            <Image 
+              source={{ uri: formData.profilePicture }} 
+              style={styles.profilePicturePreview}
+            />
+          ) : (
+            <>
+              <Text style={styles.profilePictureText}>📷</Text>
+              <Text style={styles.profilePictureLabel}>
+                {isUploadingImage ? 'Uploading...' : 'Add Profile Picture'}
+              </Text>
+              <Text style={styles.profilePictureSubtext}>Optional</Text>
+            </>
+          )}
         </TouchableOpacity>
+        
+        {formData.profilePicture && (
+          <TouchableOpacity 
+            style={styles.removeImageButton}
+            onPress={() => setFormData(prev => ({ ...prev, profilePicture: null }))}
+          >
+            <Text style={styles.removeImageText}>Remove Image</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -739,6 +932,25 @@ const styles = StyleSheet.create({
   profilePictureSubtext: {
     fontSize: 14,
     color: '#9BA1A6',
+  },
+  profilePicturePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 12,
+  },
+  removeImageButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  removeImageText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500',
   },
   navigationContainer: {
     paddingVertical: 20,

@@ -289,24 +289,23 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams();
   const [isFriend, setIsFriend] = useState(false);
   
-  const user = userProfiles[id as string];
-  
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#8EC5FC" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile Not Found</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>This profile doesn't exist</Text>
-        </View>
+  // For now, show a "coming soon" message instead of dummy data
+  // TODO: Implement real user profile fetching from database
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#8EC5FC" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>User Profile</Text>
+        <View style={styles.headerSpacer} />
       </View>
-    );
-  }
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>User profiles coming soon!</Text>
+        <Text style={styles.errorSubtext}>This feature is under development.</Text>
+      </View>
+    </View>
+  );
 
   const handleAddFriend = () => {
     setIsFriend(true);
@@ -466,6 +465,12 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     color: '#9BA1A6',
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
   },
   headerContainer: {
     height: 300,

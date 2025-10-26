@@ -8,10 +8,14 @@ import {
   ScrollView,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { supabase } from '@/lib/supabase';
 
 export default function CreateBucketScreen() {
   const router = useRouter();
@@ -20,16 +24,41 @@ export default function CreateBucketScreen() {
     description: '',
     category: '',
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.title) {
       Alert.alert('Error', 'Please enter a bucket title');
       return;
     }
     
-    // TODO: Save bucket to database
-    Alert.alert('Success', 'Bucket created successfully!');
-    router.back();
+    setLoading(true);
+    try {
+      // Use the existing RPC function instead of direct table insert
+      // This bypasses RLS policies by using a SECURITY DEFINER function
+      console.log('Creating bucket using RPC function...');
+      
+      const { data, error } = await supabase.rpc('create_bucket_secure', {
+        p_title: formData.title,
+        p_description: formData.description || null,
+        p_visibility: 'private'
+      });
+
+      if (error) {
+        console.error('Error creating bucket:', error);
+        Alert.alert('Error', `Failed to create bucket: ${error.message}`);
+        return;
+      }
+
+      console.log('Bucket created successfully with ID:', data);
+      Alert.alert('Success', 'Bucket created successfully!');
+      router.back();
+    } catch (error) {
+      console.error('Error creating bucket:', error);
+      Alert.alert('Error', 'Failed to create bucket. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateFormData = (key: string, value: string) => {
@@ -37,7 +66,11 @@ export default function CreateBucketScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -47,7 +80,12 @@ export default function CreateBucketScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Bucket Card Preview */}
         <View style={styles.bucketCard}>
           <LinearGradient
@@ -81,6 +119,7 @@ export default function CreateBucketScreen() {
               placeholderTextColor="#9BA1A6"
               value={formData.title}
               onChangeText={(value) => updateFormData('title', value)}
+              maxLength={50}
             />
           </View>
 
@@ -94,6 +133,7 @@ export default function CreateBucketScreen() {
               onChangeText={(value) => updateFormData('description', value)}
               multiline
               numberOfLines={4}
+              maxLength={300}
             />
           </View>
 
@@ -105,23 +145,32 @@ export default function CreateBucketScreen() {
               placeholderTextColor="#9BA1A6"
               value={formData.category}
               onChangeText={(value) => updateFormData('category', value)}
+              maxLength={30}
             />
           </View>
         </View>
 
         {/* Save Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <TouchableOpacity 
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
+          onPress={handleSave}
+          disabled={loading}
+        >
           <LinearGradient
-            colors={['#8EC5FC', '#E0C3FC']}
+            colors={loading ? ['#666', '#666'] : ['#8EC5FC', '#E0C3FC']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.saveButtonGradient}
           >
-            <Text style={styles.saveButtonText}>Create Bucket</Text>
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={styles.saveButtonText}>Create Bucket</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -152,6 +201,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   bucketCard: {
     marginBottom: 20,
@@ -252,5 +305,8 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
 });

@@ -21,40 +21,48 @@ export function useBuckets() {
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchBuckets = async () => {
     if (!user) { 
       setBuckets([]); 
       setLoading(false); 
       return; 
     }
     
-    (async () => {
-      try {
-        // Get user ID
-        const { data: uid } = await supabase.rpc('me_user_id');
-        if (!uid) { 
-          setBuckets([]); 
-          setLoading(false); 
-          return; 
-        }
+    try {
+      // Use the secure RPC function that handles all authentication and filtering
+      // This function completely bypasses RLS and ensures only user's own data is returned
+      console.log('Using secure RPC function to fetch user buckets...');
+      
+      const { data, error } = await supabase
+        .rpc('get_user_buckets_secure');
 
-        // Fetch buckets with new fields
-        const { data, error } = await supabase
-          .from('buckets')
-          .select('*')
-          .eq('owner_id', uid)
-          .order('created_at', { ascending: false });
-
-        if (!error && data) {
-          setBuckets(data as Bucket[]);
-        }
-      } catch (error) {
-        console.error('Error fetching buckets:', error);
-      } finally {
-        setLoading(false);
+      console.log('Secure RPC result:', { data, error });
+      
+      if (!error && data) {
+        console.log('Setting buckets from secure RPC:', data);
+        setBuckets(data as Bucket[]);
+      } else if (error) {
+        console.error('Secure RPC failed:', error);
+        // No fallback - security is paramount
+        console.log('RPC function failed, showing empty list to maintain security');
+        setBuckets([]);
       }
-    })();
+    } catch (error) {
+      console.error('Error fetching buckets:', error);
+      setBuckets([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBuckets();
   }, [user]);
 
-  return { buckets, loading };
+  const refresh = () => {
+    setLoading(true);
+    fetchBuckets();
+  };
+
+  return { buckets, loading, refresh };
 }

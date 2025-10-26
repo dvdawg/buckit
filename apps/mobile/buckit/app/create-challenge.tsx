@@ -16,10 +16,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useBuckets } from '@/hooks/useBuckets';
+import LocationPicker from '@/components/LocationPicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Svg, { Path } from 'react-native-svg';
 
-// Custom Bucket Icon Component (Filled - Polygon 3)
 const BucketIcon = ({ size = 20, color = '#8EC5FC' }) => (
   <Svg width={size} height={size * 0.6} viewBox="0 0 159 171" fill="none">
     <Path 
@@ -37,9 +37,15 @@ export default function CreateChallengeScreen() {
     title: '',
     description: '',
     location: '',
+    category: '',
     targetDate: null as Date | null,
     bucketId: bucketId as string || '',
   });
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [showBucketModal, setShowBucketModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -70,7 +76,12 @@ export default function CreateChallengeScreen() {
         p_bucket_id: formData.bucketId,
         p_title: formData.title,
         p_description: formData.description,
-        p_location: formData.location
+        p_category: formData.category,
+        p_location_name: selectedLocation?.name || formData.location,
+        p_location_point: selectedLocation ? 
+          `POINT(${selectedLocation.coordinates.longitude} ${selectedLocation.coordinates.latitude})` : 
+          null,
+        p_target_date: formData.targetDate ? formData.targetDate.toISOString() : null
       });
 
       // If we have a target date, update the item with the deadline
@@ -132,7 +143,7 @@ export default function CreateChallengeScreen() {
   };
 
   const clearTargetDate = () => {
-    updateFormData('targetDate', null);
+    setFormData(prev => ({ ...prev, targetDate: null }));
     setShowDatePicker(false);
   };
 
@@ -198,14 +209,27 @@ export default function CreateChallengeScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Location</Text>
+            <Text style={styles.inputLabel}>Category</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="e.g., Mount Tamalpais, CA"
+              placeholder="e.g., Adventure, Fitness, Learning"
               placeholderTextColor="#9BA1A6"
-              value={formData.location}
-              onChangeText={(value) => updateFormData('location', value)}
-              maxLength={50}
+              value={formData.category}
+              onChangeText={(value) => updateFormData('category', value)}
+              maxLength={25}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Location</Text>
+            <LocationPicker
+              value={selectedLocation}
+              onLocationSelect={(location) => {
+                setSelectedLocation(location);
+                updateFormData('location', location?.name || '');
+              }}
+              placeholder="Search for a location..."
+              style={styles.locationPicker}
             />
           </View>
 
@@ -542,5 +566,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  locationPicker: {
+    flex: 1,
   },
 });

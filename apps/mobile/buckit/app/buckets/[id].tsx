@@ -6,6 +6,7 @@ import { BlurView } from 'expo-blur';
 import { useState, useRef, useEffect } from 'react';
 import { useBucket } from '@/hooks/useBucket';
 import { supabase } from '@/lib/supabase';
+import LocationPicker from '@/components/LocationPicker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,6 +34,11 @@ export default function BucketDetail() {
     location: '',
     targetDate: '',
   });
+  const [editingLocation, setEditingLocation] = useState<{
+    name: string;
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  } | null>(null);
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -212,43 +218,85 @@ export default function BucketDetail() {
         location: selectedChallenge.location,
         targetDate: selectedChallenge.targetDate,
       });
+      // Initialize location data if available
+      if (selectedChallenge.location_name) {
+        setEditingLocation({
+          name: selectedChallenge.location_name,
+          coordinates: selectedChallenge.location_point ? {
+            latitude: selectedChallenge.location_point.latitude || 0,
+            longitude: selectedChallenge.location_point.longitude || 0,
+          } : { latitude: 0, longitude: 0 },
+          address: selectedChallenge.location_name,
+        });
+      } else {
+        setEditingLocation(null);
+      }
     }
   };
 
-  const handleSaveChallenge = () => {
+  const handleSaveChallenge = async () => {
     if (!selectedChallenge) return;
 
-    setChallenges(prevChallenges => 
-      prevChallenges.map(challenge => 
-        challenge.id === selectedChallenge.id 
-          ? { 
-              ...challenge, 
-              title: editingData.title,
-              description: editingData.description,
-              location: editingData.location,
-              targetDate: editingData.targetDate,
-            }
-          : challenge
-      )
-    );
-    
-    // Update selected challenge
-    setSelectedChallenge((prev: any) => ({
-      ...prev,
-      title: editingData.title,
-      description: editingData.description,
-      location: editingData.location,
-      targetDate: editingData.targetDate,
-    }));
+    try {
+      // Update the challenge in the database
+      const { error } = await supabase.rpc('update_item_secure', {
+        p_item_id: selectedChallenge.id,
+        p_title: editingData.title,
+        p_description: editingData.description,
+        p_location_name: editingLocation?.name || editingData.location,
+        p_location_point: editingLocation ? 
+          `POINT(${editingLocation.coordinates.longitude} ${editingLocation.coordinates.latitude})` : 
+          null
+      });
 
-    setIsEditingChallenge(false);
-    setEditingData({ title: '', description: '', location: '', targetDate: '' });
-    Alert.alert('Challenge Updated', 'Your challenge has been updated successfully!');
+      if (error) {
+        console.error('Error updating challenge:', error);
+        Alert.alert('Error', 'Failed to update challenge. Please try again.');
+        return;
+      }
+
+      // Update local state
+      setChallenges(prevChallenges => 
+        prevChallenges.map(challenge => 
+          challenge.id === selectedChallenge.id 
+            ? { 
+                ...challenge, 
+                title: editingData.title,
+                description: editingData.description,
+                location: editingData.location,
+                location_name: editingLocation?.name || editingData.location,
+                location_point: editingLocation?.coordinates,
+                targetDate: editingData.targetDate,
+              }
+            : challenge
+        )
+      );
+      
+      // Update selected challenge
+      setSelectedChallenge((prev: any) => ({
+        ...prev,
+        title: editingData.title,
+        description: editingData.description,
+        location: editingData.location,
+        location_name: editingLocation?.name || editingData.location,
+        location_point: editingLocation?.coordinates,
+        targetDate: editingData.targetDate,
+      }));
+
+      setIsEditingChallenge(false);
+      setEditingData({ title: '', description: '', location: '', targetDate: '' });
+      setEditingLocation(null);
+      Alert.alert('Challenge Updated', 'Your challenge has been updated successfully!');
+    } catch (error) {
+      console.error('Error updating challenge:', error);
+      Alert.alert('Error', 'Failed to update challenge. Please try again.');
+    }
   };
 
   const handleCancelEditChallenge = () => {
     setIsEditingChallenge(false);
     setEditingData({ title: '', description: '', location: '', targetDate: '' });
+    setEditingLocation(null);
   };
 
   const updateEditingData = (field: string, value: string) => {
@@ -639,15 +687,17 @@ export default function BucketDetail() {
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalLocationPin}>📍</Text>
                       {isEditingChallenge ? (
-                        <TextInput
-                          style={styles.modalDetailInput}
-                          value={editingData.location}
-                          onChangeText={(value) => updateEditingData('location', value)}
+                        <LocationPicker
+                          value={editingLocation}
+                          onLocationSelect={(location) => {
+                            setEditingLocation(location);
+                            updateEditingData('location', location?.name || '');
+                          }}
                           placeholder="Location"
-                          placeholderTextColor="#9BA1A6"
+                          style={styles.modalLocationPicker}
                         />
                       ) : (
-                        <Text style={styles.modalDetailText}>{selectedChallenge.location}</Text>
+                        <Text style={styles.modalDetailText}>{selectedChallenge.location_name || selectedChallenge.location}</Text>
                       )}
                     </View>
                     <View style={styles.modalDetailRow}>
@@ -1438,5 +1488,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalLocationPicker: {
+    flex: 1,
   },
 });

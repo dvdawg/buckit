@@ -48,8 +48,12 @@ export function useFriendsFeed() {
         // First load - replace completions
         setCompletions(data || []);
       } else {
-        // Load more - append to existing completions
-        setCompletions(prev => [...prev, ...(data || [])]);
+        // Load more - append to existing completions, avoiding duplicates
+        setCompletions(prev => {
+          const existingIds = new Set(prev.map(c => c.completion_id));
+          const newCompletions = (data || []).filter(c => !existingIds.has(c.completion_id));
+          return [...prev, ...newCompletions];
+        });
       }
 
       // Check if there are more items to load

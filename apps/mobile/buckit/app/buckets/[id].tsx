@@ -1,104 +1,27 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated, TextInput, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useState, useRef, useEffect } from 'react';
-
-// Dummy data for Jits bucket
-const jitsBucket = {
-  id: "1",
-  title: "Jits",
-  cover: "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-  headerImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-  description: "Adventure bucket for exploring the great outdoors and challenging yourself with new experiences.",
-  createdDate: "09/25/2025",
-  challenges: [
-    {
-      id: "1",
-      title: "Mt. Tam Hike",
-      description: "Hike to the summit of Mount Tamalpais for breathtaking views of the Bay Area. A challenging 7-mile round trip with elevation gain.",
-      location: "Mt Tamalpais",
-      targetDate: "2025-01-15",
-      completed: true,
-      satisfaction: 5,
-      photos: [
-        "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
-      ],
-    },
-    {
-      id: "2", 
-      title: "Golden Gate Bridge Walk",
-      description: "Walk across the iconic Golden Gate Bridge from San Francisco to Marin County. Experience the engineering marvel and stunning views.",
-      location: "San Francisco",
-      targetDate: "2025-01-20",
-      completed: true,
-      satisfaction: 4,
-      photos: [
-        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
-      ],
-    },
-    {
-      id: "3",
-      title: "Muir Woods Trail", 
-      description: "Explore the ancient redwood forest in Muir Woods National Monument. Walk among towering trees that are over 1,000 years old.",
-      location: "Mill Valley",
-      targetDate: "2025-02-10",
-      completed: false,
-      satisfaction: null,
-      photos: [],
-    },
-    {
-      id: "4",
-      title: "Lands End Coastal Walk",
-      description: "Scenic coastal trail along the rugged cliffs of Lands End. Perfect for photography with views of the Golden Gate Bridge and Pacific Ocean.",
-      location: "San Francisco", 
-      targetDate: "2025-01-25",
-      completed: true,
-      satisfaction: 3,
-      photos: [
-        "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-      ],
-    },
-    {
-      id: "5",
-      title: "Angel Island Hike",
-      description: "Take a ferry to Angel Island and hike to the top for panoramic views of San Francisco, Marin, and the East Bay. Rich in history and nature.",
-      location: "Tiburon",
-      targetDate: "2025-02-28",
-      completed: false,
-      satisfaction: null,
-      photos: [],
-    },
-    {
-      id: "6",
-      title: "Point Reyes Lighthouse",
-      description: "Visit the historic Point Reyes Lighthouse, one of the windiest and foggiest places on the Pacific Coast. A unique maritime experience.",
-      location: "Point Reyes",
-      targetDate: "2025-03-15",
-      completed: false,
-      satisfaction: null,
-      photos: [],
-    },
-  ],
-};
+import { useBucket } from '@/hooks/useBucket';
+import { supabase } from '@/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
 export default function BucketDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { bucket, items, loading, error, recalculateCount } = useBucket(id as string);
+  
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
-  const [challenges, setChallenges] = useState<any[]>(jitsBucket?.challenges || []);
+  const [challenges, setChallenges] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [bucketData, setBucketData] = useState({
-    title: jitsBucket.title,
-    description: jitsBucket.description,
-    headerImage: jitsBucket.headerImage,
+    title: '',
+    description: '',
+    headerImage: '',
   });
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [challengeToRate, setChallengeToRate] = useState<any>(null);
@@ -116,8 +39,29 @@ export default function BucketDetail() {
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
 
-  // For now, only handle Jits bucket (id: "1")
-  const bucket = id === "1" ? jitsBucket : null;
+  // Update bucket data when bucket loads
+  useEffect(() => {
+    if (bucket) {
+      setBucketData({
+        title: bucket.title,
+        description: bucket.description || '',
+        headerImage: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+      });
+      
+      // Transform items to challenges format for compatibility
+      const transformedChallenges = items.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || '',
+        location: item.location_name || '',
+        targetDate: item.deadline || '',
+        completed: item.is_completed,
+        satisfaction: item.satisfaction_rating,
+        photos: [], // TODO: Add photo support later
+      }));
+      setChallenges(transformedChallenges);
+    }
+  }, [bucket, items]);
 
   // Challenge data for modal
   const challenge = {
@@ -144,6 +88,15 @@ export default function BucketDetail() {
   const handleAddItem = () => {
     // TODO: Open modal to add new item/challenge
     console.log('Add new item to bucket');
+  };
+
+  const handleRecalculateCount = async () => {
+    try {
+      await recalculateCount();
+      Alert.alert('Success', 'Challenge count has been recalculated!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to recalculate challenge count');
+    }
   };
 
   const handleEditToggle = () => {
@@ -174,40 +127,75 @@ export default function BucketDetail() {
     setBucketData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleRatingSubmit = () => {
+  const handleRatingSubmit = async () => {
     if (tempRating === 0) {
       Alert.alert('Rating Required', 'Please select a rating before submitting.');
       return;
     }
 
-    // Update the challenge with completion and rating
-    setChallenges(prevChallenges => 
-      prevChallenges.map(challenge => 
-        challenge.id === challengeToRate.id 
-          ? { 
-              ...challenge, 
-              completed: true,
-              satisfaction: tempRating
-            }
-          : challenge
-      )
-    );
-    
-    // Update selected challenge if it's the one being rated
-    if (selectedChallenge && selectedChallenge.id === challengeToRate.id) {
-      setSelectedChallenge((prev: any) => ({
-        ...prev,
-        completed: true,
-        satisfaction: tempRating
-      }));
+    if (!challengeToRate) {
+      Alert.alert('Error', 'No challenge selected for rating.');
+      return;
     }
 
-    // Close modal and reset
-    setRatingModalVisible(false);
-    setChallengeToRate(null);
-    setTempRating(0);
-    
-    Alert.alert('Challenge Completed!', `You rated "${challengeToRate.title}" ${tempRating} star${tempRating !== 1 ? 's' : ''}!`);
+    try {
+      // Get user ID
+      const { data: uid } = await supabase.rpc('me_user_id');
+      if (!uid) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+
+      // Use the secure RPC function to update satisfaction rating
+      const { error } = await supabase.rpc('update_item_satisfaction_rating', {
+        p_item_id: challengeToRate.id,
+        p_satisfaction_rating: tempRating,
+        p_is_completed: true
+      });
+
+      if (error) {
+        console.error('Error updating item rating:', error);
+        Alert.alert('Error', 'Failed to save rating. Please try again.');
+        return;
+      }
+
+      // Update local state
+      setChallenges(prevChallenges => 
+        prevChallenges.map(challenge => 
+          challenge.id === challengeToRate.id 
+            ? { 
+                ...challenge, 
+                completed: true,
+                satisfaction: tempRating
+              }
+            : challenge
+        )
+      );
+      
+      // Update selected challenge if it's the one being rated
+      if (selectedChallenge && selectedChallenge.id === challengeToRate.id) {
+        setSelectedChallenge((prev: any) => ({
+          ...prev,
+          completed: true,
+          satisfaction: tempRating
+        }));
+      }
+
+      // Close modal and reset
+      setRatingModalVisible(false);
+      setChallengeToRate(null);
+      setTempRating(0);
+      
+      Alert.alert('Challenge Completed!', `You rated "${challengeToRate.title}" ${tempRating} star${tempRating !== 1 ? 's' : ''}!`);
+      
+      // Refresh the bucket data to get updated counts
+      if (recalculateCount) {
+        await recalculateCount();
+      }
+    } catch (error) {
+      console.error('Error in handleRatingSubmit:', error);
+      Alert.alert('Error', 'Failed to save rating. Please try again.');
+    }
   };
 
   const handleRatingCancel = () => {
@@ -268,7 +256,7 @@ export default function BucketDetail() {
     setEditingData(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleChallengeCompletion = (challengeId: string) => {
+  const toggleChallengeCompletion = async (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
     
     if (challenge && !challenge.completed) {
@@ -277,26 +265,55 @@ export default function BucketDetail() {
       setTempRating(0);
       setRatingModalVisible(true);
     } else {
-      // If uncompleting, just toggle without rating
-      setChallenges(prevChallenges => 
-        prevChallenges.map(challenge => 
-          challenge.id === challengeId 
-            ? { 
-                ...challenge, 
-                completed: !challenge.completed,
-                satisfaction: null
-              }
-            : challenge
-        )
-      );
-      
-      // Update selected challenge if it's the one being toggled
-      if (selectedChallenge && selectedChallenge.id === challengeId) {
-        setSelectedChallenge((prev: any) => ({
-          ...prev,
-          completed: !prev.completed,
-          satisfaction: null
-        }));
+      // If uncompleting, update database and local state
+      try {
+        // Get user ID
+        const { data: uid } = await supabase.rpc('me_user_id');
+        if (!uid) {
+          Alert.alert('Error', 'User not authenticated');
+          return;
+        }
+
+        // Use the secure RPC function to uncomplete the item
+        const { error } = await supabase.rpc('uncomplete_item', {
+          p_item_id: challengeId
+        });
+
+        if (error) {
+          console.error('Error updating item completion:', error);
+          Alert.alert('Error', 'Failed to update challenge. Please try again.');
+          return;
+        }
+
+        // Update local state
+        setChallenges(prevChallenges => 
+          prevChallenges.map(challenge => 
+            challenge.id === challengeId 
+              ? { 
+                  ...challenge, 
+                  completed: false,
+                  satisfaction: null
+                }
+              : challenge
+          )
+        );
+        
+        // Update selected challenge if it's the one being toggled
+        if (selectedChallenge && selectedChallenge.id === challengeId) {
+          setSelectedChallenge((prev: any) => ({
+            ...prev,
+            completed: false,
+            satisfaction: null
+          }));
+        }
+
+        // Refresh the bucket data to get updated counts
+        if (recalculateCount) {
+          await recalculateCount();
+        }
+      } catch (error) {
+        console.error('Error in toggleChallengeCompletion:', error);
+        Alert.alert('Error', 'Failed to update challenge. Please try again.');
       }
     }
   };
@@ -352,10 +369,27 @@ export default function BucketDetail() {
     });
   };
 
-  if (!bucket) {
+  if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Bucket not found</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8EC5FC" />
+          <Text style={styles.loadingText}>Loading bucket...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error || !bucket) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+          <Text style={styles.errorText}>{error || 'Bucket not found'}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+            <Text style={styles.retryButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -376,6 +410,12 @@ export default function BucketDetail() {
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerRightButtons}>
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={handleRecalculateCount}
+            >
+              <Ionicons name="refresh" size={24} color="#fff" />
+            </TouchableOpacity>
             <TouchableOpacity 
               style={styles.editButton}
               onPress={handleEditToggle}
@@ -439,7 +479,7 @@ export default function BucketDetail() {
               <Text style={styles.bucketTitle}>{bucketData.title}</Text>
               <Text style={styles.bucketDescription}>{bucketData.description}</Text>
               <View style={styles.bucketMeta}>
-                <Text style={styles.createdDate}>Created {bucket.createdDate}</Text>
+                <Text style={styles.createdDate}>Created {new Date(bucket.created_at).toLocaleDateString()}</Text>
               </View>
             </>
           )}
@@ -801,6 +841,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   editButton: {
     width: 40,
     height: 40,
@@ -1150,11 +1196,40 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
   errorText: {
     color: '#fff',
     fontSize: 18,
     textAlign: 'center',
-    marginTop: 100,
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#8EC5FC',
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
   },
   // Modal styles
   blurContainer: {

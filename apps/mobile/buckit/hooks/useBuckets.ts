@@ -29,8 +29,22 @@ export function useBuckets() {
     }
     
     try {
-      // Use the secure RPC function that handles all authentication and filtering
-      // This function completely bypasses RLS and ensures only user's own data is returned
+      // Test basic Supabase connection first
+      console.log('Testing Supabase connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('id')
+        .limit(1);
+      
+      console.log('Connection test result:', { testData, testError });
+      
+      if (testError) {
+        console.error('Supabase connection failed:', testError);
+        setBuckets([]);
+        return;
+      }
+      
+      // First, try the secure RPC function
       console.log('Using secure RPC function to fetch user buckets...');
       
       const { data, error } = await supabase
@@ -41,10 +55,36 @@ export function useBuckets() {
       if (!error && data) {
         console.log('Setting buckets from secure RPC:', data);
         setBuckets(data as Bucket[]);
-      } else if (error) {
-        console.error('Secure RPC failed:', error);
-        // No fallback - security is paramount
-        console.log('RPC function failed, showing empty list to maintain security');
+        return;
+      } 
+      
+      // If RPC fails, try fallback method with direct table access
+      console.log('RPC failed, trying fallback method...');
+      
+      // Get user's database ID first
+      const { data: uid } = await supabase.rpc('me_user_id');
+      console.log('User ID from me_user_id:', uid);
+      
+      if (!uid) {
+        console.log('No user ID found, showing empty list');
+        setBuckets([]);
+        return;
+      }
+      
+      // Try direct table access with RLS
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('buckets')
+        .select('*')
+        .eq('owner_id', uid)
+        .order('created_at', { ascending: false });
+        
+      console.log('Fallback query result:', { data: fallbackData, error: fallbackError });
+      
+      if (!fallbackError && fallbackData) {
+        console.log('Setting buckets from fallback query:', fallbackData);
+        setBuckets(fallbackData as Bucket[]);
+      } else {
+        console.error('Both RPC and fallback failed:', { rpcError: error, fallbackError });
         setBuckets([]);
       }
     } catch (error) {
@@ -64,5 +104,24 @@ export function useBuckets() {
     fetchBuckets();
   };
 
-  return { buckets, loading, refresh };
+  const recalculateCounts = async () => {
+    if (!user) return;
+    
+    try {
+      console.log('Recalculating bucket challenge counts...');
+      const { error } = await supabase.rpc('recalculate_user_bucket_counts');
+      
+      if (error) {
+        console.error('Error recalculating counts:', error);
+      } else {
+        console.log('Successfully recalculated bucket counts');
+        // Refresh the buckets to get updated counts
+        refresh();
+      }
+    } catch (error) {
+      console.error('Error in recalculateCounts:', error);
+    }
+  };
+
+  return { buckets, loading, refresh, recalculateCounts };
 }

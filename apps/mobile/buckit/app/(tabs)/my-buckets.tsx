@@ -1,77 +1,61 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Dummy data with participant counts
-const buckets = [
-  {
-    id: "1",
-    title: "Jits",
-    cover: "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-    challenges: 13,
-    participants: 5,
-  },
-  {
-    id: "2",
-    title: "Cafes",
-    cover: "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
-    challenges: 9,
-    participants: 1,
-  },
-  {
-    id: "3",
-    title: "Family",
-    cover: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-    challenges: 3,
-    participants: 8,
-  },
-  {
-    id: "4",
-    title: "Travel",
-    cover: "https://images.unsplash.com/photo-1488646953014-85cb44e25828",
-    challenges: 12,
-    participants: 3,
-  },
-  {
-    id: "5",
-    title: "Fitness",
-    cover: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
-    challenges: 8,
-    participants: 12,
-  },
-  {
-    id: "6",
-    title: "Food",
-    cover: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b",
-    challenges: 15,
-    participants: 7,
-  },
-  {
-    id: "7",
-    title: "Art",
-    cover: "https://images.unsplash.com/photo-1541961017774-22349e4a1262",
-    challenges: 5,
-    participants: 4,
-  },
-  {
-    id: "8",
-    title: "Music",
-    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f",
-    challenges: 7,
-    participants: 9,
-  },
-];
+import { useBuckets } from '@/hooks/useBuckets';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2; // 2 columns with padding
 
 export default function MyBuckets() {
   const router = useRouter();
+  const { buckets, loading } = useBuckets();
 
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);
   };
+
+  const renderBucketCard = (bucket: any) => {
+    // Use cover_url if available, otherwise use a placeholder
+    const imageSource = bucket.cover_url 
+      ? { uri: bucket.cover_url }
+      : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
+
+    return (
+      <TouchableOpacity
+        key={bucket.id}
+        style={styles.bucketCard}
+        onPress={() => handleBucketPress(bucket.id)}
+      >
+        <Image source={imageSource} style={styles.bucketImage} />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={styles.bucketGradient}
+        />
+        
+        {/* Bucket Info */}
+        <View style={styles.bucketInfo}>
+          <Text style={styles.bucketTitle}>{bucket.title}</Text>
+          <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="folder-outline" size={64} color="#666" />
+      <Text style={styles.emptyStateTitle}>No Buckets Yet</Text>
+      <Text style={styles.emptyStateSubtitle}>Create your first bucket to get started!</Text>
+    </View>
+  );
+
+  const renderLoadingState = () => (
+    <View style={styles.loadingState}>
+      <ActivityIndicator size="large" color="#8EC5FC" />
+      <Text style={styles.loadingText}>Loading your buckets...</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -83,38 +67,20 @@ export default function MyBuckets() {
         </TouchableOpacity>
       </View>
 
-      {/* Buckets Grid */}
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.gridContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {buckets.map((bucket) => (
-          <TouchableOpacity
-            key={bucket.id}
-            style={styles.bucketCard}
-            onPress={() => handleBucketPress(bucket.id)}
-          >
-            <Image source={{ uri: bucket.cover }} style={styles.bucketImage} />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.7)']}
-              style={styles.bucketGradient}
-            />
-            
-            {/* Participant Icon and Count */}
-            <View style={styles.participantInfo}>
-              <Ionicons name="people" size={16} color="#fff" />
-              <Text style={styles.participantCount}>{bucket.participants}</Text>
-            </View>
-            
-            {/* Bucket Info */}
-            <View style={styles.bucketInfo}>
-              <Text style={styles.bucketTitle}>{bucket.title}</Text>
-              <Text style={styles.bucketChallenges}>{bucket.challenges} Challenges</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Content */}
+      {loading ? (
+        renderLoadingState()
+      ) : buckets.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.gridContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {buckets.map(renderBucketCard)}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -206,5 +172,35 @@ const styles = StyleSheet.create({
   bucketChallenges: {
     fontSize: 14,
     color: '#9BA1A6',
+  },
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    marginTop: 16,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

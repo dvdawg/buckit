@@ -9,7 +9,7 @@ import { useBuckets } from '@/hooks/useBuckets';
 import { useItems } from '@/hooks/useItems';
 import { useFriends } from '@/hooks/useFriends';
 import PerformancePreview from '@/components/PerformancePreview';
-import ChallengeModal from '@/components/ChallengeModal';
+import ChallengeDetailModal from '@/components/ChallengeDetailModal';
 import { useEffect, useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -194,9 +194,9 @@ export default function Profile() {
   const { buckets, loading: bucketsLoading, refresh: refreshBuckets } = useBuckets();
   const { items, loading: itemsLoading } = useItems();
   const { getFriendCount } = useFriends();
+  const [friendCount, setFriendCount] = useState<number>(0);
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
-  const [friendCount, setFriendCount] = useState<number>(0);
 
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
@@ -292,6 +292,7 @@ export default function Profile() {
     setChallengeModalVisible(false);
     setSelectedChallengeId(null);
   };
+
 
   return (
     <View style={styles.container}>
@@ -488,13 +489,12 @@ export default function Profile() {
         </View>
       </View>
 
-      
-        {/* Challenge Modal */}
-        <ChallengeModal
-          visible={challengeModalVisible}
-          challengeId={selectedChallengeId}
-          onClose={handleCloseChallengeModal}
-        />
+      {/* Challenge Detail Modal */}
+      <ChallengeDetailModal
+        visible={challengeModalVisible}
+        challengeId={selectedChallengeId}
+        onClose={handleCloseChallengeModal}
+      />
       </ScrollView>
     </View>
   );

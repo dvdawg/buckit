@@ -722,7 +722,7 @@ export default function BucketDetail() {
       {/* Floating Add Button - Only show if user can edit */}
       {bucket?.can_edit && (
         <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
-          <Ionicons name="add" size={24} color="#000" />
+          <Ionicons name="add" size={24} color="#8EC5FC" />
         </TouchableOpacity>
       )}
 
@@ -1301,10 +1301,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(142, 197, 252, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

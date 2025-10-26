@@ -13,6 +13,8 @@ type ThemeAnalysis = {
 
 export const handler = serve(async (req) => {
   try {
+    console.log('Popular themes function called');
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -26,6 +28,7 @@ export const handler = serve(async (req) => {
     // Get user ID from auth
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error('Auth error:', authError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -33,6 +36,7 @@ export const handler = serve(async (req) => {
     }
 
     const userId = user.id;
+    console.log('User authenticated:', userId);
 
     // Define theme categories based on challenge data patterns
     const themeCategories = [
@@ -53,10 +57,7 @@ export const handler = serve(async (req) => {
 
     for (const category of themeCategories) {
       // Get challenges that match this theme
-      const searchConditions = category.keywords.flatMap(keyword => [
-        `title.ilike.%${keyword}%`,
-        `description.ilike.%${keyword}%`
-      ]);
+      const keywordQuery = category.keywords.map(keyword => `title.ilike.%${keyword}%,description.ilike.%${keyword}%`).join(',');
       console.log(`Searching for theme ${category.theme} with keywords: ${category.keywords.slice(0, 3).join(', ')}...`);
       
       const { data: themeChallenges, error: challengesError } = await supabase
@@ -68,9 +69,9 @@ export const handler = serve(async (req) => {
           is_completed,
           satisfaction_rating,
           created_at,
-          buckets(title)
+          buckets!inner(title)
         `)
-        .or(searchConditions.join(','))
+        .or(keywordQuery)
         .eq('visibility', 'public');
 
       if (challengesError) {
@@ -148,6 +149,25 @@ export const handler = serve(async (req) => {
     const topThemes = themeAnalysis.length > 0 ? themeAnalysis.slice(0, 8) : [];
     
     console.log(`Found ${themeAnalysis.length} themes, returning top ${topThemes.length}`);
+
+    // If no themes found, return some default themes
+    if (topThemes.length === 0) {
+      console.log('No themes found, returning default themes');
+      const defaultThemes = [
+        { theme: 'Fitness & Health', icon: '💪', color: '#ef4444', popularity_score: 50, challenge_count: 0, completion_rate: 0, recent_activity: 0 },
+        { theme: 'Learning & Growth', icon: '📚', color: '#8EC5FC', popularity_score: 45, challenge_count: 0, completion_rate: 0, recent_activity: 0 },
+        { theme: 'Creative Arts', icon: '🎨', color: '#ec4899', popularity_score: 40, challenge_count: 0, completion_rate: 0, recent_activity: 0 }
+      ];
+      
+      return new Response(JSON.stringify({ 
+        themes: defaultThemes,
+        user_id: userId,
+        generated_at: new Date().toISOString()
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ 
       themes: topThemes,

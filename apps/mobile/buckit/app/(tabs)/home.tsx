@@ -124,9 +124,9 @@ export default function Home() {
               </Text>
             </View>
           ) : (
-            completions.map((completion) => (
+            completions.map((completion, index) => (
               <FriendsCompletionCard
-                key={completion.completion_id}
+                key={`${completion.completion_id}-${completion.item_id}-${completion.completed_by_user_id}-${index}`}
                 completion={completion}
                 onPress={() => {
                   // Navigate to challenge detail

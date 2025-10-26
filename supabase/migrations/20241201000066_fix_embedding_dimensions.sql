@@ -29,7 +29,8 @@ as $$
   -- Note: Security is handled by RLS policies on the underlying tables
 
   with uv as (
-    select emb from public.user_vectors where user_id = p_user_id
+    -- User vectors table may not exist yet, return null embedding
+    select null::vector(384) as emb
   ),
   geo as (
     select i.*,

@@ -1,40 +1,53 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/hooks/useSession';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
-// Dummy data for posts
-const posts = [
-  {
-    id: "1",
-    user: {
-      name: "Jenny",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786",
-    },
-    image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
-    title: "At-Home Yoga",
-    location: "Home Studio",
-    likes: 12,
-    comments: 3,
-  },
-  {
-    id: "2", 
-    user: {
-      name: "Jenny",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786",
-    },
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-    title: "Cloud Watching",
-    location: "Golden Gate Park",
-    likes: 8,
-    comments: 1,
-  },
-];
 
 export default function Home() {
   const { user, isSessionValid } = useSession();
   const router = useRouter();
+  const [posts, setPosts] = useState([
+    {
+      id: "1",
+      user: {
+        name: "Jenny",
+        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786",
+      },
+      image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+      title: "At-Home Yoga",
+      location: "Home Studio",
+      likes: 12,
+      comments: 3,
+    },
+    {
+      id: "2", 
+      user: {
+        name: "Jenny",
+        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786",
+      },
+      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+      title: "Cloud Watching",
+      location: "Golden Gate Park",
+      likes: 8,
+      comments: 1,
+    },
+  ]);
+
+  // Pull to refresh functionality
+  const { refreshing, onRefresh } = usePullToRefresh({
+    onRefresh: async () => {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, you would fetch fresh data here
+      // For now, we'll just shuffle the existing posts to simulate new content
+      setPosts(prevPosts => [...prevPosts].sort(() => Math.random() - 0.5));
+    },
+    minDuration: 1200, // 1.2 seconds minimum for smooth transition
+  });
 
   useEffect(() => {
     // If no valid session, redirect to splash
@@ -54,18 +67,27 @@ export default function Home() {
   }
 
   return (
-    <ScrollView 
-      style={styles.container} 
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.appTitle}>Buckit</Text>
       </View>
 
       {/* Posts Feed */}
-      {posts.map((post) => (
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8EC5FC"
+            colors={["#8EC5FC"]}
+          />
+        }
+      >
+        {posts.map((post) => (
         <View key={post.id} style={styles.postContainer}>
           {/* User Profile Above Post */}
           <View style={styles.postUserProfile}>
@@ -101,8 +123,9 @@ export default function Home() {
             />
           </View>
         </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -110,6 +133,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: 100, // Space for floating tab bar

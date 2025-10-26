@@ -1,15 +1,25 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useBuckets } from '@/hooks/useBuckets';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2; // 2 columns with padding
 
 export default function MyBuckets() {
   const router = useRouter();
-  const { buckets, loading } = useBuckets();
+  const { buckets, loading, refresh } = useBuckets();
+
+  // Pull to refresh functionality
+  const { refreshing, onRefresh } = usePullToRefresh({
+    onRefresh: async () => {
+      // Refresh buckets data
+      refresh();
+    },
+    minDuration: 1000, // 1 second minimum for smooth transition
+  });
 
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);
@@ -72,19 +82,29 @@ export default function MyBuckets() {
       </View>
 
       {/* Content */}
-      {loading ? (
-        renderLoadingState()
-      ) : buckets.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.gridContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {buckets.map(renderBucketCard)}
-        </ScrollView>
-      )}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8EC5FC"
+            colors={["#8EC5FC"]}
+          />
+        }
+      >
+        {loading ? (
+          renderLoadingState()
+        ) : buckets.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <View style={styles.gridContainer}>
+            {buckets.map(renderBucketCard)}
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -93,6 +113,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100, // Space for tab bar
   },
   header: {
     flexDirection: 'row',
@@ -115,15 +142,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(142, 197, 252, 0.2)',
     borderRadius: 20,
   },
-  scrollView: {
-    flex: 1,
-  },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 100, // Space for tab bar
+    minHeight: 400, // Ensure minimum height for proper scrolling
   },
   bucketCard: {
     width: cardWidth,
@@ -182,6 +206,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    minHeight: 400,
   },
   loadingText: {
     fontSize: 16,
@@ -193,6 +218,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    minHeight: 400,
   },
   emptyStateTitle: {
     fontSize: 24,

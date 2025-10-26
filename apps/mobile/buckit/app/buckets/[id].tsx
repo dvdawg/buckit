@@ -17,7 +17,9 @@ const jitsBucket = {
     {
       id: "1",
       title: "Mt. Tam Hike",
+      description: "Hike to the summit of Mount Tamalpais for breathtaking views of the Bay Area. A challenging 7-mile round trip with elevation gain.",
       location: "Mt Tamalpais",
+      targetDate: "2025-01-15",
       completed: true,
       satisfaction: 5,
       photos: [
@@ -29,7 +31,9 @@ const jitsBucket = {
     {
       id: "2", 
       title: "Golden Gate Bridge Walk",
+      description: "Walk across the iconic Golden Gate Bridge from San Francisco to Marin County. Experience the engineering marvel and stunning views.",
       location: "San Francisco",
+      targetDate: "2025-01-20",
       completed: true,
       satisfaction: 4,
       photos: [
@@ -40,7 +44,9 @@ const jitsBucket = {
     {
       id: "3",
       title: "Muir Woods Trail", 
+      description: "Explore the ancient redwood forest in Muir Woods National Monument. Walk among towering trees that are over 1,000 years old.",
       location: "Mill Valley",
+      targetDate: "2025-02-10",
       completed: false,
       satisfaction: null,
       photos: [],
@@ -48,7 +54,9 @@ const jitsBucket = {
     {
       id: "4",
       title: "Lands End Coastal Walk",
+      description: "Scenic coastal trail along the rugged cliffs of Lands End. Perfect for photography with views of the Golden Gate Bridge and Pacific Ocean.",
       location: "San Francisco", 
+      targetDate: "2025-01-25",
       completed: true,
       satisfaction: 3,
       photos: [
@@ -58,7 +66,9 @@ const jitsBucket = {
     {
       id: "5",
       title: "Angel Island Hike",
+      description: "Take a ferry to Angel Island and hike to the top for panoramic views of San Francisco, Marin, and the East Bay. Rich in history and nature.",
       location: "Tiburon",
+      targetDate: "2025-02-28",
       completed: false,
       satisfaction: null,
       photos: [],
@@ -66,7 +76,9 @@ const jitsBucket = {
     {
       id: "6",
       title: "Point Reyes Lighthouse",
+      description: "Visit the historic Point Reyes Lighthouse, one of the windiest and foggiest places on the Pacific Coast. A unique maritime experience.",
       location: "Point Reyes",
+      targetDate: "2025-03-15",
       completed: false,
       satisfaction: null,
       photos: [],
@@ -87,6 +99,16 @@ export default function BucketDetail() {
     title: jitsBucket.title,
     description: jitsBucket.description,
     headerImage: jitsBucket.headerImage,
+  });
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [challengeToRate, setChallengeToRate] = useState<any>(null);
+  const [tempRating, setTempRating] = useState(0);
+  const [isEditingChallenge, setIsEditingChallenge] = useState(false);
+  const [editingData, setEditingData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    targetDate: '',
   });
   
   // Animation values
@@ -152,27 +174,130 @@ export default function BucketDetail() {
     setBucketData(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleChallengeCompletion = (challengeId: string) => {
+  const handleRatingSubmit = () => {
+    if (tempRating === 0) {
+      Alert.alert('Rating Required', 'Please select a rating before submitting.');
+      return;
+    }
+
+    // Update the challenge with completion and rating
     setChallenges(prevChallenges => 
       prevChallenges.map(challenge => 
-        challenge.id === challengeId 
+        challenge.id === challengeToRate.id 
           ? { 
               ...challenge, 
-              completed: !challenge.completed,
-              // If completing for the first time, add default satisfaction
-              satisfaction: !challenge.completed && challenge.satisfaction === null ? 5 : challenge.satisfaction
+              completed: true,
+              satisfaction: tempRating
             }
           : challenge
       )
     );
     
-    // Update selected challenge if it's the one being toggled
-    if (selectedChallenge && selectedChallenge.id === challengeId) {
+    // Update selected challenge if it's the one being rated
+    if (selectedChallenge && selectedChallenge.id === challengeToRate.id) {
       setSelectedChallenge((prev: any) => ({
         ...prev,
-        completed: !prev.completed,
-        satisfaction: !prev.completed && prev.satisfaction === null ? 5 : prev.satisfaction
+        completed: true,
+        satisfaction: tempRating
       }));
+    }
+
+    // Close modal and reset
+    setRatingModalVisible(false);
+    setChallengeToRate(null);
+    setTempRating(0);
+    
+    Alert.alert('Challenge Completed!', `You rated "${challengeToRate.title}" ${tempRating} star${tempRating !== 1 ? 's' : ''}!`);
+  };
+
+  const handleRatingCancel = () => {
+    setRatingModalVisible(false);
+    setChallengeToRate(null);
+    setTempRating(0);
+  };
+
+  const handleEditChallenge = () => {
+    if (selectedChallenge) {
+      setIsEditingChallenge(true);
+      setEditingData({
+        title: selectedChallenge.title,
+        description: selectedChallenge.description,
+        location: selectedChallenge.location,
+        targetDate: selectedChallenge.targetDate,
+      });
+    }
+  };
+
+  const handleSaveChallenge = () => {
+    if (!selectedChallenge) return;
+
+    setChallenges(prevChallenges => 
+      prevChallenges.map(challenge => 
+        challenge.id === selectedChallenge.id 
+          ? { 
+              ...challenge, 
+              title: editingData.title,
+              description: editingData.description,
+              location: editingData.location,
+              targetDate: editingData.targetDate,
+            }
+          : challenge
+      )
+    );
+    
+    // Update selected challenge
+    setSelectedChallenge((prev: any) => ({
+      ...prev,
+      title: editingData.title,
+      description: editingData.description,
+      location: editingData.location,
+      targetDate: editingData.targetDate,
+    }));
+
+    setIsEditingChallenge(false);
+    setEditingData({ title: '', description: '', location: '', targetDate: '' });
+    Alert.alert('Challenge Updated', 'Your challenge has been updated successfully!');
+  };
+
+  const handleCancelEditChallenge = () => {
+    setIsEditingChallenge(false);
+    setEditingData({ title: '', description: '', location: '', targetDate: '' });
+  };
+
+  const updateEditingData = (field: string, value: string) => {
+    setEditingData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleChallengeCompletion = (challengeId: string) => {
+    const challenge = challenges.find(c => c.id === challengeId);
+    
+    if (challenge && !challenge.completed) {
+      // If completing for the first time, show rating modal
+      setChallengeToRate(challenge);
+      setTempRating(0);
+      setRatingModalVisible(true);
+    } else {
+      // If uncompleting, just toggle without rating
+      setChallenges(prevChallenges => 
+        prevChallenges.map(challenge => 
+          challenge.id === challengeId 
+            ? { 
+                ...challenge, 
+                completed: !challenge.completed,
+                satisfaction: null
+              }
+            : challenge
+        )
+      );
+      
+      // Update selected challenge if it's the one being toggled
+      if (selectedChallenge && selectedChallenge.id === challengeId) {
+        setSelectedChallenge((prev: any) => ({
+          ...prev,
+          completed: !prev.completed,
+          satisfaction: null
+        }));
+      }
     }
   };
 
@@ -347,9 +472,14 @@ export default function BucketDetail() {
             {/* Challenge Info */}
             <View style={styles.challengeInfo}>
               <Text style={styles.challengeTitle}>{challenge.title}</Text>
+              <Text style={styles.challengeDescription}>{challenge.description}</Text>
               <View style={styles.challengeLocation}>
                 <Text style={styles.locationPin}>📍</Text>
                 <Text style={styles.locationText}>{challenge.location}</Text>
+              </View>
+              <View style={styles.challengeTargetDate}>
+                <Text style={styles.targetDatePin}>📅</Text>
+                <Text style={styles.targetDateText}>Target: {new Date(challenge.targetDate).toLocaleDateString()}</Text>
               </View>
               
               {/* Additional Info Row */}
@@ -415,7 +545,17 @@ export default function BucketDetail() {
                   {/* Header */}
                   <View style={styles.modalHeader}>
                     <View style={styles.modalTitleSection}>
-                      <Text style={styles.modalTitle}>{selectedChallenge.title}</Text>
+                      {isEditingChallenge ? (
+                        <TextInput
+                          style={styles.modalTitleInput}
+                          value={editingData.title}
+                          onChangeText={(value) => updateEditingData('title', value)}
+                          placeholder="Challenge Title"
+                          placeholderTextColor="#9BA1A6"
+                        />
+                      ) : (
+                        <Text style={styles.modalTitle}>{selectedChallenge.title}</Text>
+                      )}
                       <TouchableOpacity 
                         style={styles.modalCompletionBadge}
                         onPress={() => toggleChallengeCompletion(selectedChallenge.id)}
@@ -433,6 +573,22 @@ export default function BucketDetail() {
                         )}
                       </TouchableOpacity>
                     </View>
+                    {isEditingChallenge && (
+                      <View style={styles.modalHeaderActions}>
+                        <TouchableOpacity 
+                          style={styles.modalActionButton}
+                          onPress={handleSaveChallenge}
+                        >
+                          <Ionicons name="checkmark" size={20} color="#4ade80" />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.modalActionButton}
+                          onPress={handleCancelEditChallenge}
+                        >
+                          <Ionicons name="close" size={20} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
 
                   {/* Details */}
@@ -443,34 +599,36 @@ export default function BucketDetail() {
                     </View>
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalLocationPin}>📍</Text>
-                      <Text style={styles.modalDetailText}>{selectedChallenge.location}</Text>
+                      {isEditingChallenge ? (
+                        <TextInput
+                          style={styles.modalDetailInput}
+                          value={editingData.location}
+                          onChangeText={(value) => updateEditingData('location', value)}
+                          placeholder="Location"
+                          placeholderTextColor="#9BA1A6"
+                        />
+                      ) : (
+                        <Text style={styles.modalDetailText}>{selectedChallenge.location}</Text>
+                      )}
+                    </View>
+                    <View style={styles.modalDetailRow}>
+                      <Text style={styles.modalLocationPin}>📅</Text>
+                      {isEditingChallenge ? (
+                        <TextInput
+                          style={styles.modalDetailInput}
+                          value={editingData.targetDate}
+                          onChangeText={(value) => updateEditingData('targetDate', value)}
+                          placeholder="Target Date (YYYY-MM-DD)"
+                          placeholderTextColor="#9BA1A6"
+                        />
+                      ) : (
+                        <Text style={styles.modalDetailText}>Target: {new Date(selectedChallenge.targetDate).toLocaleDateString()}</Text>
+                      )}
                     </View>
                     {selectedChallenge.completed && (
                       <View style={styles.modalDetailRow}>
                         <Text style={styles.modalLocationPin}>⭐</Text>
                         <Text style={styles.modalDetailText}>Satisfaction: {selectedChallenge.satisfaction || 5}/5</Text>
-                        <View style={styles.satisfactionStars}>
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <TouchableOpacity
-                              key={star}
-                              onPress={() => {
-                                const updatedChallenges = challenges.map(c => 
-                                  c.id === selectedChallenge.id 
-                                    ? { ...c, satisfaction: star }
-                                    : c
-                                );
-                                setChallenges(updatedChallenges);
-                                setSelectedChallenge((prev: any) => ({ ...prev, satisfaction: star }));
-                              }}
-                            >
-                              <Ionicons 
-                                name={star <= (selectedChallenge.satisfaction || 5) ? "star" : "star-outline"} 
-                                size={20} 
-                                color="#f59e0b" 
-                              />
-                            </TouchableOpacity>
-                          ))}
-                        </View>
                       </View>
                     )}
                   </View>
@@ -480,12 +638,22 @@ export default function BucketDetail() {
 
                   {/* Description */}
                   <View style={styles.modalDescriptionSection}>
-                    <Text style={styles.modalDescriptionText}>
-                      {selectedChallenge.completed 
-                        ? `Completed this challenge! ${selectedChallenge.satisfaction ? `Rated ${selectedChallenge.satisfaction}/5 stars.` : ''}`
-                        : 'This challenge is waiting to be completed.'
-                      }
-                    </Text>
+                    <Text style={styles.modalDescriptionTitle}>Challenge Description</Text>
+                    {isEditingChallenge ? (
+                      <TextInput
+                        style={styles.modalDescriptionInput}
+                        value={editingData.description}
+                        onChangeText={(value) => updateEditingData('description', value)}
+                        placeholder="Challenge Description"
+                        placeholderTextColor="#9BA1A6"
+                        multiline
+                        numberOfLines={4}
+                      />
+                    ) : (
+                      <Text style={styles.modalDescriptionText}>
+                        {selectedChallenge.description}
+                      </Text>
+                    )}
                   </View>
 
                   {/* Photo Album */}
@@ -518,9 +686,76 @@ export default function BucketDetail() {
             <TouchableOpacity style={styles.modalCloseButton} onPress={handleCloseModal}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
+            
+            {/* Edit Button */}
+            {!isEditingChallenge && (
+              <TouchableOpacity 
+                style={styles.modalEditButton}
+                onPress={handleEditChallenge}
+              >
+                <Ionicons name="create-outline" size={20} color="#8EC5FC" />
+              </TouchableOpacity>
+            )}
             </Animated.View>
           </BlurView>
         </Animated.View>
+      </Modal>
+
+      {/* Rating Modal */}
+      <Modal
+        visible={ratingModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleRatingCancel}
+      >
+        <View style={styles.ratingModalOverlay}>
+          <View style={styles.ratingModalContainer}>
+            <View style={styles.ratingModalHeader}>
+              <Text style={styles.ratingModalTitle}>Rate Your Experience</Text>
+              <Text style={styles.ratingModalSubtitle}>
+                How satisfied were you with "{challengeToRate?.title}"?
+              </Text>
+            </View>
+
+            <View style={styles.starsContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setTempRating(star)}
+                  style={styles.starButton}
+                >
+                  <Ionicons 
+                    name={star <= tempRating ? "star" : "star-outline"} 
+                    size={40} 
+                    color={star <= tempRating ? "#f59e0b" : "#9BA1A6"} 
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.ratingModalActions}>
+              <TouchableOpacity 
+                style={styles.ratingCancelButton} 
+                onPress={handleRatingCancel}
+              >
+                <Text style={styles.ratingCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.ratingSubmitButton} 
+                onPress={handleRatingSubmit}
+              >
+                <LinearGradient
+                  colors={['#8EC5FC', '#E0C3FC']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.ratingSubmitGradient}
+                >
+                  <Text style={styles.ratingSubmitButtonText}>Submit Rating</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -703,6 +938,100 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  // Rating modal styles
+  ratingModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  ratingModalContainer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  ratingModalHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  ratingModalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  ratingModalSubtitle: {
+    fontSize: 16,
+    color: '#B0B0B0',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+    gap: 8,
+  },
+  starButton: {
+    padding: 8,
+  },
+  ratingModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  ratingCancelButton: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+  },
+  ratingCancelButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  ratingSubmitButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#8EC5FC',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  ratingSubmitGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  ratingSubmitButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+  },
   challengesSection: {
     flex: 1,
     backgroundColor: '#000',
@@ -736,6 +1065,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 4,
   },
+  challengeDescription: {
+    fontSize: 13,
+    color: '#B0B0B0',
+    lineHeight: 18,
+    marginBottom: 6,
+  },
   challengeLocation: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -748,6 +1083,20 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 14,
     color: '#9BA1A6',
+  },
+  challengeTargetDate: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  targetDatePin: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  targetDateText: {
+    fontSize: 14,
+    color: '#8EC5FC',
+    fontWeight: '500',
   },
   challengeMeta: {
     flexDirection: 'row',
@@ -831,10 +1180,26 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
   modalTitleSection: {
     flex: 1,
+  },
+  modalHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
     fontSize: 24,
@@ -892,10 +1257,52 @@ const styles = StyleSheet.create({
   modalDescriptionSection: {
     marginBottom: 30,
   },
+  modalDescriptionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 12,
+  },
   modalDescriptionText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#B0B0B0',
     lineHeight: 24,
+  },
+  // Modal editing styles
+  modalTitleInput: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  modalDetailInput: {
+    fontSize: 16,
+    color: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    flex: 1,
+  },
+  modalDescriptionInput: {
+    fontSize: 16,
+    color: '#B0B0B0',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
   modalPhotoAlbumSection: {
     marginBottom: 20,
@@ -941,6 +1348,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalEditButton: {
+    position: 'absolute',
+    top: 16,
+    right: 64,
     width: 40,
     height: 40,
     borderRadius: 20,

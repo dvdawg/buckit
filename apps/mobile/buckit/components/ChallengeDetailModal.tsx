@@ -248,10 +248,10 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
     
     const challengeToToggle = challenge;
     
-    if (challengeToToggle && !challengeToToggle.completed) {
+    if (challengeToToggle && !challengeToToggle.is_completed) {
       // If completing for the first time, show rating modal
       setRatingModalVisible(true);
-    } else if (challengeToToggle && challengeToToggle.completed) {
+    } else if (challengeToToggle && challengeToToggle.is_completed) {
       // If uncompleting, update directly
       try {
         const { error } = await supabase
@@ -266,7 +266,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         }
 
         // Update local state
-        setChallenge({ ...challengeToToggle, completed: false, is_completed: false });
+        setChallenge({ ...challengeToToggle, is_completed: false });
         Alert.alert('Success', 'Challenge marked as incomplete');
       } catch (error) {
         console.error('Error in toggleChallengeCompletion:', error);
@@ -282,7 +282,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         .from('items')
         .update({ 
           is_completed: true,
-          completed: true,
           satisfaction_rating: tempRating 
         })
         .eq('id', challengeId);
@@ -294,7 +293,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
       }
 
       // Update local state
-      setChallenge({ ...challenge, is_completed: true, completed: true, satisfaction_rating: tempRating });
+      setChallenge({ ...challenge, is_completed: true, satisfaction_rating: tempRating });
       setRatingModalVisible(false);
       setTempRating(0);
       Alert.alert('Success', 'Challenge completed!');
@@ -369,7 +368,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                         }}
                         disabled={!bucket?.can_edit}
                       >
-                        {challenge.completed || challenge.is_completed ? (
+                        {challenge.is_completed ? (
                           <>
                             <Ionicons name="checkmark-circle" size={14} color="#4ade80" />
                             <Text style={styles.modalCompletionText}>Completed</Text>
@@ -436,7 +435,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                         <Text style={styles.modalDetailText}>{challenge.target_date ? `Target: ${new Date(challenge.target_date).toLocaleDateString()}` : 'None yet!'}</Text>
                       )}
                     </View>
-                    {(challenge.completed || challenge.is_completed) && (
+                    {challenge.is_completed && (
                       <View style={styles.modalDetailRow}>
                         <Text style={styles.modalLocationPin}>⭐</Text>
                         <Text style={styles.modalDetailText}>Satisfaction: {challenge.satisfaction_rating || 5}/5</Text>

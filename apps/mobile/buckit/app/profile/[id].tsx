@@ -403,22 +403,22 @@ export default function UserProfileScreen() {
               <Text style={styles.challengeTitle}>{challenge.title}</Text>
               <View style={[
                 styles.statusBadge,
-                { backgroundColor: challenge.completed ? '#10B981' : '#6B7280' }
+                { backgroundColor: challenge.is_completed ? '#10B981' : '#6B7280' }
               ]}>
                 <Text style={styles.statusText}>
-                  {challenge.completed ? 'Completed' : 'In Progress'}
+                  {challenge.is_completed ? 'Completed' : 'In Progress'}
                 </Text>
               </View>
             </View>
             <Text style={styles.challengeLocation}>📍 {challenge.location}</Text>
-            {challenge.completed && challenge.satisfaction && (
+            {challenge.is_completed && challenge.satisfaction_rating && (
               <View style={styles.satisfactionRow}>
                 <Text style={styles.satisfactionText}>Satisfaction: </Text>
                 <View style={styles.starsContainer}>
                   {[...Array(5)].map((_, i) => (
                     <Ionicons
                       key={i}
-                      name={i < challenge.satisfaction! ? "star" : "star-outline"}
+                      name={i < challenge.satisfaction_rating! ? "star" : "star-outline"}
                       size={16}
                       color="#F59E0B"
                     />

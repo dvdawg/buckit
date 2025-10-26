@@ -69,9 +69,21 @@ export default function CreateChallengeScreen() {
         p_bucket_id: formData.bucketId,
         p_title: formData.title,
         p_description: formData.description,
-        p_location: formData.location,
-        p_target_date: formData.targetDate ? formData.targetDate.toISOString() : null
+        p_location: formData.location
       });
+
+      // If we have a target date, update the item with the deadline
+      if (data && formData.targetDate) {
+        const { error: updateError } = await supabase
+          .from('items')
+          .update({ deadline: formData.targetDate.toISOString().split('T')[0] })
+          .eq('id', data);
+        
+        if (updateError) {
+          console.error('Error updating deadline:', updateError);
+          // Don't fail the whole operation, just log the error
+        }
+      }
 
       if (error) {
         console.error('Error creating challenge:', error);

@@ -93,35 +93,18 @@ export default function ChallengesIndex() {
                       <Text style={styles.urgencyText}>{urgencyInfo.text}</Text>
                     </View>
                   </View>
-
-                  {/* Challenge Content - Same as Bucket View */}
-                  <View style={styles.challengeContent}>
-                    {/* Completion Status & Icon */}
-                    <View style={styles.challengeIcon}>
-                      {item.is_completed ? (
-                        <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
-                      ) : (
-                        <Ionicons name="ellipse-outline" size={24} color="#fff" />
-                      )}
-                    </View>
-                    
-                    {/* Challenge Info */}
-                    <View style={styles.challengeInfo}>
-                      <Text style={styles.challengeTitle}>{item.title}</Text>
-                      {item.description && (
-                        <Text style={styles.challengeDescription}>{item.description}</Text>
-                      )}
-                      <View style={styles.challengeLocation}>
-                        <Text style={styles.locationPin}>📍</Text>
-                        <Text style={styles.locationText}>{item.location_name || 'No location'}</Text>
-                      </View>
-                      <View style={styles.challengeTargetDate}>
-                        <Text style={styles.targetDatePin}>📅</Text>
-                        <Text style={styles.targetDateText}>
-                          {item.deadline ? `Target: ${new Date(item.deadline).toLocaleDateString()}` : 'None yet!'}
-                        </Text>
-                      </View>
-                    </View>
+                  
+                  <Text style={styles.challengeTitle} numberOfLines={2} ellipsizeMode="tail">
+                    {item.title}
+                  </Text>
+                  
+                  <View style={styles.challengeFooter}>
+                    <Text style={styles.challengeLocation} numberOfLines={1} ellipsizeMode="tail">
+                      📍 {item.location_name || 'No location'}
+                    </Text>
+                    <Text style={styles.dueDateText} numberOfLines={1} ellipsizeMode="tail">
+                      {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               );

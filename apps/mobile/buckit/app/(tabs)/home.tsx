@@ -4,11 +4,16 @@ import { useSession } from '@/hooks/useSession';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useRecommendations } from '@/hooks/use-recommendations';
+import { useLocation } from '@/hooks/useLocation';
+import ColdStartModal from '@/components/ColdStartModal';
 
 
 export default function Home() {
   const { user, isSessionValid } = useSession();
   const router = useRouter();
+  const { location, loading: locationLoading } = useLocation();
+  const [showColdStart, setShowColdStart] = useState(false);
   const [posts, setPosts] = useState([
     {
       id: "1",
@@ -36,9 +41,36 @@ export default function Home() {
     },
   ]);
 
+  // Recommendations
+  const { 
+    items: recommendations, 
+    loading: recommendationsLoading, 
+    error: recommendationsError,
+    refetch: refetchRecommendations,
+    logEvent,
+    logView,
+    logCompletion
+  } = useRecommendations({
+    lat: location?.latitude || 0,
+    lon: location?.longitude || 0,
+    radiusKm: 15,
+    k: 20,
+    enabled: !!location && !!user
+  });
+
+  // Check if user needs cold start
+  useEffect(() => {
+    if (user && !recommendationsLoading && recommendations.length === 0 && !recommendationsError) {
+      setShowColdStart(true);
+    }
+  }, [user, recommendationsLoading, recommendations.length, recommendationsError]);
+
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
+      // Refresh recommendations
+      await refetchRecommendations();
+      
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -68,6 +100,15 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
+      <ColdStartModal
+        visible={showColdStart}
+        onComplete={(preferences) => {
+          setShowColdStart(false);
+          refetchRecommendations();
+        }}
+        onSkip={() => setShowColdStart(false)}
+      />
+      
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.appTitle}>Buckit</Text>
@@ -87,6 +128,38 @@ export default function Home() {
           />
         }
       >
+        {/* Recommendations Section */}
+        {recommendations.length > 0 && (
+          <View style={styles.recommendationsSection}>
+            <Text style={styles.sectionTitle}>Recommended for You</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recommendationsScroll}>
+              {recommendations.slice(0, 10).map((rec, index) => (
+                <TouchableOpacity
+                  key={rec.id}
+                  style={styles.recommendationCard}
+                  onPress={() => {
+                    logView(rec.id);
+                    // Navigate to item detail
+                    router.push(`/buckets/${rec.id}`);
+                  }}
+                >
+                  <View style={styles.recommendationScore}>
+                    <Text style={styles.scoreText}>{Math.round(rec.score * 100)}%</Text>
+                  </View>
+                  <Text style={styles.recommendationTitle} numberOfLines={2}>
+                    Item {rec.id.slice(0, 8)}
+                  </Text>
+                  <View style={styles.reasonTags}>
+                    {rec.reasons.trait > 0.5 && <Text style={styles.reasonTag}>Personal</Text>}
+                    {rec.reasons.social > 0.3 && <Text style={styles.reasonTag}>Social</Text>}
+                    {rec.reasons.appeal > 0.7 && <Text style={styles.reasonTag}>Popular</Text>}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+        
         {posts.map((post) => (
         <View key={post.id} style={styles.postContainer}>
           {/* User Profile Above Post */}
@@ -228,5 +301,64 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: '#fff',
+  },
+  // Recommendations styles
+  recommendationsSection: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
+    marginBottom: 16,
+  },
+  recommendationsScroll: {
+    flexDirection: 'row',
+  },
+  recommendationCard: {
+    width: 140,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  recommendationScore: {
+    backgroundColor: '#2196F3',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  scoreText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Poppins',
+  },
+  recommendationTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Poppins',
+    marginBottom: 8,
+  },
+  reasonTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  reasonTag: {
+    backgroundColor: '#333',
+    color: '#FFFFFF',
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: 'Poppins',
   },
 });

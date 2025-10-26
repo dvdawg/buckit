@@ -1,0 +1,49 @@
+{
+  "jobs": [
+    {
+      "name": "refresh_materialized_views",
+      "schedule": "0 * * * *",
+      "function": "scheduled-jobs",
+      "payload": {
+        "jobType": "refresh_materialized"
+      },
+      "description": "Refresh materialized views every hour"
+    },
+    {
+      "name": "embeddings_backfill",
+      "schedule": "0 2 * * *",
+      "function": "scheduled-jobs",
+      "payload": {
+        "jobType": "embeddings"
+      },
+      "description": "Backfill embeddings nightly at 2 AM"
+    },
+    {
+      "name": "appeal_precompute",
+      "schedule": "0 3 * * *",
+      "function": "scheduled-jobs",
+      "payload": {
+        "jobType": "appeal_precompute"
+      },
+      "description": "Precompute appeal scores nightly at 3 AM"
+    },
+    {
+      "name": "bandit_decay",
+      "schedule": "0 4 * * *",
+      "function": "scheduled-jobs",
+      "payload": {
+        "jobType": "bandit_decay"
+      },
+      "description": "Decay old bandit arms nightly at 4 AM"
+    },
+    {
+      "name": "cleanup_cache",
+      "schedule": "*/30 * * * *",
+      "function": "scheduled-jobs",
+      "payload": {
+        "jobType": "cleanup_cache"
+      },
+      "description": "Clean up expired cache entries every 30 minutes"
+    }
+  ]
+}

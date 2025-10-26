@@ -70,6 +70,7 @@ CREATE POLICY "Users can view relevant feed events" ON feed_events
     );
 
 -- Update get_user_buckets function to respect bucket visibility
+DROP FUNCTION IF EXISTS get_user_buckets(UUID);
 CREATE OR REPLACE FUNCTION get_user_buckets(p_user_id UUID)
 RETURNS TABLE (
     id UUID,

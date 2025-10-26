@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import BucketVisibilitySelector from '@/components/BucketVisibilitySelector';
+import FriendsSelectionModal from '@/components/FriendsSelectionModal';
 
 export default function CreateBucketScreen() {
   const router = useRouter();
@@ -30,19 +31,11 @@ export default function CreateBucketScreen() {
     description: (description as string) || '',
     photo: (coverUrl as string) || null,
     visibility: (visibility as 'public' | 'private') || 'private',
-    invitedFriends: [] as Array<{id: string, name: string, avatar?: string}>,
+    invitedFriends: [] as Array<{id: string, full_name: string, handle: string, avatar_url?: string}>,
   });
   const [loading, setLoading] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
 
-  // Dummy friends data - in real app this would come from your friends list
-  const friends = [
-    { id: '1', name: 'Alex Chen', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
-    { id: '2', name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face' },
-    { id: '3', name: 'Mike Rodriguez', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' },
-    { id: '4', name: 'Emma Wilson', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face' },
-    { id: '5', name: 'David Kim', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face' },
-  ];
 
   const handleSave = async () => {
     if (!formData.title) {
@@ -115,6 +108,29 @@ export default function CreateBucketScreen() {
         }
 
         console.log('Bucket created successfully with ID:', data);
+        
+        // Add collaborators if any were selected
+        if (formData.invitedFriends.length > 0 && data) {
+          console.log('Adding collaborators...');
+          for (const friend of formData.invitedFriends) {
+            try {
+              const { error: collaboratorError } = await supabase.rpc('add_bucket_collaborator', {
+                p_bucket_id: data,
+                p_user_id: friend.id
+              });
+              
+              if (collaboratorError) {
+                console.error('Error adding collaborator:', friend.full_name, collaboratorError);
+                // Don't fail the whole operation, just log the error
+              } else {
+                console.log('Added collaborator:', friend.full_name);
+              }
+            } catch (error) {
+              console.error('Unexpected error adding collaborator:', friend.full_name, error);
+            }
+          }
+        }
+        
         Alert.alert('Success', 'Bucket created successfully!');
         router.back();
       }
@@ -149,21 +165,11 @@ export default function CreateBucketScreen() {
     }
   };
 
-  const toggleFriend = (friend: {id: string, name: string, avatar?: string}) => {
-    setFormData(prev => {
-      const isSelected = prev.invitedFriends.some(f => f.id === friend.id);
-      if (isSelected) {
-        return {
-          ...prev,
-          invitedFriends: prev.invitedFriends.filter(f => f.id !== friend.id)
-        };
-      } else {
-        return {
-          ...prev,
-          invitedFriends: [...prev.invitedFriends, friend]
-        };
-      }
-    });
+  const handleFriendsSelected = (selectedFriends: Array<{id: string, full_name: string, handle: string, avatar_url?: string}>) => {
+    setFormData(prev => ({
+      ...prev,
+      invitedFriends: selectedFriends
+    }));
   };
 
   const removeFriend = (friendId: string) => {
@@ -268,11 +274,19 @@ export default function CreateBucketScreen() {
                 <View style={styles.selectedFriendsList}>
                   {formData.invitedFriends.map((friend) => (
                     <View key={friend.id} style={styles.selectedFriendItem}>
-                      <Image 
-                        source={{ uri: friend.avatar || 'https://via.placeholder.com/30' }} 
-                        style={styles.friendAvatar} 
-                      />
-                      <Text style={styles.friendName}>{friend.name}</Text>
+                      {friend.avatar_url ? (
+                        <Image 
+                          source={{ uri: friend.avatar_url }} 
+                          style={styles.friendAvatar} 
+                        />
+                      ) : (
+                        <View style={styles.friendAvatarPlaceholder}>
+                          <Text style={styles.friendAvatarText}>
+                            {friend.full_name.split(' ').map(n => n[0]).join('')}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.friendName}>{friend.full_name}</Text>
                       <TouchableOpacity 
                         onPress={() => removeFriend(friend.id)}
                         style={styles.removeFriendButton}
@@ -302,57 +316,12 @@ export default function CreateBucketScreen() {
       </ScrollView>
 
       {/* Friends Selection Modal */}
-      <Modal
+      <FriendsSelectionModal
         visible={showFriendsModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowFriendsModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Friends</Text>
-              <TouchableOpacity 
-                onPress={() => setShowFriendsModal(false)}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView style={styles.friendsList}>
-              {friends.map((friend) => {
-                const isSelected = formData.invitedFriends.some(f => f.id === friend.id);
-                return (
-                  <TouchableOpacity
-                    key={friend.id}
-                    style={[styles.friendItem, isSelected && styles.friendItemSelected]}
-                    onPress={() => toggleFriend(friend)}
-                  >
-                    <Image 
-                      source={{ uri: friend.avatar }} 
-                      style={styles.friendItemAvatar} 
-                    />
-                    <Text style={styles.friendItemName}>{friend.name}</Text>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={24} color="#8EC5FC" />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.doneButton}
-                onPress={() => setShowFriendsModal(false)}
-              >
-                <Text style={styles.doneButtonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowFriendsModal(false)}
+        onConfirm={handleFriendsSelected}
+        initialSelectedFriends={formData.invitedFriends}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -520,6 +489,20 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     marginRight: 8,
+  },
+  friendAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 8,
+    backgroundColor: '#8EC5FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendAvatarText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#000',
   },
   friendName: {
     fontSize: 14,

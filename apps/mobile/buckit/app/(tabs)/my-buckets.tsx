@@ -49,7 +49,14 @@ export default function MyBuckets() {
         
         {/* Bucket Info */}
         <View style={styles.bucketInfo}>
-          <Text style={styles.bucketTitle}>{bucket.title}</Text>
+          <View style={styles.bucketTitleRow}>
+            <Text style={styles.bucketTitle}>{bucket.title}</Text>
+            {bucket.is_collaborator && (
+              <View style={styles.collaboratorIcon}>
+                <Ionicons name="people" size={12} color="#8EC5FC" />
+              </View>
+            )}
+          </View>
           <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
         </View>
       </TouchableOpacity>
@@ -196,11 +203,24 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
   },
+  bucketTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   bucketTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 8,
+  },
+  collaboratorIcon: {
+    backgroundColor: 'rgba(142, 197, 252, 0.2)',
+    borderRadius: 8,
+    padding: 4,
+    marginTop: 2,
   },
   bucketChallenges: {
     fontSize: 14,

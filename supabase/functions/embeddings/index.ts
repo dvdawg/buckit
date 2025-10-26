@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const DIM = 384; // keep in sync with vector dimension (your existing schema uses 384)
+const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 384);
 
 interface RequestBody {
   limit?: number;
@@ -90,19 +90,83 @@ export const handler = serve(async (req) => {
 });
 
 async function getTextEmbedding(text: string): Promise<number[]> {
-  // TODO: integrate your embedding provider (must return DIM-length floats).
-  // For now, using a simple hash-based approach for demonstration
-  // In production, replace with OpenAI, Cohere, or other embedding service
+  const claudeApiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
   
+  // Try Claude first if available
+  if (claudeApiKey) {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": claudeApiKey,
+          "Content-Type": "application/json",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 1024,
+          messages: [{
+            role: "user",
+            content: `Create a dense vector embedding for this text. Return only a JSON array of 1536 floating-point numbers between -1 and 1: "${text}"`
+          }]
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Claude API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.content[0].text;
+      
+      // Parse the JSON array from Claude's response
+      const embedding = JSON.parse(content);
+      if (Array.isArray(embedding) && embedding.length === EMBED_DIM) {
+        return embedding;
+      }
+    } catch (error) {
+      console.error("Claude embedding error:", error);
+      // Fall back to OpenAI or hash-based approach
+    }
+  }
+  
+  // Fallback to OpenAI if Claude fails
+  if (openaiApiKey) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openaiApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input: text,
+          model: "text-embedding-3-small", // 1536 dimensions
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data[0].embedding;
+    } catch (error) {
+      console.error("OpenAI embedding error:", error);
+      // Fall back to hash-based approach
+    }
+  }
+  
+  // Final fallback: hash-based approach for demo/testing
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   const hashArray = new Uint8Array(hash);
   
-  // Generate deterministic but varied embeddings based on text content
-  const embedding = new Array(DIM).fill(0);
-  for (let i = 0; i < DIM; i++) {
+  const embedding = new Array(EMBED_DIM).fill(0);
+  for (let i = 0; i < EMBED_DIM; i++) {
     const hashIndex = i % hashArray.length;
     const seed = hashArray[hashIndex] + i * 0.01;
-    embedding[i] = Math.sin(seed) * 0.1; // Small values for cosine similarity
+    embedding[i] = Math.sin(seed) * 0.1;
   }
   
   return embedding;

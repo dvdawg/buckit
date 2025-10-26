@@ -75,11 +75,8 @@ export default function CreateChallengeScreen() {
         p_bucket_id: formData.bucketId,
         p_title: formData.title,
         p_description: formData.description,
-        p_location_name: selectedLocation?.name || formData.location,
-        p_location_point: selectedLocation ? 
-          `POINT(${selectedLocation.coordinates.longitude} ${selectedLocation.coordinates.latitude})` : 
-          null,
-        p_target_date: formData.targetDate ? formData.targetDate.toISOString() : null
+        p_category: null,
+        p_location: selectedLocation?.name || formData.location
       });
 
       // If we have a target date, update the item with the deadline

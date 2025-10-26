@@ -17,6 +17,9 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can upload their own avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Users can update their own avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete their own avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete avatars" ON storage.objects;
 
 -- Create more permissive policies for avatars
 -- Allow authenticated users to upload to avatars bucket

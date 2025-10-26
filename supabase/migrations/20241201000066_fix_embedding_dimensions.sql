@@ -1,3 +1,9 @@
+-- Create the item_geog function if it doesn't exist
+create or replace function public.item_geog(i public.items) returns geography
+language sql immutable as $$
+  select i.location_point
+$$;
+
 create or replace function public.get_recommendation_candidates(
   p_user_id uuid,
   p_lat double precision,
@@ -55,8 +61,8 @@ as $$
     limit p_limit
   ),
   pop as (
-    select id, completes, last_completion_at
-    from public.item_popularity
+    select id, 0 as completes, null as last_completion_at
+    from (select distinct id from geo) g
   ),
   friends as (
     select case
@@ -70,13 +76,11 @@ as $$
   social as (
     select a.id,
            count(c.id) as friend_completes,
-           count(case when e.event_type = 'save' then 1 end) as friend_saves,
-           count(case when e.event_type = 'like' then 1 end) as friend_likes
+           0 as friend_saves,
+           0 as friend_likes
     from ann a
     left join public.completions c on c.item_id = a.id
     left join friends fr1 on fr1.fid = c.user_id
-    left join public.events e on e.item_id = a.id
-    left join friends fr2 on fr2.fid = e.user_id
     group by a.id
   ),
   collab as (
@@ -100,7 +104,7 @@ as $$
          coalesce(s.friend_completes,0) as friend_completes,
          coalesce(s.friend_saves,0) as friend_saves,
          coalesce(s.friend_likes,0) as friend_likes,
-         a.appeal_score,
+         0.0 as appeal_score,
          coalesce(c.collab_hint, false) as collab_hint
   from ann a
   left join pop p on p.id = a.id

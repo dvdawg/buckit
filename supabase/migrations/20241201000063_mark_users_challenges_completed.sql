@@ -8,18 +8,18 @@ CREATE TEMP TABLE target_users (
 INSERT INTO target_users (uuid, handle, full_name) VALUES
     ('0104e50a-53f4-4ae8-bf93-d15c6b65d262', 'johnsmith266', 'John Smith'),
     ('01efb100-3292-4ee8-80cb-359d4339a236', 'rachelwilson312', 'Rachel Wilson'),
-    ('0551092-4b69-4222-bec5-c3627264e6c', 'cheryljones947', 'Cheryl Jones'),
+    ('0551092a-4b69-4222-bec5-c3627264e6c0', 'cheryljones947', 'Cheryl Jones'),
     ('07a522aa-08b1-4331-a625-5e5a98d5f48d', 'christopherbrown200', 'Christopher Brown'),
     ('07c3cbfc-ca35-449e-847b-fa09c87bc650', 'scottdavis187', 'Scott Davis'),
-    ('08d94a6e-8a04-4d13-8330-b9cc9ffbe5e', 'francesmiller286', 'Frances Miller'),
+    ('08d94a6e-8a04-4d13-8330-b9cc9ffbe5e0', 'francesmiller286', 'Frances Miller'),
     ('0a1278a4-7b5c-47d6-84e9-69fbf8489888', 'brendawilson795', 'Brenda Wilson'),
-    ('0dfd16ba-286a-4e4c-a47e-79b2b3be4bb', 'josephmoore399', 'Joseph Moore'),
-    ('0f26add2-a3b3-4454-a72e-675dd3982de', 'seantaylor275', 'Sean Taylor'),
+    ('0dfd16ba-286a-4e4c-a47e-79b2b3be4bb0', 'josephmoore399', 'Joseph Moore'),
+    ('0f26add2-a3b3-4454-a72e-675dd3982de0', 'seantaylor275', 'Sean Taylor'),
     ('10faf8ea-5880-477d-bb4e-d3814c476a1d', 'megananderson967', 'Megan Anderson'),
     ('17324414-91f6-4047-b958-5276f3bc7936', 'danielthomas422', 'Daniel Thomas'),
     ('19a0f163-4d06-4c61-879b-f9ba47ba6875', 'garyjackson246', 'Gary Jackson'),
     ('1b7a285b-3ec1-4692-bc72-5447ce458750', 'anthonywhite607', 'Anthony White'),
-    ('1ca6553d-8d24-441b-8aed-d6f962dd68e', 'arthurharris816', 'Arthur Harris'),
+    ('1ca6553d-8d24-441b-8aed-d6f962dd68e0', 'arthurharris816', 'Arthur Harris'),
     ('20ce621f-1a1c-479f-944c-9127d051ab7d', 'amymartin344', 'Amy Martin');
 
 UPDATE items 

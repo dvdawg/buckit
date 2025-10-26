@@ -259,6 +259,12 @@ export default function Profile() {
             </View>
             <View style={styles.headerButtons}>
               <TouchableOpacity 
+                style={styles.addFriendsButton}
+                onPress={() => router.push('/add-friends')}
+              >
+                <Ionicons name="person-add-outline" size={20} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity 
                 style={styles.refreshButton}
                 onPress={async () => {
                   console.log('Profile: Manual refresh triggered');
@@ -418,6 +424,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  addFriendsButton: {
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
   },
   refreshButton: {
     padding: 8,

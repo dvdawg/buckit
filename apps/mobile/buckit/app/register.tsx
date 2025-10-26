@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -353,26 +354,48 @@ export default function RegisterScreen() {
                 onFocus={closeDatePicker}
               />
             </View>
-            {showCountryPicker && (
-              <View style={styles.countryPickerContainer}>
-                {countryCodes.map((country) => (
-                  <TouchableOpacity
-                    key={country.code}
-                    style={[
-                      styles.countryOption,
-                      countryCode === country.code && styles.countryOptionSelected
-                    ]}
-                    onPress={() => {
-                      setCountryCode(country.code);
-                      setShowCountryPicker(false);
-                    }}
-                  >
-                    <Text style={styles.countryOptionText}>{country.code}</Text>
-                    <Text style={styles.countryOptionCountry}>{country.country}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+            <Modal
+              visible={showCountryPicker}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setShowCountryPicker(false)}
+            >
+              <TouchableOpacity 
+                style={styles.modalOverlay}
+                activeOpacity={1}
+                onPress={() => setShowCountryPicker(false)}
+              >
+                <View style={styles.countryPickerModal}>
+                  <View style={styles.countryPickerHeader}>
+                    <Text style={styles.countryPickerTitle}>Select Country Code</Text>
+                    <TouchableOpacity 
+                      onPress={() => setShowCountryPicker(false)}
+                      style={styles.closeButton}
+                    >
+                      <Ionicons name="close" size={24} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={styles.countryPickerList}>
+                    {countryCodes.map((country) => (
+                      <TouchableOpacity
+                        key={country.code}
+                        style={[
+                          styles.countryOption,
+                          countryCode === country.code && styles.countryOptionSelected
+                        ]}
+                        onPress={() => {
+                          setCountryCode(country.code);
+                          setShowCountryPicker(false);
+                        }}
+                      >
+                        <Text style={styles.countryOptionText}>{country.code}</Text>
+                        <Text style={styles.countryOptionCountry}>{country.country}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </TouchableOpacity>
+            </Modal>
           </View>
           {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
         </View>
@@ -773,25 +796,48 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
-  countryPickerContainer: {
-    position: 'absolute',
-    top: 60,
-    left: 0,
-    right: 0,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  countryPickerModal: {
     backgroundColor: '#1f2937',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#374151',
-    zIndex: 99999,
-    elevation: 999,
-    maxHeight: 200,
+    width: '100%',
+    maxHeight: 400,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8,
     },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  countryPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  countryPickerTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  countryPickerList: {
+    maxHeight: 300,
   },
   countryOption: {
     flexDirection: 'row',

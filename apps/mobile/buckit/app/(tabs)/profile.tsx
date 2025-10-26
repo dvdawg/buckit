@@ -7,6 +7,7 @@ import { useMe } from '@/hooks/useMe';
 import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 import PerformancePreview from '@/components/PerformancePreview';
 import { useEffect, useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Dummy data
 const dummyUser = {
@@ -190,7 +191,13 @@ export default function Profile() {
   // Monitor session validity
   useSessionMonitor();
 
-  // No automatic refresh - only manual refresh or when settings page calls refresh()
+  // Refresh data when profile page comes into focus (e.g., returning from settings)
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Profile: Page focused, refreshing data');
+      refresh();
+    }, [refresh])
+  );
 
   // Debug logging for user data
   useEffect(() => {

@@ -18,6 +18,7 @@ import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
+import ChallengeRatingModal from '@/components/ChallengeRatingModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,7 +34,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   const [bucket, setBucket] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
-  const [tempRating, setTempRating] = useState(0);
 
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -181,72 +181,22 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   };
 
 
-  const toggleChallengeCompletion = async (challengeId: string) => {
+  const toggleChallengeCompletion = () => {
     if (!bucket?.can_edit) {
       Alert.alert('Access Denied', 'You can only complete challenges in buckets you own or collaborate on.');
       return;
     }
     
-    const challengeToToggle = challenge;
-    
-    if (challengeToToggle && !challengeToToggle.is_completed) {
-      // If completing for the first time, show rating modal
+    if (challenge) {
       setRatingModalVisible(true);
-    } else if (challengeToToggle && challengeToToggle.is_completed) {
-      // If uncompleting, update directly
-      try {
-        const { error } = await supabase
-          .from('items')
-          .update({ is_completed: false })
-          .eq('id', challengeId);
-
-        if (error) {
-          console.error('Error uncompleting challenge:', error);
-          Alert.alert('Error', 'Failed to uncomplete challenge');
-          return;
-        }
-
-        // Update local state
-        setChallenge({ ...challengeToToggle, is_completed: false });
-        Alert.alert('Success', 'Challenge marked as incomplete');
-      } catch (error) {
-        console.error('Error in toggleChallengeCompletion:', error);
-        Alert.alert('Error', 'Failed to update challenge. Please try again.');
-      }
     }
   };
 
-  const handleRatingSubmit = async () => {
-    try {
-      // Update challenge as completed
-      const { error: updateError } = await supabase
-        .from('items')
-        .update({ 
-          is_completed: true,
-          satisfaction_rating: tempRating 
-        })
-        .eq('id', challengeId);
-
-      if (updateError) {
-        console.error('Error completing challenge:', updateError);
-        Alert.alert('Error', 'Failed to complete challenge');
-        return;
-      }
-
-      // Update local state
-      setChallenge({ ...challenge, is_completed: true, satisfaction_rating: tempRating });
-      setRatingModalVisible(false);
-      setTempRating(0);
-      Alert.alert('Success', 'Challenge completed!');
-    } catch (error) {
-      console.error('Error in handleRatingSubmit:', error);
-      Alert.alert('Error', 'Failed to complete challenge');
+  const handleRatingSuccess = () => {
+    // Refresh challenge data
+    if (challengeId) {
+      fetchChallengeData();
     }
-  };
-
-  const handleRatingCancel = () => {
-    setRatingModalVisible(false);
-    setTempRating(0);
   };
 
   if (!visible) return null;
@@ -292,11 +242,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                       <Text style={styles.modalTitle}>{challenge.title}</Text>
                       <TouchableOpacity 
                         style={[styles.modalCompletionBadge, !bucket?.can_edit && styles.modalCompletionBadgeDisabled]}
-                        onPress={() => {
-                          if (bucket?.can_edit) {
-                            toggleChallengeCompletion(challenge.id);
-                          }
-                        }}
+                        onPress={toggleChallengeCompletion}
                         disabled={!bucket?.can_edit}
                       >
                         {challenge.is_completed ? (
@@ -396,55 +342,12 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
       </Animated.View>
 
       {/* Rating Modal */}
-      <Modal
+      <ChallengeRatingModal
         visible={ratingModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={handleRatingCancel}
-      >
-        <View style={styles.ratingModalOverlay}>
-          <View style={styles.ratingModalContainer}>
-            <View style={styles.ratingModalHeader}>
-              <Text style={styles.ratingModalTitle}>Rate Your Experience</Text>
-              <Text style={styles.ratingModalSubtitle}>
-                How satisfied were you with "{challenge?.title}"?
-              </Text>
-            </View>
-
-            <View style={styles.ratingStars}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => setTempRating(star)}
-                  style={styles.starButton}
-                >
-                  <Ionicons
-                    name={star <= tempRating ? "star" : "star-outline"}
-                    size={32}
-                    color={star <= tempRating ? "#fbbf24" : "#6b7280"}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.ratingModalActions}>
-              <TouchableOpacity
-                style={styles.ratingCancelButton}
-                onPress={handleRatingCancel}
-              >
-                <Text style={styles.ratingCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.ratingSubmitButton, tempRating === 0 && styles.ratingSubmitButtonDisabled]}
-                onPress={handleRatingSubmit}
-                disabled={tempRating === 0}
-              >
-                <Text style={styles.ratingSubmitText}>Complete Challenge</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setRatingModalVisible(false)}
+        onSuccess={handleRatingSuccess}
+        challenge={challenge}
+      />
     </Modal>
   );
 }
@@ -639,72 +542,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     textAlign: 'center',
-  },
-  // Rating Modal Styles
-  ratingModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  ratingModalContainer: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  ratingModalHeader: {
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  ratingModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  ratingModalSubtitle: {
-    fontSize: 16,
-    color: '#9BA1A6',
-    textAlign: 'center',
-  },
-  ratingStars: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  starButton: {
-    padding: 8,
-  },
-  ratingModalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  ratingCancelButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#2a2a2a',
-  },
-  ratingCancelText: {
-    color: '#9BA1A6',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  ratingSubmitButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#8EC5FC',
-  },
-  ratingSubmitButtonDisabled: {
-    backgroundColor: '#4a5568',
-  },
-  ratingSubmitText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

@@ -4,12 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useItems } from '@/hooks/useItems';
 import ChallengeDetailModal from '@/components/ChallengeDetailModal';
+import ChallengeRatingModal from '@/components/ChallengeRatingModal';
 
 export default function ChallengesIndex() {
   const router = useRouter();
-  const { items, loading } = useItems();
+  const { items, loading, refresh } = useItems();
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [challengeToRate, setChallengeToRate] = useState<any>(null);
 
   const handleChallengePress = (challenge: any) => {
     setSelectedChallengeId(challenge.id);
@@ -19,6 +22,16 @@ export default function ChallengesIndex() {
   const handleCloseChallengeModal = () => {
     setChallengeModalVisible(false);
     setSelectedChallengeId(null);
+  };
+
+  const toggleChallengeCompletion = (challenge: any) => {
+    setChallengeToRate(challenge);
+    setRatingModalVisible(true);
+  };
+
+  const handleRatingSuccess = () => {
+    // Refresh the items data to reflect the changes
+    refresh();
   };
 
 
@@ -93,18 +106,42 @@ export default function ChallengesIndex() {
                       <Text style={styles.urgencyText}>{urgencyInfo.text}</Text>
                     </View>
                   </View>
-                  
-                  <Text style={styles.challengeTitle} numberOfLines={2} ellipsizeMode="tail">
-                    {item.title}
-                  </Text>
-                  
-                  <View style={styles.challengeFooter}>
-                    <Text style={styles.challengeLocation} numberOfLines={1} ellipsizeMode="tail">
-                      📍 {item.location_name || 'No location'}
-                    </Text>
-                    <Text style={styles.dueDateText} numberOfLines={1} ellipsizeMode="tail">
-                      {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}
-                    </Text>
+
+                  {/* Challenge Content Row */}
+                  <View style={styles.challengeContent}>
+                    {/* Completion Status & Icon */}
+                    <TouchableOpacity 
+                      style={styles.challengeIcon}
+                      onPress={() => toggleChallengeCompletion(item)}
+                    >
+                      {item.is_completed ? (
+                        <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
+                      ) : (
+                        <Ionicons name="ellipse-outline" size={24} color="#fff" />
+                      )}
+                    </TouchableOpacity>
+                    
+                    {/* Challenge Info */}
+                    <View style={styles.challengeInfo}>
+                      <Text style={styles.challengeTitle} numberOfLines={2} ellipsizeMode="tail">
+                        {item.title}
+                      </Text>
+                      
+                      <View style={styles.challengeMeta}>
+                        <View style={styles.challengeLocation}>
+                          <Text style={styles.locationPin}>📍</Text>
+                          <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                            {item.location_name || 'No location'}
+                          </Text>
+                        </View>
+                        <View style={styles.challengeTargetDate}>
+                          <Text style={styles.targetDatePin}>📅</Text>
+                          <Text style={styles.targetDateText} numberOfLines={1} ellipsizeMode="tail">
+                            {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
                   </View>
                 </TouchableOpacity>
               );
@@ -118,6 +155,14 @@ export default function ChallengesIndex() {
         visible={challengeModalVisible}
         challengeId={selectedChallengeId}
         onClose={handleCloseChallengeModal}
+      />
+
+      {/* Rating Modal */}
+      <ChallengeRatingModal
+        visible={ratingModalVisible}
+        onClose={() => setRatingModalVisible(false)}
+        onSuccess={handleRatingSuccess}
+        challenge={challengeToRate}
       />
     </View>
   );
@@ -254,11 +299,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 4,
   },
-  challengeDescription: {
-    fontSize: 13,
-    color: '#B0B0B0',
-    lineHeight: 18,
-    marginBottom: 6,
+  challengeMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   challengeLocation: {
     flexDirection: 'row',
@@ -284,6 +328,7 @@ const styles = StyleSheet.create({
   },
   targetDateText: {
     fontSize: 14,
-    color: '#9BA1A6',
+    color: '#8EC5FC',
+    fontWeight: '500',
   },
 });

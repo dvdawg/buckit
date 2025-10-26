@@ -116,11 +116,13 @@ export default function BucketDetail() {
   };
 
   const handleCancelEdit = () => {
-    setBucketData({
-      title: jitsBucket.title,
-      description: jitsBucket.description,
-      headerImage: jitsBucket.headerImage,
-    });
+    if (bucket) {
+      setBucketData({
+        title: bucket.title,
+        description: bucket.description || '',
+        headerImage: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+      });
+    }
     setIsEditing(false);
   };
 
@@ -446,7 +448,7 @@ export default function BucketDetail() {
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <Image source={{ uri: bucket.headerImage }} style={styles.headerImage} />
+        <Image source={{ uri: bucketData.headerImage }} style={styles.headerImage} />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}

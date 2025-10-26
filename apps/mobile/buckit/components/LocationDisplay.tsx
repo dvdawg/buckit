@@ -8,7 +8,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
 
@@ -73,33 +72,13 @@ export default function LocationDisplay({ location, style }: LocationDisplayProp
             <View style={styles.placeholder} />
           </View>
 
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: location.coordinates.latitude,
-                longitude: location.coordinates.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-              showsUserLocation={true}
-              showsMyLocationButton={false}
-            >
-              <Marker
-                coordinate={location.coordinates}
-                title={location.name}
-                description={location.address}
-              />
-            </MapView>
-          </View>
-
-          <View style={styles.locationDetails}>
+          <View style={styles.locationDetailsContainer}>
             <Text style={styles.locationDetailsTitle}>{location.name}</Text>
-            {location.address && (
+            {location.address && location.address !== location.name && (
               <Text style={styles.locationDetailsAddress}>{location.address}</Text>
             )}
             <Text style={styles.locationDetailsCoordinates}>
-              {location.coordinates.latitude.toFixed(6)}, {location.coordinates.longitude.toFixed(6)}
+              Coordinates: {location.coordinates.latitude.toFixed(6)}, {location.coordinates.longitude.toFixed(6)}
             </Text>
           </View>
         </View>
@@ -169,14 +148,16 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 60,
   },
-  mapContainer: {
+  locationDetailsContainer: {
     flex: 1,
     margin: 20,
+    padding: 20,
+    backgroundColor: '#1F2937',
     borderRadius: 12,
-    overflow: 'hidden',
-  },
-  map: {
-    flex: 1,
+    borderWidth: 1,
+    borderColor: '#374151',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   locationDetails: {
     paddingHorizontal: 20,

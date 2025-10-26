@@ -11,9 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GooglePlacesAutocomplete } from 'expo-google-places-autocomplete';
 import * as Location from 'expo-location';
-import MapView, { Marker } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,7 +39,7 @@ export default function LocationPicker({
 }: LocationPickerProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState(value?.name || '');
-  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(value);
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(value || null);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -79,19 +77,19 @@ export default function LocationPicker({
     }
   };
 
-  const handlePlaceSelect = (data: any, details: any) => {
-    if (details) {
-      const location: LocationData = {
-        name: details.name || details.formatted_address,
-        coordinates: {
-          latitude: details.geometry.location.lat,
-          longitude: details.geometry.location.lng,
-        },
-        address: details.formatted_address,
-      };
-      setSelectedLocation(location);
-      setSearchQuery(location.name);
-    }
+  const handlePlaceSelect = (placeName: string) => {
+    // For now, create a simple location object without coordinates
+    // In a real app, you'd use a geocoding service
+    const location: LocationData = {
+      name: placeName,
+      coordinates: {
+        latitude: 0,
+        longitude: 0,
+      },
+      address: placeName,
+    };
+    setSelectedLocation(location);
+    setSearchQuery(location.name);
   };
 
   const handleCurrentLocationSelect = () => {
@@ -150,28 +148,18 @@ export default function LocationPicker({
           </View>
 
           <View style={styles.searchContainer}>
-            <GooglePlacesAutocomplete
+            <TextInput
+              style={styles.searchInput}
               placeholder="Search for a location..."
-              onPress={handlePlaceSelect}
-              query={{
-                key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || 'YOUR_API_KEY',
-                language: 'en',
-                components: 'country:us', // You can modify this based on your target region
+              placeholderTextColor="#9BA1A6"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={() => {
+                if (searchQuery.trim()) {
+                  handlePlaceSelect(searchQuery.trim());
+                }
               }}
-              fetchDetails={true}
-              styles={{
-                container: styles.autocompleteContainer,
-                textInput: styles.autocompleteInput,
-                listView: styles.autocompleteList,
-                row: styles.autocompleteRow,
-                description: styles.autocompleteDescription,
-              }}
-              textInputProps={{
-                placeholderTextColor: '#9BA1A6',
-                returnKeyType: 'search',
-              }}
-              enablePoweredByContainer={false}
-              debounce={300}
+              returnKeyType="search"
             />
           </View>
 
@@ -183,24 +171,15 @@ export default function LocationPicker({
           )}
 
           {selectedLocation && (
-            <View style={styles.mapContainer}>
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: selectedLocation.coordinates.latitude,
-                  longitude: selectedLocation.coordinates.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                showsUserLocation={true}
-                showsMyLocationButton={false}
-              >
-                <Marker
-                  coordinate={selectedLocation.coordinates}
-                  title={selectedLocation.name}
-                  description={selectedLocation.address}
-                />
-              </MapView>
+            <View style={styles.locationPreviewContainer}>
+              <Text style={styles.locationPreviewText}>
+                📍 {selectedLocation.name}
+              </Text>
+              {selectedLocation.address && selectedLocation.address !== selectedLocation.name && (
+                <Text style={styles.locationPreviewAddress}>
+                  {selectedLocation.address}
+                </Text>
+              )}
             </View>
           )}
 
@@ -280,10 +259,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  autocompleteContainer: {
-    flex: 0,
-  },
-  autocompleteInput: {
+  searchInput: {
     backgroundColor: '#1F2937',
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -292,23 +268,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#374151',
-  },
-  autocompleteList: {
-    backgroundColor: '#1F2937',
-    borderRadius: 12,
-    marginTop: 8,
-    maxHeight: 200,
-  },
-  autocompleteRow: {
-    backgroundColor: '#1F2937',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#374151',
-  },
-  autocompleteDescription: {
-    color: '#9BA1A6',
-    fontSize: 14,
   },
   currentLocationButton: {
     flexDirection: 'row',
@@ -327,15 +286,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 12,
   },
-  mapContainer: {
-    height: 200,
+  locationPreviewContainer: {
     marginHorizontal: 20,
     marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#1F2937',
     borderRadius: 12,
-    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#374151',
   },
-  map: {
-    flex: 1,
+  locationPreviewText: {
+    color: '#F9FAFB',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  locationPreviewAddress: {
+    color: '#9BA1A6',
+    fontSize: 14,
   },
   selectedLocationInfo: {
     paddingHorizontal: 20,

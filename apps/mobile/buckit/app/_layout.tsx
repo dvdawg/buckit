@@ -14,7 +14,7 @@ function AuthGate() {
 
   useEffect(() => {
     if (!loading && !hasRedirected) {
-      // Check if session is invalid
+      // Check if session is invalid (only show error if there's actually a session error)
       if (!isSessionValid && sessionError) {
         console.log('Invalid session detected:', sessionError);
         
@@ -54,10 +54,12 @@ function AuthGate() {
 
       if (user && isSessionValid) {
         console.log('Valid user found, showing main app');
+        console.log('User details:', { id: user.id, email: user.email });
         markRedirected();
         router.replace('/(tabs)/profile');
-      } else if (!user) {
+      } else {
         console.log('No valid user found, starting splash sequence');
+        console.log('User state:', { user: !!user, isSessionValid, sessionError });
         markRedirected();
         router.replace('/splash');
       }

@@ -6,9 +6,10 @@ import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
 import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 import PerformancePreview from '@/components/PerformancePreview';
+import { useEffect } from 'react';
 
 // Dummy data
-const user = {
+const dummyUser = {
   name: "Brandon",
   location: "Berkeley, CA",
   profileImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
@@ -182,11 +183,28 @@ const { width } = Dimensions.get('window');
 
 export default function Profile() {
   const router = useRouter();
-  const { signOut } = useSession();
+  const { signOut, user, isSessionValid } = useSession();
   const { me, loading } = useMe();
   
   // Monitor session validity
   useSessionMonitor();
+
+  useEffect(() => {
+    // If no valid session, redirect to splash
+    if (!user || !isSessionValid) {
+      console.log('Profile: No valid session, redirecting to splash');
+      router.replace('/splash');
+    }
+  }, [user, isSessionValid, router]);
+
+  // If no valid session, show loading
+  if (!user || !isSessionValid) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+        <Text style={{ color: '#fff' }}>Loading...</Text>
+      </View>
+    );
+  }
 
   const handleBucketPress = (bucketId: string) => {
     router.push(`/buckets/${bucketId}`);
@@ -201,7 +219,7 @@ export default function Profile() {
       {/* Profile Header with Full-Width Image */}
       <View style={styles.headerContainer}>
         <Image 
-          source={{ uri: me?.avatar_url || user.profileImage }} 
+          source={{ uri: me?.avatar_url || dummyUser.profileImage }} 
           style={styles.profileHeaderImage} 
         />
         <LinearGradient
@@ -210,7 +228,7 @@ export default function Profile() {
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>
-            {loading ? 'Loading...' : (me?.full_name ?? me?.handle ?? user.name)}
+            {loading ? 'Loading...' : (me?.full_name ?? me?.handle ?? dummyUser.name)}
           </Text>
           <Text style={styles.userLocation}>
             {me?.location || `Points: ${me?.points || 0}`}
@@ -238,7 +256,7 @@ export default function Profile() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.bucketsContainer}
         >
-          {user.buckets.slice(0, 6).map((bucket) => (
+          {dummyUser.buckets.slice(0, 6).map((bucket) => (
             <TouchableOpacity
               key={bucket.id}
               style={styles.bucketCard}

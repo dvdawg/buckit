@@ -1,5 +1,8 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSession } from '@/hooks/useSession';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 
 // Dummy data for posts
 const posts = [
@@ -30,6 +33,26 @@ const posts = [
 ];
 
 export default function Home() {
+  const { user, isSessionValid } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If no valid session, redirect to splash
+    if (!user || !isSessionValid) {
+      console.log('Home: No valid session, redirecting to splash');
+      router.replace('/splash');
+    }
+  }, [user, isSessionValid, router]);
+
+  // If no valid session, show loading
+  if (!user || !isSessionValid) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+        <Text style={{ color: '#fff' }}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}

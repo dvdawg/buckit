@@ -45,10 +45,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   const validateSession = (session: Session | null) => {
-    // Simple validation - just check if session and user exist
+    // If no session, this is normal for new users - don't treat as error
     if (!session || !session.user) {
       setIsSessionValid(false);
-      setSessionError('No active session found');
+      setSessionError(null); // No error for missing session
+      // Clear any cached user data
+      setSession(null);
       return false;
     }
 
@@ -70,6 +72,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Get initial session first
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session);
+      console.log('Session user:', session?.user);
+      console.log('Session access token:', session?.access_token ? 'present' : 'missing');
       setSession(session);
       validateSession(session);
       setLoading(false);

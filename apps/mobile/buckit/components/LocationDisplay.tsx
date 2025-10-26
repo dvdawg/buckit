@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Modal,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width, height } = Dimensions.get('window');
 
 interface LocationData {
   name: string;
@@ -26,8 +21,6 @@ interface LocationDisplayProps {
 }
 
 export default function LocationDisplay({ location, style }: LocationDisplayProps) {
-  const [modalVisible, setModalVisible] = useState(false);
-
   if (!location) {
     return (
       <View style={[styles.container, style]}>
@@ -37,14 +30,10 @@ export default function LocationDisplay({ location, style }: LocationDisplayProp
     );
   }
 
-  const openMapModal = () => {
-    setModalVisible(true);
-  };
-
   return (
     <View style={[styles.container, style]}>
-      <TouchableOpacity style={styles.locationContainer} onPress={openMapModal}>
-        <Ionicons name="location" size={16} color="#EF4444" style={styles.icon} />
+      <View style={styles.locationContainer}>
+        <Ionicons name="location" size={16} color="#8EC5FC" style={styles.icon} />
         <View style={styles.locationInfo}>
           <Text style={styles.locationName} numberOfLines={1}>
             {location.name}
@@ -55,34 +44,7 @@ export default function LocationDisplay({ location, style }: LocationDisplayProp
             </Text>
           )}
         </View>
-        <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
-      </TouchableOpacity>
-
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeButton}>Close</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Location</Text>
-            <View style={styles.placeholder} />
-          </View>
-
-          <View style={styles.locationDetailsContainer}>
-            <Text style={styles.locationDetailsTitle}>{location.name}</Text>
-            {location.address && location.address !== location.name && (
-              <Text style={styles.locationDetailsAddress}>{location.address}</Text>
-            )}
-            <Text style={styles.locationDetailsCoordinates}>
-              Coordinates: {location.coordinates.latitude.toFixed(6)}, {location.coordinates.longitude.toFixed(6)}
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      </View>
     </View>
   );
 }
@@ -94,12 +56,12 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1F2937',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   icon: {
     marginRight: 12,
@@ -108,7 +70,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationName: {
-    color: '#F9FAFB',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -121,68 +83,5 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
     fontSize: 16,
     fontStyle: 'italic',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#111827',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#374151',
-  },
-  closeButton: {
-    color: '#60A5FA',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalTitle: {
-    color: '#F9FAFB',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 60,
-  },
-  locationDetailsContainer: {
-    flex: 1,
-    margin: 20,
-    padding: 20,
-    backgroundColor: '#1F2937',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#374151',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationDetails: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#1F2937',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  locationDetailsTitle: {
-    color: '#F9FAFB',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  locationDetailsAddress: {
-    color: '#9BA1A6',
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  locationDetailsCoordinates: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontFamily: 'monospace',
   },
 });

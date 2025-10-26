@@ -18,12 +18,6 @@ export default function BucketDetail() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
   const [challenges, setChallenges] = useState<any[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [bucketData, setBucketData] = useState({
-    title: '',
-    description: '',
-    headerImage: '',
-  });
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [challengeToRate, setChallengeToRate] = useState<any>(null);
   const [tempRating, setTempRating] = useState(0);
@@ -45,16 +39,9 @@ export default function BucketDetail() {
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
 
-  // Update bucket data when bucket loads
+  // Transform items to challenges format for compatibility
   useEffect(() => {
-    if (bucket) {
-      setBucketData({
-        title: bucket.title,
-        description: bucket.description || '',
-        headerImage: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
-      });
-      
-      // Transform items to challenges format for compatibility
+    if (items) {
       const transformedChallenges = items.map(item => ({
         id: item.id,
         title: item.title,
@@ -67,7 +54,7 @@ export default function BucketDetail() {
       }));
       setChallenges(transformedChallenges);
     }
-  }, [bucket, items]);
+  }, [items]);
 
   // Challenge data for modal
   const challenge = {
@@ -105,34 +92,19 @@ export default function BucketDetail() {
   };
 
   const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const handleSaveChanges = () => {
-    // TODO: Save changes to backend
-    Alert.alert('Changes Saved', 'Your bucket has been updated successfully!');
-    setIsEditing(false);
-  };
-
-  const handleCancelEdit = () => {
     if (bucket) {
-      setBucketData({
-        title: bucket.title,
+      // Navigate to create bucket page with pre-filled data
+      const params = new URLSearchParams({
+        edit: 'true',
+        bucketId: bucket.id,
+        title: bucket.title || '',
         description: bucket.description || '',
-        headerImage: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+        coverUrl: bucket.cover_url || ''
       });
+      router.push(`/create-bucket?${params.toString()}`);
     }
-    setIsEditing(false);
   };
 
-  const handleChangeImage = () => {
-    // TODO: Implement image picker
-    Alert.alert('Change Image', 'Image picker functionality would be implemented here');
-  };
-
-  const updateBucketData = (field: string, value: string) => {
-    setBucketData(prev => ({ ...prev, [field]: value }));
-  };
 
   const handleRatingSubmit = async () => {
     if (tempRating === 0) {
@@ -447,7 +419,7 @@ export default function BucketDetail() {
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <Image source={{ uri: bucketData.headerImage }} style={styles.headerImage} />
+        <Image source={{ uri: bucket?.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' }} style={styles.headerImage} />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
@@ -469,7 +441,7 @@ export default function BucketDetail() {
               style={styles.editButton}
               onPress={handleEditToggle}
             >
-              <Ionicons name={isEditing ? "close" : "create-outline"} size={24} color="#fff" />
+              <Ionicons name="create-outline" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.shareButton}
@@ -482,56 +454,19 @@ export default function BucketDetail() {
 
         {/* Bucket Info */}
         <View style={styles.bucketInfo}>
-          {isEditing ? (
-            <>
-              <TouchableOpacity style={styles.imageEditButton} onPress={handleChangeImage}>
-                <Image source={{ uri: bucketData.headerImage }} style={styles.editableImage} />
-                <View style={styles.imageEditOverlay}>
-                  <Ionicons name="camera" size={24} color="#fff" />
-                  <Text style={styles.imageEditText}>Change Photo</Text>
-                </View>
-              </TouchableOpacity>
-              <TextInput
-                style={styles.bucketTitleInput}
-                value={bucketData.title}
-                onChangeText={(value) => updateBucketData('title', value)}
-                placeholder="Bucket Name"
-                placeholderTextColor="#9BA1A6"
-              />
-              <TextInput
-                style={styles.bucketDescriptionInput}
-                value={bucketData.description}
-                onChangeText={(value) => updateBucketData('description', value)}
-                placeholder="Bucket Description"
-                placeholderTextColor="#9BA1A6"
-                multiline
-                numberOfLines={3}
-              />
-              <View style={styles.editActions}>
-                <TouchableOpacity style={styles.cancelButton} onPress={handleCancelEdit}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
-                  <LinearGradient
-                    colors={['#8EC5FC', '#E0C3FC']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.saveButtonGradient}
-                  >
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={styles.bucketTitle}>{bucketData.title}</Text>
-              <Text style={styles.bucketDescription}>{bucketData.description}</Text>
-              <View style={styles.bucketMeta}>
-                <Text style={styles.createdDate}>Created {new Date(bucket.created_at).toLocaleDateString()}</Text>
-              </View>
-            </>
-          )}
+          <Image 
+            source={{ uri: bucket?.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' }} 
+            style={styles.bucketImage} 
+          />
+          <Text style={styles.bucketTitle}>{bucket?.title}</Text>
+          <Text style={styles.bucketDescription}>{bucket?.description}</Text>
+          <Text style={styles.createdDate}>
+            Created {bucket?.created_at ? new Date(bucket.created_at).toLocaleDateString('en-US', { 
+              month: '2-digit', 
+              day: '2-digit', 
+              year: 'numeric' 
+            }) : 'Unknown'}
+          </Text>
         </View>
       </View>
 

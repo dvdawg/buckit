@@ -14,17 +14,20 @@ import {
   Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 
 export default function CreateBucketScreen() {
   const router = useRouter();
+  const { edit, bucketId, title, description, coverUrl } = useLocalSearchParams();
+  const isEditMode = edit === 'true';
+  
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    photo: null as string | null,
+    title: (title as string) || '',
+    description: (description as string) || '',
+    photo: (coverUrl as string) || null,
     invitedFriends: [] as Array<{id: string, name: string, avatar?: string}>,
   });
   const [loading, setLoading] = useState(false);
@@ -57,28 +60,64 @@ export default function CreateBucketScreen() {
     
     setLoading(true);
     try {
-      // Use the existing RPC function instead of direct table insert
-      // This bypasses RLS policies by using a SECURITY DEFINER function
-      console.log('Creating bucket using RPC function...');
-      
-      const { data, error } = await supabase.rpc('create_bucket_secure', {
-        p_title: formData.title,
-        p_description: formData.description || null,
-        p_visibility: 'private'
-      });
+      if (isEditMode && bucketId) {
+        // Update existing bucket
+        console.log('Updating bucket using direct update...');
+        
+        const { error } = await supabase
+          .from('buckets')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            cover_url: formData.photo
+          })
+          .eq('id', bucketId);
 
-      if (error) {
-        console.error('Error creating bucket:', error);
-        Alert.alert('Error', `Failed to create bucket: ${error.message}`);
-        return;
+        if (error) {
+          console.error('Error updating bucket:', error);
+          Alert.alert('Error', `Failed to update bucket: ${error.message}`);
+          return;
+        }
+
+        console.log('Bucket updated successfully');
+        Alert.alert('Success', 'Bucket updated successfully!');
+        router.back();
+      } else {
+        // Create new bucket
+        console.log('Creating bucket using RPC function...');
+        
+        const { data, error } = await supabase.rpc('create_bucket_secure', {
+          p_title: formData.title,
+          p_description: formData.description || null,
+          p_visibility: 'private'
+        });
+
+        if (error) {
+          console.error('Error creating bucket:', error);
+          Alert.alert('Error', `Failed to create bucket: ${error.message}`);
+          return;
+        }
+
+        // Update the bucket with cover photo
+        if (data && formData.photo) {
+          const { error: updateError } = await supabase
+            .from('buckets')
+            .update({ cover_url: formData.photo })
+            .eq('id', data);
+          
+          if (updateError) {
+            console.error('Error updating bucket photo:', updateError);
+            // Don't fail the whole operation, just log the error
+          }
+        }
+
+        console.log('Bucket created successfully with ID:', data);
+        Alert.alert('Success', 'Bucket created successfully!');
+        router.back();
       }
-
-      console.log('Bucket created successfully with ID:', data);
-      Alert.alert('Success', 'Bucket created successfully!');
-      router.back();
     } catch (error) {
-      console.error('Error creating bucket:', error);
-      Alert.alert('Error', 'Failed to create bucket. Please try again.');
+      console.error('Error saving bucket:', error);
+      Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'create'} bucket. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -142,7 +181,7 @@ export default function CreateBucketScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#8EC5FC" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Bucket</Text>
+        <Text style={styles.headerTitle}>{isEditMode ? 'Edit Bucket' : 'Create Bucket'}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -246,7 +285,7 @@ export default function CreateBucketScreen() {
           {loading ? (
             <ActivityIndicator color="#000" />
           ) : (
-            <Text style={styles.saveButtonText}>Create Bucket</Text>
+            <Text style={styles.saveButtonText}>{isEditMode ? 'Update Bucket' : 'Create Bucket'}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -14,6 +14,7 @@ import CompletionRatingModal from '@/components/CompletionRatingModal';
 import ViewOnlyChallengeCard from '@/components/ViewOnlyChallengeCard';
 import ViewOnlyChallengeModal from '@/components/ViewOnlyChallengeModal';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useBucketCollaborators } from '@/hooks/useBucketCollaborators';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ export default function BucketDetail() {
     getPhotosForItem, 
     getAverageRatingForItem 
   } = useSharedCompletions(id as string);
+  const { getCollaborators } = useBucketCollaborators();
   
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
@@ -50,15 +52,32 @@ export default function BucketDetail() {
     coordinates: { latitude: number; longitude: number };
     address?: string;
   } | null>(null);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
   
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
       // Recalculate count and refresh data
       await recalculateCount();
+      // Also refresh collaborators
+      if (id) {
+        const collabs = await getCollaborators(id as string);
+        setCollaborators(collabs);
+      }
     },
     minDuration: 1000, // 1 second minimum for smooth transition
   });
+
+  // Fetch collaborators when component mounts
+  useEffect(() => {
+    const fetchCollaborators = async () => {
+      if (id) {
+        const collabs = await getCollaborators(id as string);
+        setCollaborators(collabs);
+      }
+    };
+    fetchCollaborators();
+  }, [id, getCollaborators]);
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -521,7 +540,7 @@ export default function BucketDetail() {
             {bucket?.can_edit && (
               <TouchableOpacity 
                 style={styles.shareButton}
-                onPress={() => router.push('/invite-friends')}
+                onPress={() => router.push(`/invite-friends?bucketId=${bucket.id}`)}
               >
                 <Ionicons name="people" size={24} color="#fff" />
               </TouchableOpacity>
@@ -544,6 +563,37 @@ export default function BucketDetail() {
           </View>
         </View>
       </View>
+
+      {/* Collaborators Section */}
+      {collaborators.length > 0 && (
+        <View style={styles.collaboratorsSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="people" size={20} color="#8EC5FC" />
+            <Text style={styles.sectionTitle}>Collaborators</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.collaboratorsList}>
+            {collaborators.map((collaborator) => (
+              <View key={collaborator.id} style={styles.collaboratorCard}>
+                <View style={styles.collaboratorAvatar}>
+                  {collaborator.avatar_url ? (
+                    <Image source={{ uri: collaborator.avatar_url }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={styles.avatarText}>
+                      {collaborator.full_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.collaboratorName} numberOfLines={1}>
+                  {collaborator.full_name || 'Unknown'}
+                </Text>
+                <Text style={styles.collaboratorHandle} numberOfLines={1}>
+                  @{collaborator.handle || 'unknown'}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Challenges List */}
       <ScrollView 
@@ -591,7 +641,7 @@ export default function BucketDetail() {
               <Text style={styles.challengeDescription}>{challenge.description}</Text>
               <View style={styles.challengeLocation}>
                 <Text style={styles.locationPin}>📍</Text>
-                <Text style={styles.locationText}>{challenge.location}</Text>
+                <Text style={styles.locationText}>{challenge.location || 'No location set'}</Text>
               </View>
               <View style={styles.challengeTargetDate}>
                 <Text style={styles.targetDatePin}>📅</Text>
@@ -830,7 +880,7 @@ export default function BucketDetail() {
                           style={styles.modalLocationPicker}
                         />
                       ) : (
-                        <Text style={styles.modalDetailText}>{selectedChallenge.location_name || selectedChallenge.location}</Text>
+                        <Text style={styles.modalDetailText}>{selectedChallenge.location_name || selectedChallenge.location || 'No location set'}</Text>
                       )}
                     </View>
                     <View style={styles.modalDetailRow}>
@@ -1620,5 +1670,63 @@ const styles = StyleSheet.create({
   },
   modalLocationPicker: {
     flex: 1,
+  },
+  // Collaborators section styles
+  collaboratorsSection: {
+    backgroundColor: '#1F2937',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+  },
+  collaboratorsList: {
+    flexDirection: 'row',
+  },
+  collaboratorCard: {
+    alignItems: 'center',
+    marginRight: 16,
+    minWidth: 80,
+  },
+  collaboratorAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#8EC5FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  collaboratorName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  collaboratorHandle: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    textAlign: 'center',
   },
 });

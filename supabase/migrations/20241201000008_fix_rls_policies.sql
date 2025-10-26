@@ -2,12 +2,14 @@
 -- Drop existing problematic policies
 DROP POLICY IF EXISTS "Users can view their own buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view friend's buckets" ON buckets;
+DROP POLICY IF EXISTS "Users can view public buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can create buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can update their own buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can delete their own buckets" ON buckets;
 
 DROP POLICY IF EXISTS "Users can view their own items" ON items;
 DROP POLICY IF EXISTS "Users can view friend's items" ON items;
+DROP POLICY IF EXISTS "Users can view public items" ON items;
 DROP POLICY IF EXISTS "Users can view items in their buckets" ON items;
 DROP POLICY IF EXISTS "Users can create items" ON items;
 DROP POLICY IF EXISTS "Users can update their own items" ON items;

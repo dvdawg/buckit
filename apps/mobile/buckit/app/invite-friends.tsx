@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   ScrollView,
   Alert,
   FlatList,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { supabase } from '@/lib/supabase';
+import { useSession } from '@/hooks/useSession';
 
 // Dummy friends data
 const dummyFriends = [
@@ -56,15 +60,83 @@ const dummyFriends = [
   },
 ];
 
+interface Friend {
+  id: string;
+  full_name: string;
+  handle: string;
+  avatar_url?: string;
+  isInvited: boolean;
+}
+
 export default function InviteFriendsScreen() {
   const router = useRouter();
-  const [friends, setFriends] = useState(dummyFriends);
+  const { bucketId } = useLocalSearchParams();
+  const { user } = useSession();
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [invitedFriends, setInvitedFriends] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleInviteFriend = (friendId: string) => {
-    setInvitedFriends(prev => [...prev, friendId]);
-    const friend = friends.find(f => f.id === friendId);
-    Alert.alert('Invitation Sent', `Invited ${friend?.fullName} to join your Jits bucket!`);
+  useEffect(() => {
+    fetchFriends();
+  }, []);
+
+  const fetchFriends = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Fetch user's friends
+      const { data: friendsData, error } = await supabase.rpc('get_friends');
+
+      if (error) {
+        console.error('Error fetching friends:', error);
+        Alert.alert('Error', 'Failed to load friends list');
+        return;
+      }
+
+      // Transform the data
+      const friendsList = (friendsData || []).map((friend: any) => ({
+        id: friend.id,
+        full_name: friend.full_name,
+        handle: friend.handle,
+        avatar_url: friend.avatar_url,
+        isInvited: false
+      }));
+
+      setFriends(friendsList);
+    } catch (error) {
+      console.error('Unexpected error fetching friends:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInviteFriend = async (friendId: string) => {
+    if (!bucketId) {
+      Alert.alert('Error', 'No bucket specified');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.rpc('add_bucket_collaborator', {
+        p_bucket_id: bucketId,
+        p_user_id: friendId
+      });
+
+      if (error) {
+        console.error('Error adding collaborator:', error);
+        Alert.alert('Error', 'Failed to invite friend as collaborator');
+        return;
+      }
+
+      setInvitedFriends(prev => [...prev, friendId]);
+      const friend = friends.find(f => f.id === friendId);
+      Alert.alert('Invitation Sent', `Invited ${friend?.full_name} to collaborate on this bucket!`);
+    } catch (error) {
+      console.error('Unexpected error inviting friend:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    }
   };
 
   const handleSendAllInvites = () => {
@@ -85,21 +157,24 @@ export default function InviteFriendsScreen() {
     );
   };
 
-  const renderFriendItem = ({ item }: { item: typeof dummyFriends[0] }) => {
+  const renderFriendItem = ({ item }: { item: Friend }) => {
     const isInvited = invitedFriends.includes(item.id);
     
     return (
       <View style={styles.friendCard}>
         <View style={styles.friendInfo}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {item.fullName.split(' ').map(n => n[0]).join('')}
-            </Text>
+            {item.avatar_url ? (
+              <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>
+                {item.full_name.split(' ').map(n => n[0]).join('')}
+              </Text>
+            )}
           </View>
           <View style={styles.friendDetails}>
-            <Text style={styles.username}>@{item.username}</Text>
-            <Text style={styles.fullName}>{item.fullName}</Text>
-            <Text style={styles.location}>📍 {item.location}</Text>
+            <Text style={styles.username}>@{item.handle}</Text>
+            <Text style={styles.fullName}>{item.full_name}</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -164,13 +239,29 @@ export default function InviteFriendsScreen() {
           {invitedFriends.length} of {friends.length} friends invited
         </Text>
         
-        <FlatList
-          data={friends}
-          renderItem={renderFriendItem}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.friendsList}
-        />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8EC5FC" />
+            <Text style={styles.loadingText}>Loading friends...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={friends}
+            renderItem={renderFriendItem}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.friendsList}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="people-outline" size={48} color="#6B7280" />
+                <Text style={styles.emptyText}>No friends found</Text>
+                <Text style={styles.emptySubtext}>
+                  Add friends first to invite them as collaborators
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
 
       {/* Send Invites Button */}
@@ -300,6 +391,40 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#000',
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    marginTop: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+    textAlign: 'center',
   },
   friendDetails: {
     flex: 1,

@@ -101,7 +101,7 @@ export default function ChallengesIndex() {
                   
                   <View style={styles.challengeFooter}>
                     <Text style={styles.challengeLocation} numberOfLines={1} ellipsizeMode="tail">
-                      📍 {item.location_name || 'No location'}
+                      📍 {item.location_name || 'No location set'}
                     </Text>
                     <Text style={styles.dueDateText} numberOfLines={1} ellipsizeMode="tail">
                       {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}

@@ -25,7 +25,7 @@ export default function LocationDisplay({ location, style }: LocationDisplayProp
     return (
       <View style={[styles.container, style]}>
         <Ionicons name="location-outline" size={16} color="#9BA1A6" style={styles.icon} />
-        <Text style={styles.noLocationText}>No location specified</Text>
+        <Text style={styles.noLocationText}>No location set</Text>
       </View>
     );
   }

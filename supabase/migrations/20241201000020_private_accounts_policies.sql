@@ -6,6 +6,8 @@ DROP POLICY IF EXISTS "Users can view public buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view public items" ON items;
 
 -- Update buckets policies to only allow friends to see buckets
+DROP POLICY IF EXISTS "Users can view their own buckets" ON buckets;
+DROP POLICY IF EXISTS "Users can view friend's buckets" ON buckets;
 CREATE POLICY "Users can view their own buckets" ON buckets
     FOR SELECT USING (auth.uid() = (SELECT auth_id FROM users WHERE id = owner_id));
 
@@ -21,6 +23,8 @@ CREATE POLICY "Users can view friend's buckets" ON buckets
     );
 
 -- Update items policies to only allow friends to see items
+DROP POLICY IF EXISTS "Users can view their own items" ON items;
+DROP POLICY IF EXISTS "Users can view friend's items" ON items;
 CREATE POLICY "Users can view their own items" ON items
     FOR SELECT USING (auth.uid() = (SELECT auth_id FROM users WHERE id = owner_id));
 

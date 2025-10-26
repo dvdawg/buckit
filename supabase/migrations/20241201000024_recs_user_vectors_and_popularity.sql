@@ -13,7 +13,9 @@ with signals as (
   from public.completions c
 )
 , joined as (
-  select s.user_id, it.embedding, s.strength, s.created_at
+  select s.user_id, 
+         it.embedding::vector(1536) as embedding,
+         s.strength, s.created_at
   from signals s
   join public.items it on it.id = s.i2
   where it.embedding is not null

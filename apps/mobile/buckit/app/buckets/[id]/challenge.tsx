@@ -6,6 +6,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import DatabaseTest from '@/components/DatabaseTest';
+import LocationDisplay from '@/components/LocationDisplay';
 
 const { width, height } = Dimensions.get('window');
 
@@ -279,8 +280,17 @@ export default function ChallengeDetail() {
                 <Text style={styles.detailText}>{bucket?.title || 'Unknown Bucket'}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.locationPin}>📍</Text>
-                <Text style={styles.detailText}>{challenge.location_name || 'No location'}</Text>
+                <LocationDisplay
+                  location={challenge.location_name ? {
+                    name: challenge.location_name,
+                    coordinates: challenge.location_point ? {
+                      latitude: challenge.location_point.latitude || 0,
+                      longitude: challenge.location_point.longitude || 0,
+                    } : { latitude: 0, longitude: 0 },
+                    address: challenge.location_name,
+                  } : null}
+                  style={styles.locationDisplay}
+                />
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.locationPin}>📅</Text>
@@ -616,5 +626,8 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
+  },
+  locationDisplay: {
+    flex: 1,
   },
 });

@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import { useBuckets } from '@/hooks/useBuckets';
+import LocationPicker from '@/components/LocationPicker';
 
 export default function CreateChallengeScreen() {
   const router = useRouter();
@@ -28,6 +29,11 @@ export default function CreateChallengeScreen() {
     category: '',
     bucketId: '',
   });
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [showBucketSelector, setShowBucketSelector] = useState(false);
 
@@ -53,7 +59,10 @@ export default function CreateChallengeScreen() {
         p_title: formData.title,
         p_description: formData.description,
         p_category: formData.category,
-        p_location: formData.location
+        p_location_name: selectedLocation?.name || formData.location,
+        p_location_point: selectedLocation ? 
+          `POINT(${selectedLocation.coordinates.longitude} ${selectedLocation.coordinates.latitude})` : 
+          null
       });
 
       if (error) {
@@ -181,14 +190,14 @@ export default function CreateChallengeScreen() {
               />
             </View>
             <View style={styles.detailRow}>
-              <Ionicons name="location" size={16} color="#EF4444" />
-              <TextInput
-                style={styles.detailInput}
+              <LocationPicker
+                value={selectedLocation}
+                onLocationSelect={(location) => {
+                  setSelectedLocation(location);
+                  updateFormData('location', location?.name || '');
+                }}
                 placeholder="Location"
-                placeholderTextColor="#9BA1A6"
-                value={formData.location}
-                onChangeText={(value) => updateFormData('location', value)}
-                maxLength={40}
+                style={styles.locationPicker}
               />
             </View>
             <View style={styles.detailRow}>
@@ -454,5 +463,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     padding: 16,
+  },
+  locationPicker: {
+    flex: 1,
   },
 });

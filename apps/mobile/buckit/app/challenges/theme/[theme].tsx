@@ -51,9 +51,9 @@ export default function ThemedChallengesScreen() {
   };
 
   const getDifficultyColor = (difficulty: number) => {
-    if (difficulty <= 2) return '#4ade80'; // Green
-    if (difficulty <= 3) return '#f59e0b'; // Orange
-    return '#ef4444'; // Red
+    if (difficulty <= 2) return '#4ade80';
+    if (difficulty <= 3) return '#f59e0b';
+    return '#ef4444';
   };
 
   const getDifficultyText = (difficulty: number) => {
@@ -75,7 +75,7 @@ export default function ThemedChallengesScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -86,7 +86,7 @@ export default function ThemedChallengesScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content */}
+      {}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -131,7 +131,7 @@ export default function ThemedChallengesScreen() {
                 style={styles.challengeCard}
                 onPress={() => handleChallengePress(challenge)}
               >
-                {/* Bucket Name at Top */}
+                {}
                 <View style={styles.bucketNameContainer}>
                   <View style={styles.bucketInfo}>
                     <Text style={styles.bucketEmoji}>{challenge.bucket.emoji}</Text>
@@ -144,9 +144,9 @@ export default function ThemedChallengesScreen() {
                   </View>
                 </View>
 
-                {/* Challenge Content Row */}
+                {}
                 <View style={styles.challengeContent}>
-                  {/* Completion Status & Icon */}
+                  {}
                   <TouchableOpacity 
                     style={styles.challengeIcon}
                     onPress={() => toggleChallengeCompletion(challenge)}
@@ -158,7 +158,7 @@ export default function ThemedChallengesScreen() {
                     )}
                   </TouchableOpacity>
                   
-                  {/* Challenge Info */}
+                  {}
                   <View style={styles.challengeInfo}>
                     <Text style={styles.challengeTitle} numberOfLines={2} ellipsizeMode="tail">
                       {challenge.title}
@@ -195,14 +195,14 @@ export default function ThemedChallengesScreen() {
         )}
       </ScrollView>
 
-      {/* Challenge Detail Modal */}
+      {}
       <ChallengeDetailModal
         visible={challengeModalVisible}
         challengeId={selectedChallengeId}
         onClose={handleCloseChallengeModal}
       />
 
-      {/* Rating Modal */}
+      {}
       <ChallengeRatingModal
         visible={ratingModalVisible}
         onClose={() => setRatingModalVisible(false)}

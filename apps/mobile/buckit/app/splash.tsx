@@ -17,7 +17,6 @@ export default function SplashScreen() {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    // Start animation sequence
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -32,7 +31,6 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    // Navigate to definition screen after 2 seconds
     const timer = setTimeout(() => {
       router.replace('/definition');
     }, 2000);
@@ -51,7 +49,7 @@ export default function SplashScreen() {
           }
         ]}
       >
-        {/* Bucket Logo */}
+        {}
         <View style={styles.logoContainer}>
           <BucketLogo size={40} color="#fff" />
           <Text style={styles.buckitText}>Buckit</Text>

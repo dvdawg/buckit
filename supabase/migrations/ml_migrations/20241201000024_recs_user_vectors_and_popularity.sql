@@ -1,14 +1,10 @@
--- User trait vectors (from events + completions)
--- Positive signals come from events + completions fallback
 drop materialized view if exists public.user_vectors cascade;
 create materialized view public.user_vectors as
 with signals as (
-  -- Prefer events if present
   select e.user_id, e.item_id as i2, e.strength, e.created_at
   from public.events e
   where e.event_type in ('view','like','save','start','complete')
   union all
-  -- Fallback: completions as positive signals
   select c.user_id, c.item_id as i2, 3.0 as strength, c.created_at
   from public.completions c
 )
@@ -31,15 +27,13 @@ select
   case 
     when count(*) = 0 then null
     else (
-      -- Simple average of embeddings weighted by strength and time decay
-      -- This is a simplified approach that works with pgvector
       select avg(emb) 
       from (
         select emb 
         from decayed d2 
         where d2.user_id = decayed.user_id
         order by w desc
-        limit 50  -- Limit to top 50 most relevant items per user
+        limit 50
       ) top_items
     )
   end as emb
@@ -48,7 +42,6 @@ group by user_id;
 
 create unique index if not exists user_vectors_user_idx on public.user_vectors(user_id);
 
--- Popularity/recency from completions
 drop materialized view if exists public.item_popularity cascade;
 create materialized view public.item_popularity as
 select i.id,
@@ -60,7 +53,6 @@ group by i.id;
 
 create unique index if not exists item_popularity_id_idx on public.item_popularity(id);
 
--- Refresh helper
 create or replace function public.refresh_recs_materialized()
 returns void language plpgsql as $$
 begin

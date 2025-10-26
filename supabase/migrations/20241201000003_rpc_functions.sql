@@ -1,4 +1,3 @@
--- Function to get current user's ID
 CREATE OR REPLACE FUNCTION me_user_id()
 RETURNS UUID
 LANGUAGE SQL
@@ -7,7 +6,6 @@ AS $$
     SELECT id FROM users WHERE auth_id = auth.uid();
 $$;
 
--- Function to get home feed events
 CREATE OR REPLACE FUNCTION home_feed(limit_rows INTEGER DEFAULT 30, offset_rows INTEGER DEFAULT 0)
 RETURNS TABLE (
     id BIGINT,
@@ -44,7 +42,6 @@ AS $$
     OFFSET offset_rows;
 $$;
 
--- Function to create a bucket
 CREATE OR REPLACE FUNCTION create_bucket(
     p_title TEXT,
     p_description TEXT DEFAULT NULL,
@@ -67,7 +64,6 @@ BEGIN
     VALUES (user_id, p_title, p_description, p_visibility)
     RETURNING id INTO bucket_id;
     
-    -- Create feed event
     INSERT INTO feed_events (actor_id, verb, object_type, object_id, audience)
     VALUES (user_id, 'created', 'bucket', bucket_id, p_visibility);
     
@@ -75,7 +71,6 @@ BEGIN
 END;
 $$;
 
--- Function to create an item
 CREATE OR REPLACE FUNCTION create_item(
     p_bucket_id UUID,
     p_title TEXT,
@@ -96,7 +91,6 @@ BEGIN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
     
-    -- Check if user owns the bucket or is a collaborator
     SELECT owner_id INTO bucket_owner_id FROM buckets WHERE id = p_bucket_id;
     IF bucket_owner_id IS NULL THEN
         RAISE EXCEPTION 'Bucket not found';
@@ -113,7 +107,6 @@ BEGIN
     VALUES (p_bucket_id, user_id, p_title, p_description, p_url)
     RETURNING id INTO item_id;
     
-    -- Create feed event
     INSERT INTO feed_events (actor_id, verb, object_type, object_id, audience)
     VALUES (user_id, 'created', 'item', item_id, 'friends');
     
@@ -121,7 +114,6 @@ BEGIN
 END;
 $$;
 
--- Function to complete an item
 CREATE OR REPLACE FUNCTION complete_item(
     p_item_id UUID,
     p_photo_url TEXT DEFAULT NULL,
@@ -142,13 +134,11 @@ BEGIN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
     
-    -- Check if item exists and user has access
     SELECT owner_id INTO item_owner_id FROM items WHERE id = p_item_id;
     IF item_owner_id IS NULL THEN
         RAISE EXCEPTION 'Item not found';
     END IF;
     
-    -- Check if user can complete this item (owner or collaborator)
     IF item_owner_id != user_id AND NOT EXISTS (
         SELECT 1 FROM buckets b
         JOIN bucket_collaborators bc ON bc.bucket_id = b.id
@@ -162,18 +152,15 @@ BEGIN
     VALUES (p_item_id, user_id, p_photo_url, p_caption, p_tagged_friend_ids)
     RETURNING id INTO completion_id;
     
-    -- Create feed event
     INSERT INTO feed_events (actor_id, verb, object_type, object_id, audience)
     VALUES (user_id, 'completed', 'item', p_item_id, 'friends');
     
-    -- Award points
     UPDATE users SET points = points + 10 WHERE id = user_id;
     
     RETURN completion_id;
 END;
 $$;
 
--- Function to send friend request
 CREATE OR REPLACE FUNCTION send_friend_request(p_friend_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -191,7 +178,6 @@ BEGIN
         RAISE EXCEPTION 'Cannot friend yourself';
     END IF;
     
-    -- Check if friendship already exists
     IF EXISTS (
         SELECT 1 FROM friendships f
         WHERE (f.user_id = user_id AND f.friend_id = p_friend_id)
@@ -207,7 +193,6 @@ BEGIN
 END;
 $$;
 
--- Function to accept friend request
 CREATE OR REPLACE FUNCTION accept_friend_request(p_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql

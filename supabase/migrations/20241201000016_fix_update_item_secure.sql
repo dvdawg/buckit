@@ -1,5 +1,3 @@
--- Fix update_item_secure function to ensure it exists with correct parameters
--- This migration ensures the update_item_secure function is available
 
 CREATE OR REPLACE FUNCTION update_item_secure(
     p_item_id UUID,
@@ -24,17 +22,14 @@ BEGIN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
     
-    -- Convert location_point string to geography if provided
     IF p_location_point IS NOT NULL THEN
         BEGIN
             location_geography := ST_GeogFromText(p_location_point);
         EXCEPTION WHEN OTHERS THEN
-            -- If parsing fails, set to NULL and continue
             location_geography := NULL;
         END;
     END IF;
     
-    -- Update only the fields that are provided (not NULL)
     UPDATE items 
     SET 
         title = COALESCE(p_title, title),

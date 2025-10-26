@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
 
@@ -10,7 +10,6 @@ export const handler = serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get items without appeal scores
     const { data: items, error: qerr } = await supabase
       .from("items")
       .select("id, title, description")
@@ -44,7 +43,6 @@ export const handler = serve(async (req) => {
         continue;
       }
       
-      // Compute appeal score using the database function
       const { data: appealScore, error: scoreErr } = await supabase
         .rpc("compute_appeal_score", { p_item_id: item.id });
       
@@ -53,21 +51,17 @@ export const handler = serve(async (req) => {
         continue;
       }
       
-      // If no events-based score, use text-based heuristic
       let finalScore = appealScore;
       if (finalScore === null) {
-        // Simple heuristic based on text length and keywords
         const textLength = text.length;
         const hasKeywords = /amazing|great|awesome|fantastic|wonderful|excellent/i.test(text);
         const hasNegativeKeywords = /boring|terrible|awful|bad|horrible/i.test(text);
         
-        let heuristicScore = 0.5; // Base score
+        let heuristicScore = 0.5;
         
-        // Adjust based on text length (longer descriptions often more appealing)
         if (textLength > 100) heuristicScore += 0.1;
         if (textLength > 200) heuristicScore += 0.1;
         
-        // Adjust based on keywords
         if (hasKeywords) heuristicScore += 0.2;
         if (hasNegativeKeywords) heuristicScore -= 0.3;
         
@@ -78,7 +72,6 @@ export const handler = serve(async (req) => {
     }
 
     if (updates.length > 0) {
-      // Update each item individually
       for (const update of updates) {
         const { error: uerr } = await supabase
           .from("items")

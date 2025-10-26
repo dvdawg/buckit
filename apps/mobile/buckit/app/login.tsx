@@ -66,7 +66,6 @@ export default function LoginScreen() {
           password,
         });
         if (error) throw error;
-        // Reset redirect state on successful login
         resetRedirectState();
       }
     } catch (error: any) {
@@ -87,13 +86,11 @@ export default function LoginScreen() {
   const handleDeveloperAuth = async () => {
     setLoading(true);
     try {
-      // Use specific developer credentials
       const { error } = await supabase.auth.signInWithPassword({
         email: 'oskical@buckit.app',
         password: 'oskibuckit',
       });
       if (error) throw error;
-      // Reset redirect state on successful login
       resetRedirectState();
     } catch (error: any) {
       Alert.alert('Developer Auth Error', error.message);
@@ -113,7 +110,7 @@ export default function LoginScreen() {
           }
         ]}
       >
-        {/* Logo Section */}
+        {}
         <View style={styles.logoSection}>
           <View style={styles.logoContainer}>
             <BucketLogo size={32} color="#fff" />
@@ -121,12 +118,12 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Welcome Text */}
+        {}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Welcome</Text>
         </View>
 
-        {/* Login Form */}
+        {}
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email</Text>
@@ -184,7 +181,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Developer Tools */}
+        {}
         <View style={styles.developerSection}>
           <TouchableOpacity
             style={styles.developerButton}

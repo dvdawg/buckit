@@ -1,8 +1,4 @@
--- Update policies to support bucket-level privacy
--- Buckets can be private (only owner), friends (visible to friends), or public
--- Remove the "all accounts are private" restriction
 
--- Update buckets policies to support different visibility levels
 DROP POLICY IF EXISTS "Users can view their own buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view friend's buckets" ON buckets;
 
@@ -24,7 +20,6 @@ CREATE POLICY "Users can view friend's buckets" ON buckets
 CREATE POLICY "Users can view public buckets" ON buckets
     FOR SELECT USING (visibility = 'public');
 
--- Update items policies to respect bucket visibility
 DROP POLICY IF EXISTS "Users can view their own items" ON items;
 DROP POLICY IF EXISTS "Users can view friend's items" ON items;
 
@@ -37,11 +32,8 @@ CREATE POLICY "Users can view items in visible buckets" ON items
             SELECT 1 FROM buckets b
             WHERE b.id = items.bucket_id 
             AND (
-                -- Owner can see all their items
                 b.owner_id = (SELECT id FROM users WHERE auth_id = auth.uid())
-                -- Or bucket is public
                 OR b.visibility = 'public'
-                -- Or bucket is friends and user is friends with owner
                 OR (b.visibility = 'friends' AND EXISTS (
                     SELECT 1 FROM friendships f
                     WHERE (f.user_id = (SELECT id FROM users WHERE auth_id = auth.uid()) 
@@ -53,7 +45,6 @@ CREATE POLICY "Users can view items in visible buckets" ON items
         )
     );
 
--- Update feed events to support different visibility levels
 DROP POLICY IF EXISTS "Users can view relevant feed events" ON feed_events;
 
 CREATE POLICY "Users can view relevant feed events" ON feed_events
@@ -69,7 +60,6 @@ CREATE POLICY "Users can view relevant feed events" ON feed_events
         ))
     );
 
--- Update get_user_buckets function to respect bucket visibility
 DROP FUNCTION IF EXISTS get_user_buckets(UUID);
 CREATE OR REPLACE FUNCTION get_user_buckets(p_user_id UUID)
 RETURNS TABLE (
@@ -101,11 +91,8 @@ AS $$
     FROM buckets b
     WHERE b.owner_id = p_user_id
     AND (
-        -- User can see their own buckets
         p_user_id = me_user_id()
-        -- Or bucket is public
         OR b.visibility = 'public'
-        -- Or bucket is friends and user is friends with the bucket owner
         OR (b.visibility = 'friends' AND EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
@@ -116,7 +103,6 @@ AS $$
     ORDER BY b.created_at DESC;
 $$;
 
--- Add function to get bucket visibility options
 CREATE OR REPLACE FUNCTION get_bucket_visibility_options()
 RETURNS TABLE (
     value TEXT,

@@ -28,7 +28,6 @@ export default function FriendRequestsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Get current user ID
   useEffect(() => {
     const getCurrentUserId = async () => {
       try {
@@ -82,10 +81,6 @@ export default function FriendRequestsScreen() {
       };
     }
     
-    // The database function returns requests where current user is either sender or receiver
-    // user_info is always the sender (user_id), friend_info is always the receiver (friend_id)
-    // If friend_id matches current user, it's incoming (someone sent it TO me)
-    // If user_id matches current user, it's outgoing (I sent it TO someone)
     const isIncoming = request.friend_id === currentUserId;
     
     return {
@@ -95,12 +90,10 @@ export default function FriendRequestsScreen() {
     };
   };
 
-  // Filter requests where I am the recipient (incoming requests)
   const incomingRequests = friendRequests.filter(req => 
     currentUserId && req.friend_id === currentUserId && req.status === 'pending'
   );
   
-  // Filter requests where I am the sender (outgoing requests)  
   const sentRequests = friendRequests.filter(req => 
     currentUserId && req.user_id === currentUserId && req.status === 'pending'
   );
@@ -148,7 +141,7 @@ export default function FriendRequestsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -178,7 +171,7 @@ export default function FriendRequestsScreen() {
           </View>
         )}
 
-        {/* Incoming Requests */}
+        {}
         {incomingRequests.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Incoming Requests</Text>
@@ -186,7 +179,7 @@ export default function FriendRequestsScreen() {
           </View>
         )}
 
-        {/* Sent Requests */}
+        {}
         {sentRequests.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sent Requests</Text>
@@ -194,7 +187,7 @@ export default function FriendRequestsScreen() {
           </View>
         )}
 
-        {/* Empty State */}
+        {}
         {!loading && incomingRequests.length === 0 && sentRequests.length === 0 && (
           <View style={styles.emptyContainer}>
             <Ionicons name="people-outline" size={64} color="#6B7280" />

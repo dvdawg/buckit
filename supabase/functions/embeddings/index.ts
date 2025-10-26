@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
 
@@ -17,12 +17,11 @@ export const handler = serve(async (req) => {
     const body: RequestBody = await req.json().catch(() => ({}));
     const limit = body.limit ?? 200;
 
-    // Get items without embeddings that have valid titles
     const { data: items, error: qerr } = await supabase
       .from("items")
       .select("id, title, description")
       .is("embedding", null)
-      .not("title", "is", null)  // Only get items with non-null titles
+      .not("title", "is", null)
       .limit(limit);
     
     if (qerr) {
@@ -39,12 +38,10 @@ export const handler = serve(async (req) => {
 
     const updates = [];
     for (const item of items) {
-      // Ensure we have valid text content
       const title = item.title || "";
       const description = item.description || "";
       const text = [title, description].filter(Boolean).join(" ");
       
-      // Skip items with no text content
       if (!text.trim()) {
         console.log(`Skipping item ${item.id} - no text content`);
         continue;
@@ -55,7 +52,6 @@ export const handler = serve(async (req) => {
     }
 
     if (updates.length > 0) {
-      // Update each item individually to avoid null constraint issues
       for (const update of updates) {
         const { error: uerr } = await supabase
           .from("items")
@@ -64,16 +60,13 @@ export const handler = serve(async (req) => {
         
         if (uerr) {
           console.error(`Error updating embedding for item ${update.id}:`, uerr);
-          // Continue with other items instead of failing completely
         }
       }
     }
 
-    // Refresh materialized views
     const { error: ferr } = await supabase.rpc("refresh_recs_materialized");
     if (ferr) {
       console.error("Error refreshing materialized views:", ferr);
-      // Don't throw here, as the embeddings were updated successfully
     }
 
     return new Response(JSON.stringify({ updated: updates.length }), {
@@ -93,10 +86,9 @@ async function getTextEmbedding(text: string): Promise<number[]> {
   const claudeApiKey = Deno.env.get("ANTHROPIC_API_KEY");
   const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
   
-  // Try Claude first if available
   if (claudeApiKey) {
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("https:
         method: "POST",
         headers: {
           "x-api-key": claudeApiKey,
@@ -120,21 +112,18 @@ async function getTextEmbedding(text: string): Promise<number[]> {
       const data = await response.json();
       const content = data.content[0].text;
       
-      // Parse the JSON array from Claude's response
       const embedding = JSON.parse(content);
       if (Array.isArray(embedding) && embedding.length === EMBED_DIM) {
         return embedding;
       }
     } catch (error) {
       console.error("Claude embedding error:", error);
-      // Fall back to OpenAI or hash-based approach
     }
   }
   
-  // Fallback to OpenAI if Claude fails
   if (openaiApiKey) {
     try {
-      const response = await fetch("https://api.openai.com/v1/embeddings", {
+      const response = await fetch("https:
         method: "POST",
         headers: {
           "Authorization": `Bearer ${openaiApiKey}`,
@@ -142,7 +131,7 @@ async function getTextEmbedding(text: string): Promise<number[]> {
         },
         body: JSON.stringify({
           input: text,
-          model: "text-embedding-3-small", // 1536 dimensions
+          model: "text-embedding-3-small",
         }),
       });
 
@@ -154,11 +143,9 @@ async function getTextEmbedding(text: string): Promise<number[]> {
       return data.data[0].embedding;
     } catch (error) {
       console.error("OpenAI embedding error:", error);
-      // Fall back to hash-based approach
     }
   }
   
-  // Final fallback: hash-based approach for demo/testing
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   const hashArray = new Uint8Array(hash);
   

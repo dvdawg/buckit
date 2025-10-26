@@ -1,7 +1,4 @@
--- Test collaborator functionality
--- This migration creates test data and verifies that collaborator buckets are properly displayed
 
--- Function to create test users and buckets for testing
 CREATE OR REPLACE FUNCTION create_test_collaborator_data()
 RETURNS TABLE (
     user1_id UUID,
@@ -20,7 +17,6 @@ DECLARE
     bucket2_id UUID;
     collaborator_record_id UUID;
 BEGIN
-    -- Create test user 1
     INSERT INTO users (id, auth_id, full_name, handle)
     VALUES (
         gen_random_uuid(),
@@ -31,12 +27,10 @@ BEGIN
     ON CONFLICT (auth_id) DO NOTHING
     RETURNING id INTO user1_id;
     
-    -- If user already exists, get their ID
     IF user1_id IS NULL THEN
         SELECT id INTO user1_id FROM users WHERE handle = 'testuser1' LIMIT 1;
     END IF;
     
-    -- Create test user 2
     INSERT INTO users (id, auth_id, full_name, handle)
     VALUES (
         gen_random_uuid(),
@@ -47,12 +41,10 @@ BEGIN
     ON CONFLICT (auth_id) DO NOTHING
     RETURNING id INTO user2_id;
     
-    -- If user already exists, get their ID
     IF user2_id IS NULL THEN
         SELECT id INTO user2_id FROM users WHERE handle = 'testuser2' LIMIT 1;
     END IF;
     
-    -- Create test bucket 1 (owned by user 1)
     INSERT INTO buckets (id, owner_id, title, description, visibility, emoji, color)
     VALUES (
         gen_random_uuid(),
@@ -66,12 +58,10 @@ BEGIN
     ON CONFLICT (id) DO NOTHING
     RETURNING id INTO bucket1_id;
     
-    -- If bucket already exists, get its ID
     IF bucket1_id IS NULL THEN
         SELECT id INTO bucket1_id FROM buckets WHERE title = 'User 1 Test Bucket' LIMIT 1;
     END IF;
     
-    -- Create test bucket 2 (owned by user 2)
     INSERT INTO buckets (id, owner_id, title, description, visibility, emoji, color)
     VALUES (
         gen_random_uuid(),
@@ -85,12 +75,10 @@ BEGIN
     ON CONFLICT (id) DO NOTHING
     RETURNING id INTO bucket2_id;
     
-    -- If bucket already exists, get its ID
     IF bucket2_id IS NULL THEN
         SELECT id INTO bucket2_id FROM buckets WHERE title = 'User 2 Test Bucket' LIMIT 1;
     END IF;
     
-    -- Create collaborator relationship (user 1 is collaborator on user 2's bucket)
     INSERT INTO bucket_collaborators (id, bucket_id, user_id, invited_by, invited_at, accepted_at)
     VALUES (
         gen_random_uuid(),
@@ -107,7 +95,6 @@ BEGIN
         accepted_at = NOW()
     RETURNING id INTO collaborator_record_id;
     
-    -- If collaborator record already exists, get its ID
     IF collaborator_record_id IS NULL THEN
         SELECT id INTO collaborator_record_id 
         FROM bucket_collaborators 
@@ -119,7 +106,6 @@ BEGIN
 END;
 $$;
 
--- Function to test if collaborator buckets are properly returned
 CREATE OR REPLACE FUNCTION test_collaborator_bucket_display()
 RETURNS TABLE (
     test_name TEXT,
@@ -139,10 +125,8 @@ DECLARE
     user1_collaborator_buckets INTEGER;
     user2_collaborator_buckets INTEGER;
 BEGIN
-    -- Create test data
     SELECT * INTO test_data FROM create_test_collaborator_data();
     
-    -- Test user 1 buckets (should have 1 owned + 1 collaborator = 2 total)
     SELECT COUNT(*) INTO user1_buckets 
     FROM get_user_buckets_by_id(test_data.user1_id);
     
@@ -150,7 +134,6 @@ BEGIN
     FROM get_user_buckets_by_id(test_data.user1_id)
     WHERE is_collaborator = true;
     
-    -- Test user 2 buckets (should have 1 owned = 1 total)
     SELECT COUNT(*) INTO user2_buckets 
     FROM get_user_buckets_by_id(test_data.user2_id);
     
@@ -158,11 +141,10 @@ BEGIN
     FROM get_user_buckets_by_id(test_data.user2_id)
     WHERE is_collaborator = true;
     
-    -- Return test results
     RETURN QUERY SELECT 
         'User 1 Bucket Count'::TEXT,
         test_data.user1_id,
-        2::INTEGER, -- Expected: 1 owned + 1 collaborator
+        2::INTEGER,
         user1_buckets,
         user1_collaborator_buckets,
         (user1_buckets = 2 AND user1_collaborator_buckets = 1)::BOOLEAN;
@@ -170,7 +152,7 @@ BEGIN
     RETURN QUERY SELECT 
         'User 1 Collaborator Buckets'::TEXT,
         test_data.user1_id,
-        1::INTEGER, -- Expected: 1 collaborator bucket
+        1::INTEGER,
         user1_collaborator_buckets,
         user1_collaborator_buckets,
         (user1_collaborator_buckets = 1)::BOOLEAN;
@@ -178,7 +160,7 @@ BEGIN
     RETURN QUERY SELECT 
         'User 2 Bucket Count'::TEXT,
         test_data.user2_id,
-        1::INTEGER, -- Expected: 1 owned bucket
+        1::INTEGER,
         user2_buckets,
         user2_collaborator_buckets,
         (user2_buckets = 1 AND user2_collaborator_buckets = 0)::BOOLEAN;

@@ -28,7 +28,7 @@ export default function AddFriendsScreen() {
     if (searchQuery.trim()) {
       const timeoutId = setTimeout(() => {
         searchUsers(searchQuery);
-      }, 300); // Debounce search
+      }, 300);
       return () => clearTimeout(timeoutId);
     }
   }, [searchQuery, searchUsers]);
@@ -135,7 +135,7 @@ export default function AddFriendsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -144,7 +144,7 @@ export default function AddFriendsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Search Bar */}
+      {}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color="#9BA1A6" />
@@ -164,7 +164,7 @@ export default function AddFriendsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Results */}
+      {}
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsTitle}>
           {searchQuery ? `Search Results (${searchResults.length})` : 'Find Friends'}

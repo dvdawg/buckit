@@ -29,10 +29,9 @@ export function usePerformanceSimple() {
       return; 
     }
     
-    // Simulate loading delay
     setTimeout(() => {
       setPerformance({
-        overallProgress: 0.56, // 56%
+        overallProgress: 0.56,
         currentStreak: 5,
         growthRate: 250,
         totalCompletions: 14,

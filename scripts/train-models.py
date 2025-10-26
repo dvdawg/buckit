@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Comprehensive Model Training Pipeline
 Trains and deploys all recommendation system models
@@ -14,7 +13,6 @@ from datetime import datetime
 from typing import Dict, List, Optional
 import logging
 
-# Add the services directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'recs', 'training'))
 
 from appeal_head_train import AppealHeadTrainer
@@ -69,7 +67,7 @@ class ModelTrainingPipeline:
                 raise Exception(f"Training job {job_id} failed: {data.get('error_message', 'Unknown error')}")
             
             logger.info(f"Training job {job_id} status: {status}")
-            time.sleep(30)  # Check every 30 seconds
+            time.sleep(30)
         
         raise Exception(f"Training job {job_id} timed out after {timeout} seconds")
     
@@ -77,14 +75,11 @@ class ModelTrainingPipeline:
         """Train the appeal head model"""
         logger.info("Starting appeal head model training...")
         
-        # Create training job
         job_id = self.create_training_job('appeal_head')
         logger.info(f"Created training job: {job_id}")
         
-        # Wait for completion
         result = self.wait_for_job_completion(job_id)
         
-        # Deploy the model
         model_version = result.get('model_version')
         if model_version:
             self.deploy_model('appeal_head', model_version)
@@ -145,15 +140,12 @@ class ModelTrainingPipeline:
         }
         
         try:
-            # 1. Refresh embeddings first (needed for other models)
             logger.info("Step 1: Refreshing embeddings...")
             results['models']['embeddings'] = self.refresh_embeddings()
             
-            # 2. Refresh user vectors
             logger.info("Step 2: Refreshing user vectors...")
             results['models']['user_vectors'] = self.refresh_user_vectors()
             
-            # 3. Train appeal head model
             logger.info("Step 3: Training appeal head model...")
             results['models']['appeal_head'] = self.train_appeal_head_model()
             
@@ -181,19 +173,16 @@ def main():
     
     args = parser.parse_args()
     
-    # Set environment variables
     os.environ['SUPABASE_URL'] = args.supabase_url
     os.environ['SUPABASE_SERVICE_ROLE_KEY'] = args.supabase_key
     os.environ['OPENAI_API_KEY'] = args.openai_key
     
-    # Initialize pipeline
     pipeline = ModelTrainingPipeline(
         args.supabase_url,
         args.supabase_key,
         args.openai_key
     )
     
-    # Run training
     if args.model == 'all':
         results = pipeline.run_full_pipeline()
     else:
@@ -204,7 +193,6 @@ def main():
         elif args.model == 'embeddings':
             results = pipeline.refresh_embeddings()
     
-    # Output results
     if args.output:
         with open(args.output, 'w') as f:
             json.dump(results, f, indent=2)

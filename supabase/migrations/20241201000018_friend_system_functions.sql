@@ -1,6 +1,4 @@
--- Additional friend system functions
 
--- Function to reject friend request
 CREATE OR REPLACE FUNCTION reject_friend_request(p_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -26,7 +24,6 @@ BEGIN
 END;
 $$;
 
--- Function to unfriend someone
 CREATE OR REPLACE FUNCTION unfriend(p_friend_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -52,7 +49,6 @@ BEGIN
 END;
 $$;
 
--- Function to get friend requests (both sent and received)
 DROP FUNCTION IF EXISTS get_friend_requests();
 CREATE OR REPLACE FUNCTION get_friend_requests()
 RETURNS TABLE (
@@ -92,7 +88,6 @@ AS $$
     ORDER BY f.created_at DESC;
 $$;
 
--- Function to get friends list
 CREATE OR REPLACE FUNCTION get_friends()
 RETURNS TABLE (
     id UUID,
@@ -121,7 +116,6 @@ AS $$
     ORDER BY u.full_name;
 $$;
 
--- Function to search users by username/handle
 CREATE OR REPLACE FUNCTION search_users(search_term TEXT, limit_count INTEGER DEFAULT 20)
 RETURNS TABLE (
     id UUID,
@@ -162,7 +156,6 @@ AS $$
     LIMIT limit_count;
 $$;
 
--- Function to get friend count
 CREATE OR REPLACE FUNCTION get_friend_count()
 RETURNS INTEGER
 LANGUAGE SQL
@@ -174,7 +167,6 @@ AS $$
     AND f.status = 'accepted';
 $$;
 
--- Function to check friendship status with another user
 CREATE OR REPLACE FUNCTION get_friendship_status(p_user_id UUID)
 RETURNS TEXT
 LANGUAGE SQL
@@ -189,7 +181,6 @@ AS $$
     );
 $$;
 
--- Function to get user profile by handle
 CREATE OR REPLACE FUNCTION get_user_by_handle(p_handle TEXT)
 RETURNS TABLE (
     id UUID,

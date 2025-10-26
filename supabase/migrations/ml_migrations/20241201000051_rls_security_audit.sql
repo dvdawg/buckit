@@ -1,10 +1,5 @@
--- RLS & Security Audit
--- Comprehensive security review and fixes for the recommendation system
 
--- 1. Audit existing RLS policies
--- Check current policies on all recommendation-related tables
 
--- 2. Fix events table RLS
 drop policy if exists events_owner_rw on public.events;
 create policy events_owner_rw on public.events
 for all
@@ -17,15 +12,8 @@ with check (
   auth.uid() = (select u.auth_id from public.users u where u.id = user_id)
 );
 
--- 3. Skip RLS for user_vectors (materialized views don't support RLS)
--- Note: user_vectors is a materialized view, so RLS cannot be enabled
--- Access control is handled at the function level instead
 
--- 4. Skip RLS for item_popularity (materialized views don't support RLS)
--- Note: item_popularity is a materialized view, so RLS cannot be enabled
--- Access control is handled at the function level instead
 
--- 5. Fix exposure_tracking RLS
 drop policy if exists exposure_tracking_owner_rw on public.exposure_tracking;
 create policy exposure_tracking_owner_rw on public.exposure_tracking
 for all
@@ -38,7 +26,6 @@ with check (
   auth.uid() = (select u.auth_id from public.users u where u.id = user_id)
 );
 
--- 6. Fix bandit arms RLS
 drop policy if exists recs_bandit_arms_owner_rw on public.recs_bandit_arms;
 create policy recs_bandit_arms_owner_rw on public.recs_bandit_arms
 for all
@@ -51,7 +38,6 @@ with check (
   auth.uid() = (select u.auth_id from public.users u where u.id = user_id)
 );
 
--- 7. Fix rate limiting RLS
 drop policy if exists recs_rate_limit_owner_rw on public.recs_rate_limit;
 create policy recs_rate_limit_owner_rw on public.recs_rate_limit
 for all
@@ -64,7 +50,6 @@ with check (
   (user_id is null or auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 );
 
--- 8. Fix cache RLS
 drop policy if exists recs_cache_owner_rw on public.recs_cache;
 create policy recs_cache_owner_rw on public.recs_cache
 for all
@@ -77,7 +62,6 @@ with check (
   auth.uid() = (select u.auth_id from public.users u where u.id = user_id)
 );
 
--- 9. Fix performance logs RLS
 drop policy if exists recs_performance_logs_owner_rw on public.recs_performance_logs;
 create policy recs_performance_logs_owner_rw on public.recs_performance_logs
 for all
@@ -90,7 +74,6 @@ with check (
   (user_id is null or auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 );
 
--- 10. Secure the candidate RPC function
 create or replace function public.get_recommendation_candidates(
   p_user_id uuid,
   p_lat double precision,
@@ -115,10 +98,9 @@ returns table (
   collab_hint boolean
 ) 
 language sql 
-security definer -- Run with function owner's privileges
+security definer
 set search_path = public
 as $$
-  -- Note: Security is handled by RLS policies on the underlying tables
 
   with uv as (
     select emb from public.user_vectors where user_id = p_user_id
@@ -136,7 +118,7 @@ as $$
             st_setsrid(st_makepoint(p_lon, p_lat), 4326)::geography,
             p_radius_km*1000
           )
-      and i.visibility = 'public' -- Only return public items
+      and i.visibility = 'public'
   ),
   ann as (
     select g.*,
@@ -159,7 +141,6 @@ as $$
     from public.item_popularity
   ),
   friends as (
-    -- accepted friends of the user
     select case
              when f.user_id = p_user_id then f.friend_id
              when f.friend_id = p_user_id then f.user_id
@@ -209,7 +190,6 @@ as $$
   left join collab c on c.id = a.id;
 $$;
 
--- 11. Secure other RPC functions
 create or replace function public.get_user_experiment_variant(
   p_user_id uuid,
   p_experiment_name text
@@ -224,7 +204,6 @@ security definer
 set search_path = public
 as $$
 begin
-  -- Verify user is authenticated and owns the user_id
   if not (auth.uid() is not null and 
           auth.uid() = (select u.auth_id from public.users u where u.id = p_user_id)) then
     raise exception 'Access denied: Invalid user';
@@ -245,7 +224,6 @@ begin
 end;
 $$;
 
--- 12. Add function to audit RLS policies
 create or replace function public.audit_rls_policies()
 returns table (
   table_name text,
@@ -270,7 +248,6 @@ as $$
   order by tablename, policyname;
 $$;
 
--- 13. Create security test function
 create or replace function public.test_rls_security()
 returns table (
   test_name text,
@@ -286,11 +263,9 @@ declare
   test_item_id uuid;
   result record;
 begin
-  -- Test 1: Events table isolation
   select id into test_user_id from public.users limit 1;
   select id into other_user_id from public.users where id != test_user_id limit 1;
   
-  -- This should fail if RLS is working
   begin
     insert into public.events (user_id, item_id, event_type, strength)
     values (other_user_id, (select id from public.items limit 1), 'test', 1.0);
@@ -300,7 +275,6 @@ begin
     return query select 'events_cross_user_insert'::text, true::boolean, 'Cross-user insert blocked'::text;
   end;
 
-  -- Test 2: User vectors isolation
   begin
     select * into result from public.user_vectors where user_id = other_user_id limit 1;
     if found then
@@ -312,7 +286,6 @@ begin
     return query select 'user_vectors_cross_user_read'::text, true::boolean, 'Cross-user read blocked by exception'::text;
   end;
 
-  -- Test 3: Candidate RPC security
   begin
     select * into result from public.get_recommendation_candidates(other_user_id, 0.0, 0.0, 100.0, 10);
     return query select 'candidate_rpc_cross_user'::text, false::boolean, 'Cross-user RPC succeeded'::text;

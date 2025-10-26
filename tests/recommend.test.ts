@@ -1,12 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Test configuration
-const supabaseUrl = process.env.SUPABASE_URL || 'http://localhost:54321';
+const supabaseUrl = process.env.SUPABASE_URL || 'http:
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-service-key';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Test data
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_FRIEND_ID = '00000000-0000-0000-0000-000000000002';
 const TEST_BUCKET_ID = '00000000-0000-0000-0000-000000000003';
@@ -14,7 +12,6 @@ const TEST_BUCKET_ID = '00000000-0000-0000-0000-000000000003';
 async function setupTestData() {
   console.log('Setting up test data...');
   
-  // Create test users
   await supabase.from('users').upsert([
     {
       id: TEST_USER_ID,
@@ -30,7 +27,6 @@ async function setupTestData() {
     },
   ]);
 
-  // Create test bucket
   await supabase.from('buckets').upsert([
     {
       id: TEST_BUCKET_ID,
@@ -41,7 +37,6 @@ async function setupTestData() {
     },
   ]);
 
-  // Create test items with embeddings and locations
   const testItems = [
     {
       id: '00000000-0000-0000-0000-000000000010',
@@ -50,7 +45,7 @@ async function setupTestData() {
       title: 'Visit Central Park',
       description: 'A beautiful park in Manhattan with lots of activities',
       location_name: 'Central Park, NYC',
-      location_point: 'POINT(-73.965355 40.782865)', // Central Park coordinates
+      location_point: 'POINT(-73.965355 40.782865)',
       visibility: 'public',
       difficulty: 2,
       price_min: 0,
@@ -64,7 +59,7 @@ async function setupTestData() {
       title: 'Try New Restaurant',
       description: 'Amazing Italian restaurant with great pasta',
       location_name: 'Little Italy, NYC',
-      location_point: 'POINT(-73.9979 40.7196)', // Little Italy coordinates
+      location_point: 'POINT(-73.9979 40.7196)',
       visibility: 'public',
       difficulty: 1,
       price_min: 25,
@@ -78,7 +73,7 @@ async function setupTestData() {
       title: 'Museum Visit',
       description: 'Explore art and history at the Met',
       location_name: 'Metropolitan Museum, NYC',
-      location_point: 'POINT(-73.9632 40.7794)', // Met Museum coordinates
+      location_point: 'POINT(-73.9632 40.7794)',
       visibility: 'public',
       difficulty: 3,
       price_min: 15,
@@ -89,7 +84,6 @@ async function setupTestData() {
 
   await supabase.from('items').upsert(testItems);
 
-  // Create friendship
   await supabase.from('friendships').upsert([
     {
       user_id: TEST_USER_ID,
@@ -98,7 +92,6 @@ async function setupTestData() {
     },
   ]);
 
-  // Create some completions for popularity
   await supabase.from('completions').upsert([
     {
       id: '00000000-0000-0000-0000-000000000020',
@@ -114,7 +107,6 @@ async function setupTestData() {
     },
   ]);
 
-  // Create some events for user vectors
   await supabase.from('events').upsert([
     {
       id: '00000000-0000-0000-0000-000000000030',
@@ -136,7 +128,6 @@ async function setupTestData() {
 }
 
 function generateTestEmbedding(text: string): number[] {
-  // Generate deterministic embeddings based on text content
   const hash = text.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
@@ -156,8 +147,8 @@ async function testRecommendationCandidates() {
   
   const { data: candidates, error } = await supabase.rpc('get_recommendation_candidates', {
     p_user_id: TEST_USER_ID,
-    p_lat: 40.782865, // Central Park latitude
-    p_lon: -73.965355, // Central Park longitude
+    p_lat: 40.782865,
+    p_lon: -73.965355,
     p_radius_km: 10,
     p_limit: 10,
   });
@@ -168,12 +159,10 @@ async function testRecommendationCandidates() {
 
   console.log(`Found ${candidates?.length || 0} candidates`);
   
-  // Verify we get results within radius
   if (!candidates || candidates.length === 0) {
     throw new Error('No candidates returned');
   }
 
-  // Check that all candidates are within radius
   for (const candidate of candidates) {
     if (candidate.distance_km > 10) {
       throw new Error(`Candidate ${candidate.id} is outside radius: ${candidate.distance_km}km`);
@@ -207,7 +196,6 @@ async function testRecommendationEndpoint() {
     throw new Error('No recommendations returned');
   }
 
-  // Verify recommendation structure
   for (const item of items) {
     if (!item.id || typeof item.score !== 'number' || !item.reasons) {
       throw new Error('Invalid recommendation structure');
@@ -225,7 +213,6 @@ async function testRecommendationEndpoint() {
 async function testEventsLogging() {
   console.log('Testing events logging...');
   
-  // Test impression logging
   const { error: impError } = await supabase.from('events').insert({
     user_id: TEST_USER_ID,
     item_id: '00000000-0000-0000-0000-000000000010',
@@ -256,7 +243,6 @@ async function testMaterializedViewsRefresh() {
 async function cleanupTestData() {
   console.log('Cleaning up test data...');
   
-  // Delete in reverse order to respect foreign key constraints
   await supabase.from('events').delete().in('user_id', [TEST_USER_ID, TEST_FRIEND_ID]);
   await supabase.from('completions').delete().in('item_id', [
     '00000000-0000-0000-0000-000000000010',
@@ -294,7 +280,6 @@ async function runTests() {
   }
 }
 
-// Run tests if this file is executed directly
 if (require.main === module) {
   runTests();
 }

@@ -41,7 +41,6 @@ export function useItems() {
     }
     
     try {
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) { 
         setItems([]); 
@@ -49,12 +48,10 @@ export function useItems() {
         return; 
       }
 
-      // Use ultimate secure RPC function that handles authentication internally
       const { data, error } = await supabase
         .rpc('get_user_items_secure');
 
       if (!error && data) {
-        // Transform the data to include bucket information
         const transformedItems = data.map((item: any) => ({
           ...item,
           bucket: item.bucket_id ? {
@@ -67,7 +64,6 @@ export function useItems() {
         setItems(transformedItems as Item[]);
       } else if (error) {
         console.error('Ultimate secure RPC failed for items:', error);
-        // No fallback - security is paramount
         setItems([]);
       }
     } catch (error) {

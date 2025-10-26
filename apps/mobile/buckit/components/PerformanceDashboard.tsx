@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-// Dummy data
 const bucketData = [
   { bucket: "Outdoors", completion: 0.8 },
   { bucket: "Family", completion: 0.65 },
@@ -33,13 +32,13 @@ export default function PerformanceDashboard() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <Text style={styles.title}>Your Stats</Text>
         <Text style={styles.subtitle}>Reflect on your experiences across all your buckets.</Text>
       </View>
 
-      {/* Section 1 - Progress by Bucket */}
+      {}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
@@ -71,7 +70,7 @@ export default function PerformanceDashboard() {
         </Text>
       </View>
 
-      {/* Section 2 - Streaks & Consistency */}
+      {}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="flame" size={20} color="#8EC5FC" />
@@ -94,7 +93,7 @@ export default function PerformanceDashboard() {
         </Text>
       </View>
 
-      {/* Section 3 - Total Challenges Completed */}
+      {}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="trending-up" size={20} color="#3b82f6" />

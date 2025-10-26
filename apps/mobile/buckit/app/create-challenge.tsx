@@ -46,11 +46,10 @@ export default function CreateChallengeScreen() {
     coordinates: { latitude: number; longitude: number };
     address?: string;
   } | null>(() => {
-    // Initialize with location data if in edit mode
     if (isEditMode && location) {
       return {
         name: location as string,
-        coordinates: { latitude: 0, longitude: 0 }, // Default coordinates
+        coordinates: { latitude: 0, longitude: 0 },
         address: location as string
       };
     }
@@ -79,7 +78,6 @@ export default function CreateChallengeScreen() {
     setLoading(true);
     try {
       if (isEditMode && challengeId) {
-        // Edit mode - update existing challenge
         console.log('Updating challenge using RPC function...');
         
         const { error } = await supabase.rpc('update_item_secure', {
@@ -98,7 +96,6 @@ export default function CreateChallengeScreen() {
           return;
         }
 
-        // Update the target date separately if provided
         if (formData.targetDate) {
           const { error: dateError } = await supabase
             .from('items')
@@ -107,14 +104,12 @@ export default function CreateChallengeScreen() {
           
           if (dateError) {
             console.error('Error updating deadline:', dateError);
-            // Don't fail the whole operation, just log the error
           }
         }
 
         console.log('Challenge updated successfully');
         Alert.alert('Success', 'Challenge updated successfully!');
       } else {
-        // Create mode - create new challenge
         console.log('Creating challenge using RPC function...');
         
         const { data, error } = await supabase.rpc('create_item_secure', {
@@ -125,7 +120,6 @@ export default function CreateChallengeScreen() {
           p_location: selectedLocation?.name || formData.location
         });
 
-        // If we have a target date, update the item with the deadline
         if (data && formData.targetDate) {
           const { error: updateError } = await supabase
             .from('items')
@@ -134,7 +128,6 @@ export default function CreateChallengeScreen() {
           
           if (updateError) {
             console.error('Error updating deadline:', updateError);
-            // Don't fail the whole operation, just log the error
           }
         }
 
@@ -162,7 +155,6 @@ export default function CreateChallengeScreen() {
   };
 
   const selectBucket = (bucketId: string) => {
-    // Don't allow changing bucket if it was pre-selected
     if (bucketId && formData.bucketId === bucketId) {
       return;
     }
@@ -196,7 +188,7 @@ export default function CreateChallengeScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -211,7 +203,7 @@ export default function CreateChallengeScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Form */}
+        {}
         <View style={styles.formCard}>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Title *</Text>
@@ -288,7 +280,7 @@ export default function CreateChallengeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Date Picker - Shows when showDatePicker is true */}
+          {}
           {showDatePicker && (
             <View style={styles.datePickerContainer}>
               <DateTimePicker
@@ -323,7 +315,7 @@ export default function CreateChallengeScreen() {
           </View>
         </View>
 
-        {/* Save Button */}
+        {}
         <TouchableOpacity 
           style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
           onPress={handleSave}
@@ -337,7 +329,7 @@ export default function CreateChallengeScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Bucket Selection Modal - Only show if no bucket pre-selected and not in edit mode */}
+      {}
       {!bucketId && !isEditMode && (
         <Modal
           visible={showBucketModal}
@@ -511,7 +503,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#666',
     opacity: 0.6,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',

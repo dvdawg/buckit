@@ -23,7 +23,6 @@ export function useBuckets() {
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Function to fetch buckets for a specific user
   const fetchUserBuckets = async (userId: string): Promise<Bucket[]> => {
     try {
       const { data, error } = await supabase.rpc('get_user_buckets_by_id', {
@@ -50,7 +49,6 @@ export function useBuckets() {
     }
     
     try {
-      // Test basic Supabase connection first
       console.log('Testing Supabase connection...');
       const { data: testData, error: testError } = await supabase
         .from('users')
@@ -65,13 +63,10 @@ export function useBuckets() {
         return;
       }
       
-      // First, try the secure RPC function that includes collaborator buckets
       console.log('Using secure RPC function to fetch user buckets...');
       
-      // Get user's database ID first
       let uid = null;
       
-      // Try me_user_id first
       const { data: meUserId } = await supabase.rpc('me_user_id');
       console.log('User ID from me_user_id:', meUserId);
       
@@ -80,10 +75,8 @@ export function useBuckets() {
       } else {
         console.log('me_user_id failed, trying auth user...');
         
-        // Get authenticated user
         const { data: authUser } = await supabase.auth.getUser();
         if (authUser?.user?.id) {
-          // Check if user exists in users table
           const { data: existingUser } = await supabase
             .from('users')
             .select('id')
@@ -135,10 +128,8 @@ export function useBuckets() {
         return;
       } 
       
-      // If RPC fails, try fallback method with direct table access
       console.log('RPC failed, trying fallback method...');
       
-      // Try direct table access with RLS (only owned buckets as fallback)
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('buckets')
         .select('*')
@@ -182,7 +173,6 @@ export function useBuckets() {
         console.error('Error recalculating counts:', error);
       } else {
         console.log('Successfully recalculated bucket counts');
-        // Refresh the buckets to get updated counts
         refresh();
       }
     } catch (error) {

@@ -1,5 +1,3 @@
--- Create function to get friends' completed challenges for the home feed
--- This function returns completed challenges from friends, sorted by completion time
 
 CREATE OR REPLACE FUNCTION get_friends_completed_challenges(
     limit_rows INTEGER DEFAULT 20,
@@ -50,25 +48,20 @@ AS $$
     JOIN buckets b ON b.id = i.bucket_id
     JOIN users u ON u.id = c.user_id
     WHERE 
-        -- Only show completions from friends
         EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
             AND f.status = 'accepted'
             AND (f.user_id = c.user_id OR f.friend_id = c.user_id)
         )
-        -- Only show completed items (not just any completion)
         AND i.is_completed = TRUE
-        -- Only show items from buckets that are friends visibility or public
         AND (b.visibility = 'friends' OR b.visibility = 'public')
-        -- Don't show user's own completions
         AND c.user_id != me_user_id()
     ORDER BY c.created_at DESC
     LIMIT limit_rows
     OFFSET offset_rows;
 $$;
 
--- Create function to get friends' completed challenges count
 CREATE OR REPLACE FUNCTION get_friends_completed_challenges_count()
 RETURNS INTEGER
 LANGUAGE SQL
@@ -79,17 +72,13 @@ AS $$
     JOIN items i ON i.id = c.item_id
     JOIN buckets b ON b.id = i.bucket_id
     WHERE 
-        -- Only show completions from friends
         EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
             AND f.status = 'accepted'
             AND (f.user_id = c.user_id OR f.friend_id = c.user_id)
         )
-        -- Only show completed items (not just any completion)
         AND i.is_completed = TRUE
-        -- Only show items from buckets that are friends visibility or public
         AND (b.visibility = 'friends' OR b.visibility = 'public')
-        -- Don't show user's own completions
         AND c.user_id != me_user_id();
 $$;

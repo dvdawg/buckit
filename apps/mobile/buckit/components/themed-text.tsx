@@ -40,7 +40,6 @@ export function ThemedText({
 }
 
 const styles = StyleSheet.create({
-  // Legacy styles for backward compatibility
   default: {
     fontSize: 16,
     lineHeight: 24,
@@ -70,7 +69,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamily,
   },
   
-  // New typography system
   h1: {
     ...Typography.h1,
     fontFamily: Typography.fontFamily,

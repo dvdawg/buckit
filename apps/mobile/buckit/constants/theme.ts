@@ -5,33 +5,28 @@
 
 import { Platform } from 'react-native';
 
-// Color Palette for Dark Theme
 export const Colors = {
-  // Background Colors
   background: {
     main: '#0E0E0E',
     card: '#1A1A1A',
     surface: 'rgba(255, 255, 255, 0.05)',
   },
   
-  // Text Colors
   text: {
-    primary: '#FFFFFF',      // Headers, section titles
-    secondary: '#D1D1D1',    // Body text, descriptions
-    muted: '#A0A0A0',        // Labels, meta, status tags
-    accent: '#EAEAEA',       // Subheaders
+    primary: '#FFFFFF',
+    secondary: '#D1D1D1',
+    muted: '#A0A0A0',
+    accent: '#EAEAEA',
   },
   
-  // Accent Colors - Thematic Blue Scheme
   accent: {
-    primary: '#18357A',      // Dark blue - for primary buttons and main actions
-    secondary: '#8EC5FC',    // Light blue - for secondary elements and highlights
-    success: '#8EC5FC',      // Light blue (was orange) - for success states
-    warning: '#8EC5FC',      // Light blue (was orange) - for warnings
-    error: '#8EC5FC',        // Light blue (was red) - for errors and alerts
+    primary: '#18357A',
+    secondary: '#8EC5FC',
+    success: '#8EC5FC',
+    warning: '#8EC5FC',
+    error: '#8EC5FC',
   },
   
-  // Legacy support
   light: {
     text: '#11181C',
     background: '#fff',
@@ -50,7 +45,6 @@ export const Colors = {
   },
 };
 
-// Typography System
 export const Typography = {
   fontFamily: Platform.select({
     ios: 'Poppins',
@@ -59,7 +53,6 @@ export const Typography = {
     default: 'Poppins',
   }),
   
-  // Header Styles
   h1: {
     fontSize: 26,
     fontWeight: '600' as const,
@@ -74,7 +67,6 @@ export const Typography = {
     lineHeight: 24,
   },
   
-  // Body Text
   body: {
     fontSize: 15,
     fontWeight: '400' as const,
@@ -82,7 +74,6 @@ export const Typography = {
     lineHeight: 22,
   },
   
-  // Caption/Label/Meta
   caption: {
     fontSize: 13,
     fontWeight: '500' as const,
@@ -90,7 +81,6 @@ export const Typography = {
     lineHeight: 18,
   },
   
-  // Button Text
   button: {
     fontSize: 14,
     fontWeight: '600' as const,
@@ -99,7 +89,6 @@ export const Typography = {
     lineHeight: 20,
   },
   
-  // Legacy font definitions for compatibility
   fonts: Platform.select({
     ios: {
       sans: 'Poppins',
@@ -122,5 +111,4 @@ export const Typography = {
   }),
 };
 
-// Legacy Fonts export for backward compatibility
 export const Fonts = Typography.fonts;

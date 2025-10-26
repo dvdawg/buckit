@@ -78,8 +78,6 @@ export default function LocationPicker({
   };
 
   const handlePlaceSelect = (placeName: string) => {
-    // For now, create a simple location object without coordinates
-    // In a real app, you'd use a geocoding service
     const location: LocationData = {
       name: placeName,
       coordinates: {

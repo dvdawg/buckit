@@ -35,7 +35,6 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
     try {
       setLoading(true);
       
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) {
         Alert.alert('Error', 'User not authenticated');
@@ -43,7 +42,6 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
         return;
       }
 
-      // Fetch the challenge data
       const { data: challengeData, error: challengeError } = await supabase
         .from('items')
         .select(`
@@ -80,7 +78,6 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
 
   const handleCompleteChallenge = () => {
     if (challenge?.is_completed) {
-      // If already completed, show option to uncomplete
       Alert.alert(
         'Uncomplete Challenge',
         'Do you want to mark this challenge as incomplete?',
@@ -90,7 +87,6 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
         ]
       );
     } else {
-      // If not completed, show rating modal
       setRatingModalVisible(true);
     }
   };
@@ -170,7 +166,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
             </View>
           ) : challenge ? (
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              {/* Header */}
+              {}
               <View style={styles.header}>
                 <View style={styles.titleRow}>
                   <Text style={styles.challengeTitle}>{challenge.title}</Text>
@@ -180,7 +176,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                 </View>
               </View>
 
-              {/* Details */}
+              {}
               <View style={styles.detailsSection}>
                 <View style={styles.detailRow}>
                   <Text style={styles.locationPin}>🪣</Text>
@@ -223,7 +219,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                 </View>
               </View>
 
-              {/* Description */}
+              {}
               {challenge.description && (
                 <View style={styles.descriptionSection}>
                   <Text style={styles.descriptionTitle}>Description</Text>
@@ -231,7 +227,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
                 </View>
               )}
 
-              {/* Completion Info */}
+              {}
               {challenge.is_completed && challenge.satisfaction_rating && (
                 <View style={styles.completionInfo}>
                   <Text style={styles.completionTitle}>Satisfaction Rating</Text>
@@ -259,7 +255,7 @@ export default function ChallengeModal({ visible, challengeId, onClose }: Challe
             </View>
           )}
 
-          {/* Rating Modal */}
+          {}
           <Modal
             visible={ratingModalVisible}
             transparent={true}

@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https:
 
 export function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: string) {
   return {
@@ -14,7 +14,6 @@ export function createLinUCBBandit(supabase: ReturnType<typeof createClient>, us
       
       if (pool.length === 0) return current;
       
-      // Compute UCB scores for exploration candidates
       const ucbCandidates = await Promise.all(
         pool.map(async (candidate) => {
           const features = [
@@ -39,13 +38,11 @@ export function createLinUCBBandit(supabase: ReturnType<typeof createClient>, us
         })
       );
       
-      // Sort by UCB score and pick top exploreK
       const sortedByUCB = ucbCandidates.sort((a, b) => b.ucbScore - a.ucbScore);
       const picks = sortedByUCB.slice(0, exploreK);
       
       const out = [...current];
       
-      // Inject exploration items at strategic positions
       if (picks[0]) out.splice(Math.min(3, out.length), 0, picks[0]);
       if (picks[1]) out.splice(Math.min(7, out.length), 0, picks[1]);
       

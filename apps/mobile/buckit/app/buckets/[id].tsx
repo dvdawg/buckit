@@ -55,21 +55,17 @@ export default function BucketDetail() {
   } | null>(null);
   const [collaborators, setCollaborators] = useState<any[]>([]);
   
-  // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      // Recalculate count and refresh data
       await recalculateCount();
-      // Also refresh collaborators
       if (id) {
         const collabs = await getCollaborators(id as string);
         setCollaborators(collabs);
       }
     },
-    minDuration: 1000, // 1 second minimum for smooth transition
+    minDuration: 1000,
   });
 
-  // Fetch collaborators when component mounts
   useEffect(() => {
     const fetchCollaborators = async () => {
       if (id) {
@@ -80,12 +76,10 @@ export default function BucketDetail() {
     fetchCollaborators();
   }, [id, getCollaborators]);
   
-  // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
 
-  // Transform items to challenges format for compatibility
   useEffect(() => {
     if (items) {
       const transformedChallenges = items.map(item => ({
@@ -96,13 +90,12 @@ export default function BucketDetail() {
         targetDate: item.deadline || '',
         is_completed: item.is_completed,
         satisfaction_rating: item.satisfaction_rating,
-        photos: [], // TODO: Add photo support later
+        photos: [],
       }));
       setChallenges(transformedChallenges);
     }
   }, [items]);
 
-  // Challenge data for modal
   const challenge = {
     id: "1",
     title: "Mt. Tam Hike",
@@ -111,12 +104,12 @@ export default function BucketDetail() {
     date: "12/18/2025",
     description: "Go to the Mill Valley Library, do some light gardening, and wander around.",
     photos: [
-      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
-      "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      "https:
+      "https:
+      "https:
+      "https:
+      "https:
+      "https:
     ],
   };
 
@@ -131,13 +124,12 @@ export default function BucketDetail() {
 
   const handleEditToggle = () => {
     if (bucket) {
-      // Navigate to create bucket page with pre-filled data
       const params = new URLSearchParams({
         edit: 'true',
         bucketId: bucket.id,
         title: bucket.title || '',
         description: bucket.description || '',
-        coverUrl: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+        coverUrl: bucket.cover_url || 'https:
         visibility: bucket.visibility || 'private',
       });
       router.push(`/create-bucket?${params.toString()}`);
@@ -146,7 +138,6 @@ export default function BucketDetail() {
 
 
   const handleEditChallenge = () => {
-    // Only allow editing if user can edit the bucket
     if (!bucket?.can_edit) {
       Alert.alert('Access Denied', 'You can only edit challenges in buckets you own or collaborate on.');
       return;
@@ -160,7 +151,6 @@ export default function BucketDetail() {
         location: selectedChallenge.location,
         targetDate: selectedChallenge.targetDate,
       });
-      // Initialize location data if available
       if (selectedChallenge.location_name) {
         setEditingLocation({
           name: selectedChallenge.location_name,
@@ -180,7 +170,6 @@ export default function BucketDetail() {
     if (!selectedChallenge) return;
 
     try {
-      // Update the challenge in the database
       const { error } = await supabase.rpc('update_item_secure', {
         p_item_id: selectedChallenge.id,
         p_title: editingData.title,
@@ -197,7 +186,6 @@ export default function BucketDetail() {
         return;
       }
 
-      // Update local state
       setChallenges(prevChallenges => 
         prevChallenges.map(challenge => 
           challenge.id === selectedChallenge.id 
@@ -214,7 +202,6 @@ export default function BucketDetail() {
         )
       );
       
-      // Update selected challenge
       setSelectedChallenge((prev: any) => ({
         ...prev,
         title: editingData.title,
@@ -246,7 +233,6 @@ export default function BucketDetail() {
   };
 
   const toggleChallengeCompletion = (challengeId: string) => {
-    // Only allow challenge completion if user can edit the bucket
     if (!bucket?.can_edit) {
       Alert.alert('Access Denied', 'You can only complete challenges in buckets you own or collaborate on.');
       return;
@@ -260,7 +246,6 @@ export default function BucketDetail() {
   };
 
   const handleRatingSuccess = async () => {
-    // Refresh the bucket data to get updated counts
     if (recalculateCount) {
       await recalculateCount();
     }
@@ -272,7 +257,6 @@ export default function BucketDetail() {
   };
 
   const handleCloseModal = () => {
-    // Start collapse animation
     Animated.parallel([
       Animated.timing(scaleAnim, {
         toValue: 0,
@@ -294,7 +278,6 @@ export default function BucketDetail() {
     });
   };
 
-  // Only show loading screen on initial load, not during refresh
   if (loading && !bucket) {
     return (
       <View style={styles.container}>
@@ -322,15 +305,15 @@ export default function BucketDetail() {
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
+      {}
       <View style={styles.headerSection}>
-        <Image source={{ uri: bucket?.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' }} style={styles.headerImage} />
+        <Image source={{ uri: bucket?.cover_url || 'https:
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
         />
         
-        {/* Navigation */}
+        {}
         <View style={styles.headerNav}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -355,7 +338,7 @@ export default function BucketDetail() {
           </View>
         </View>
 
-        {/* Bucket Info */}
+        {}
         <View style={styles.bucketInfo}>
           <Text style={styles.bucketTitle}>{bucket?.title}</Text>
           <Text style={styles.bucketDescription}>{bucket?.description}</Text>
@@ -371,7 +354,7 @@ export default function BucketDetail() {
         </View>
       </View>
 
-      {/* Collaborators Section */}
+      {}
       {collaborators.length > 0 && (
         <View style={styles.collaboratorsSection}>
           <View style={styles.sectionHeader}>
@@ -402,7 +385,7 @@ export default function BucketDetail() {
         </View>
       )}
 
-      {/* Challenges List */}
+      {}
       <ScrollView 
         style={styles.challengesSection} 
         showsVerticalScrollIndicator={false}
@@ -417,14 +400,13 @@ export default function BucketDetail() {
       >
         {challenges.map((challenge) => {
           if (bucket?.can_edit) {
-            // Use interactive challenge card for collaborators
             return (
           <TouchableOpacity
             key={challenge.id}
             style={styles.challengeCard}
             onPress={() => handleChallengePress(challenge.id)}
           >
-            {/* Completion Status & Icon */}
+            {}
             <TouchableOpacity 
               style={[styles.challengeIcon, !bucket?.can_edit && styles.challengeIconDisabled]}
               onPress={(e) => {
@@ -442,7 +424,7 @@ export default function BucketDetail() {
               )}
             </TouchableOpacity>
             
-            {/* Challenge Info */}
+            {}
             <View style={styles.challengeInfo}>
               <Text style={styles.challengeTitle}>{challenge.title}</Text>
               <Text style={styles.challengeDescription}>{challenge.description}</Text>
@@ -455,9 +437,9 @@ export default function BucketDetail() {
                 <Text style={styles.targetDateText}>{challenge.targetDate ? `Target: ${new Date(challenge.targetDate).toLocaleDateString()}` : 'None yet!'}</Text>
               </View>
               
-              {/* Additional Info Row */}
+              {}
               <View style={styles.challengeMeta}>
-                {/* Satisfaction Rating */}
+                {}
                 {challenge.is_completed && challenge.satisfaction_rating && (
                   <View style={styles.satisfactionContainer}>
                     <Ionicons name="star" size={12} color="#f59e0b" />
@@ -465,7 +447,7 @@ export default function BucketDetail() {
                   </View>
                 )}
                 
-                {/* Photo Count */}
+                {}
                 {challenge.photos && challenge.photos.length > 0 && (
                   <View style={styles.photoCountContainer}>
                     <Ionicons name="camera" size={12} color="#9BA1A6" />
@@ -474,7 +456,7 @@ export default function BucketDetail() {
                 )}
               </View>
               
-              {/* Shared Completions Info */}
+              {}
               {(() => {
                 const itemCompletions = completions.filter(c => c.item_id === challenge.id);
                 const photos = getPhotosForItem(challenge.id);
@@ -516,7 +498,6 @@ export default function BucketDetail() {
           </TouchableOpacity>
             );
           } else {
-            // Use view-only challenge card for non-collaborators
             return (
               <ViewOnlyChallengeCard
                 key={challenge.id}
@@ -528,7 +509,7 @@ export default function BucketDetail() {
         })}
       </ScrollView>
 
-      {/* Shared Photo Album */}
+      {}
       {completions.length > 0 && (
         <View style={styles.photoAlbumSection}>
           <SharedPhotoAlbum
@@ -548,11 +529,7 @@ export default function BucketDetail() {
               rateCompletion(photoId, rating, review);
             }}
             onAddPhoto={async (photoUrl, caption) => {
-              // Add photo to the shared album without completing any challenges
-              // Photos can be added to the album independently of challenge completion
               try {
-                // This would add the photo to the shared album
-                // For now, we'll just show a message that photos can be added
                 Alert.alert('Photo Added', 'Photo added to the shared album!');
               } catch (error) {
                 console.error('Error adding photo:', error);
@@ -564,14 +541,14 @@ export default function BucketDetail() {
         </View>
       )}
 
-      {/* Floating Add Button - Only show if user can edit */}
+      {}
       {bucket?.can_edit && (
         <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
           <Ionicons name="add" size={24} color="#8EC5FC" />
         </TouchableOpacity>
       )}
 
-      {/* View Only Challenge Modal for non-editable buckets */}
+      {}
       {!bucket?.can_edit && (
         <ViewOnlyChallengeModal
           visible={modalVisible}
@@ -582,14 +559,13 @@ export default function BucketDetail() {
       )}
 
 
-      {/* Completion Rating Modal */}
+      {}
       <CompletionRatingModal
         visible={completionRatingModalVisible}
         onClose={() => setCompletionRatingModalVisible(false)}
         onRate={async (rating, review) => {
           if (completionToRate) {
             try {
-              // Use the update_item_satisfaction_rating function directly
               const { error } = await supabase.rpc('update_item_satisfaction_rating', {
                 p_item_id: completionToRate.id,
                 p_satisfaction_rating: rating,
@@ -602,7 +578,6 @@ export default function BucketDetail() {
                 return;
               }
 
-              // Update local state
               setChallenges(prev => 
                 prev.map(c => 
                   c.id === completionToRate.id 
@@ -611,7 +586,6 @@ export default function BucketDetail() {
                 )
               );
 
-              // Update selected challenge if it's the one being rated
               if (selectedChallenge && selectedChallenge.id === completionToRate.id) {
                 setSelectedChallenge((prev: any) => ({
                   ...prev,
@@ -620,7 +594,6 @@ export default function BucketDetail() {
                 }));
               }
 
-              // Refresh the bucket data
               if (recalculateCount) {
                 await recalculateCount();
               }
@@ -638,7 +611,7 @@ export default function BucketDetail() {
         completedByName={completionToRate?.completed_by_name}
       />
 
-      {/* Challenge Detail Modal */}
+      {}
       <ChallengeDetailModal
         visible={challengeDetailModalVisible}
         challengeId={selectedChallengeId}
@@ -648,7 +621,7 @@ export default function BucketDetail() {
         }}
       />
 
-      {/* Shared Rating Modal */}
+      {}
       <ChallengeRatingModal
         visible={ratingModalVisible}
         onClose={() => setRatingModalVisible(false)}
@@ -754,7 +727,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#9BA1A6',
   },
-  // Rating modal styles
   ratingModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -1004,7 +976,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Modal styles
   blurContainer: {
     position: 'absolute',
     top: 0,
@@ -1131,7 +1102,6 @@ const styles = StyleSheet.create({
     color: '#B0B0B0',
     lineHeight: 24,
   },
-  // Modal editing styles
   modalTitleInput: {
     fontSize: 24,
     fontWeight: '700',
@@ -1274,7 +1244,6 @@ const styles = StyleSheet.create({
   modalLocationPicker: {
     flex: 1,
   },
-  // Collaborators section styles
   collaboratorsSection: {
     backgroundColor: '#1F2937',
     paddingVertical: 16,

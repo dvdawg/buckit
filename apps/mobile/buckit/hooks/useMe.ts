@@ -30,13 +30,11 @@ export function useMe() {
     }
     
     try {
-      // get users.id via RPC me_user_id(), then fetch row
       const { data: uid } = await supabase.rpc('me_user_id');
       
       if (!uid) { 
         console.log('No user ID from me_user_id, checking auth user...');
         
-        // Get authenticated user
         const { data: authUser } = await supabase.auth.getUser();
         if (!authUser?.user?.id) {
           setMe(null);
@@ -44,7 +42,6 @@ export function useMe() {
           return;
         }
         
-        // Check if user exists in users table
         const { data: existingUser } = await supabase
           .from('users')
           .select('*')
@@ -57,7 +54,6 @@ export function useMe() {
           return;
         }
         
-        // User needs to be created via migration
         console.log('User not found - needs to be created via migration');
         setMe(null);
         setLoading(false);

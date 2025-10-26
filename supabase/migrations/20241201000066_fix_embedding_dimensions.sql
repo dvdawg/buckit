@@ -1,4 +1,3 @@
--- Fix embedding dimensions in RPC function to match actual schema (384 dimensions)
 create or replace function public.get_recommendation_candidates(
   p_user_id uuid,
   p_lat double precision,
@@ -8,7 +7,7 @@ create or replace function public.get_recommendation_candidates(
 )
 returns table (
   id uuid,
-  embedding vector(384),  -- Fixed to 384 dimensions
+  embedding vector(384),
   distance_km double precision,
   price_min integer,
   price_max integer,
@@ -23,13 +22,11 @@ returns table (
   collab_hint boolean
 ) 
 language sql 
-security definer -- Run with function owner's privileges
+security definer
 set search_path = public
 as $$
-  -- Note: Security is handled by RLS policies on the underlying tables
 
   with uv as (
-    -- User vectors table may not exist yet, return null embedding
     select null::vector(384) as emb
   ),
   geo as (
@@ -45,15 +42,15 @@ as $$
             st_setsrid(st_makepoint(p_lon, p_lat), 4326)::geography,
             p_radius_km*1000
           )
-      and i.visibility = 'public' -- Only return public items
+      and i.visibility = 'public'
   ),
   ann as (
     select g.*,
-           g.embedding as emb_use  -- Use embedding directly (384 dimensions)
+           g.embedding as emb_use
     from geo g
     where g.embedding is not null
     order by
-      g.embedding <-> (select emb from uv)  -- Direct comparison (384 dimensions)
+      g.embedding <-> (select emb from uv)
     nulls last
     limit p_limit
   ),
@@ -62,7 +59,6 @@ as $$
     from public.item_popularity
   ),
   friends as (
-    -- accepted friends of the user
     select case
              when f.user_id = p_user_id then f.friend_id
              when f.friend_id = p_user_id then f.user_id

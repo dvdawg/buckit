@@ -52,7 +52,6 @@ export function useFriends() {
       const { data, error } = await supabase.rpc('get_friends');
       if (error) throw error;
       
-      // Deduplicate friends by ID to prevent duplicate key errors
       const uniqueFriends = (data || []).reduce((acc: Friend[], friend: Friend) => {
         if (!acc.find(f => f.id === friend.id)) {
           acc.push(friend);
@@ -88,7 +87,7 @@ export function useFriends() {
         p_friend_id: friendId
       });
       if (error) throw error;
-      await fetchFriendRequests(); // Refresh requests
+      await fetchFriendRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send friend request');
       throw err;
@@ -109,7 +108,7 @@ export function useFriends() {
         throw error;
       }
       console.log('Friend request accepted successfully');
-      await Promise.all([fetchFriends(), fetchFriendRequests()]); // Refresh both
+      await Promise.all([fetchFriends(), fetchFriendRequests()]);
     } catch (err) {
       console.error('acceptFriendRequest error:', err);
       setError(err instanceof Error ? err.message : 'Failed to accept friend request');
@@ -126,7 +125,7 @@ export function useFriends() {
         p_user_id: userId
       });
       if (error) throw error;
-      await fetchFriendRequests(); // Refresh requests
+      await fetchFriendRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reject friend request');
       throw err;
@@ -147,7 +146,7 @@ export function useFriends() {
         throw error;
       }
       console.log('Unfriend successful');
-      await fetchFriends(); // Refresh friends
+      await fetchFriends();
     } catch (err) {
       console.error('Unfriend error:', err);
       setError(err instanceof Error ? err.message : 'Failed to unfriend');

@@ -45,21 +45,19 @@ export function useFriendsFeed() {
       if (fetchError) throw fetchError;
 
       if (offset === 0) {
-        // First load - replace completions
         setCompletions(data || []);
+        console.log('🔄 First load - set completions:', (data || []).length);
       } else {
-        // Load more - append to existing completions, avoiding duplicates
         setCompletions(prev => {
           const existingIds = new Set(prev.map(c => c.completion_id));
-          const newCompletions = (data || []).filter(c => !existingIds.has(c.completion_id));
+          const newCompletions = (data || []).filter((c: FriendsCompletion) => !existingIds.has(c.completion_id));
+          console.log(`📥 Load more - existing: ${prev.length}, new: ${(data || []).length}, filtered: ${newCompletions.length}`);
           return [...prev, ...newCompletions];
         });
       }
 
-      // Check if there are more items to load
       setHasMore((data || []).length === limit);
 
-      // Get total count on first load
       if (offset === 0) {
         const { data: countData, error: countError } = await supabase.rpc('get_friends_completed_challenges_count');
         console.log('📈 Friends completions count:', { countData, countError });
@@ -85,7 +83,6 @@ export function useFriendsFeed() {
   }, [fetchCompletions]);
 
   useEffect(() => {
-    // Debug: Check current user and friends
     const debugUserAndFriends = async () => {
       try {
         const { data: userData } = await supabase.rpc('me_user_id');

@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 export const handler = serve(async (req) => {
   try {
@@ -8,7 +8,6 @@ export const handler = serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Get scheduled training jobs
     const { data: scheduledJobs, error: jobsError } = await supabase
       .rpc('get_next_training_jobs');
     
@@ -22,7 +21,6 @@ export const handler = serve(async (req) => {
       try {
         console.log(`Starting scheduled training for ${job.model_type}`);
         
-        // Create training job
         const { data: trainingJob, error: createError } = await supabase
           .from('ml_training_jobs')
           .insert({
@@ -38,10 +36,8 @@ export const handler = serve(async (req) => {
           continue;
         }
 
-        // Start training asynchronously
         startTrainingJob(supabase, trainingJob.id, job.model_type);
         
-        // Update schedule next run time
         await updateScheduleNextRun(supabase, job.id, job.cron_expression);
         
         results.push({
@@ -79,7 +75,6 @@ export const handler = serve(async (req) => {
 
 async function startTrainingJob(supabase: any, jobId: string, modelType: string) {
   try {
-    // Update job status to running
     await supabase
       .from('ml_training_jobs')
       .update({
@@ -103,7 +98,6 @@ async function startTrainingJob(supabase: any, jobId: string, modelType: string)
         throw new Error(`Unknown model type: ${modelType}`);
     }
 
-    // Update job as completed
     await supabase
       .from('ml_training_jobs')
       .update({
@@ -114,7 +108,6 @@ async function startTrainingJob(supabase: any, jobId: string, modelType: string)
       })
       .eq('id', jobId);
 
-    // Deploy the new model if it's an appeal head model
     if (modelType === 'appeal_head') {
       await deployModel(supabase, modelType, result.version);
     }
@@ -123,7 +116,6 @@ async function startTrainingJob(supabase: any, jobId: string, modelType: string)
   } catch (error) {
     console.error(`Training job ${jobId} failed:`, error);
     
-    // Update job as failed
     await supabase
       .from('ml_training_jobs')
       .update({
@@ -138,11 +130,8 @@ async function startTrainingJob(supabase: any, jobId: string, modelType: string)
 async function trainAppealHeadModel(supabase: any) {
   console.log("Training appeal head model...");
   
-  // For now, we'll simulate the training process
-  // In production, this would call the actual Python training script
   const modelVersion = `v${Date.now()}`;
   
-  // Simulate training metrics
   const metrics = {
     training_samples: Math.floor(Math.random() * 1000) + 500,
     model_accuracy: 0.8 + Math.random() * 0.15,
@@ -150,7 +139,6 @@ async function trainAppealHeadModel(supabase: any) {
     model_size_mb: 2.0 + Math.random() * 1.0
   };
 
-  // Store model version
   await supabase
     .from('ml_model_versions')
     .insert({
@@ -169,13 +157,11 @@ async function trainAppealHeadModel(supabase: any) {
 async function refreshUserVectors(supabase: any) {
   console.log("Refreshing user vectors...");
   
-  // Refresh materialized views
   const { error } = await supabase.rpc('refresh_recs_materialized');
   if (error) {
     throw new Error(`Failed to refresh user vectors: ${error.message}`);
   }
 
-  // Get updated count
   const { count } = await supabase
     .from('user_vectors')
     .select('*', { count: 'exact', head: true });
@@ -192,7 +178,6 @@ async function refreshUserVectors(supabase: any) {
 async function refreshEmbeddings(supabase: any) {
   console.log("Refreshing embeddings...");
   
-  // Call embeddings function
   const embeddingsResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/embeddings`, {
     method: 'POST',
     headers: {
@@ -220,13 +205,11 @@ async function refreshEmbeddings(supabase: any) {
 async function deployModel(supabase: any, modelType: string, version: string) {
   console.log(`Deploying ${modelType} model version ${version}...`);
   
-  // Deactivate other versions
   await supabase
     .from('ml_model_versions')
     .update({ is_active: false })
     .eq('model_type', modelType);
 
-  // Activate new version
   await supabase
     .from('ml_model_versions')
     .update({
@@ -238,7 +221,6 @@ async function deployModel(supabase: any, modelType: string, version: string) {
 }
 
 async function updateScheduleNextRun(supabase: any, scheduleId: string, cronExpression: string) {
-  // Simple cron parser for common patterns
   const nextRun = calculateNextRun(cronExpression);
   
   await supabase
@@ -252,25 +234,19 @@ async function updateScheduleNextRun(supabase: any, scheduleId: string, cronExpr
 }
 
 function calculateNextRun(cronExpression: string): Date {
-  // Simple implementation for common cron patterns
-  // In production, use a proper cron library
   const now = new Date();
   const nextRun = new Date(now);
   
   if (cronExpression === '0 2 * * *') {
-    // Daily at 2 AM
     nextRun.setDate(nextRun.getDate() + 1);
     nextRun.setHours(2, 0, 0, 0);
   } else if (cronExpression === '0 */6 * * *') {
-    // Every 6 hours
     nextRun.setHours(nextRun.getHours() + 6);
     nextRun.setMinutes(0, 0, 0);
   } else if (cronExpression === '0 1 * * *') {
-    // Daily at 1 AM
     nextRun.setDate(nextRun.getDate() + 1);
     nextRun.setHours(1, 0, 0, 0);
   } else {
-    // Default: run again in 1 hour
     nextRun.setHours(nextRun.getHours() + 1);
   }
   

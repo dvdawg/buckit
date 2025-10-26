@@ -1,11 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 type Params = { userId: string; lat: number; lon: number; radiusKm?: number; k?: number };
 
-const EMBED_DIM = 384; // Fixed to match database schema
+const EMBED_DIM = 384;
 
-// MMR Selection function (embedded)
 function mmrSelect<T extends { embedding?: number[]; score: number }>(
   candidates: T[], k: number, lambda = 0.7
 ): T[] {
@@ -60,7 +59,6 @@ export const handler = serve(async (req) => {
 
     console.log(`Processing recommendation request for user: ${userId}`);
 
-    // Trait vector
     let uv: any = null;
     try {
       const { data: userVectorData, error: userVectorError } = await supabase
@@ -78,7 +76,6 @@ export const handler = serve(async (req) => {
       console.error('User vector fetch failed:', error);
     }
 
-    // Candidates via schema-aligned RPC
     let candidates = [];
     try {
       const { data: candidatesData, error: candErr } = await supabase.rpc("get_recommendation_candidates", {
@@ -125,15 +122,12 @@ export const handler = serve(async (req) => {
       const trait = dot(uv?.emb ?? null, emb);
       const state = dot(stateVec, emb);
 
-      // Simple social signals
       const social = 0.15 * (c.friend_completes ?? 0);
       const cost = distancePenalty(c.distance_km) + pricePenalty(c.price_min, c.price_max) + difficultyPenalty(c.difficulty);
       const poprec = popularityBoost(c.completes, c.created_at);
       
-      // Appeal score: use precomputed score or fallback to trait similarity
       const appeal = c.appeal_score ?? trait;
 
-      // Simple scoring
       const score = 0.25*appeal + 0.25*trait + 0.20*state + 0.15*social + 0.10*poprec - 0.25*cost;
 
       return { 
@@ -144,7 +138,6 @@ export const handler = serve(async (req) => {
       };
     });
 
-    // Apply MMR diversity
     const diversified = mmrSelect(enriched, k, 0.7);
 
     const responseData = { 
@@ -170,7 +163,6 @@ export const handler = serve(async (req) => {
   }
 });
 
-// === helpers ===
 function dot(a: number[] | null | undefined, b: number[] | null | undefined) {
   if (!a || !b) return 0;
   let s = 0;

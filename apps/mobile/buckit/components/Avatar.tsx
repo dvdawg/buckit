@@ -23,7 +23,6 @@ export default function Avatar({ user, size = 'medium', style }: AvatarProps) {
   const avatarSize = sizeMap[size];
   const hasAvatar = user.avatar_url && user.avatar_url.trim() !== '';
   
-  // Get initials from full_name or handle
   const getInitials = () => {
     if (user.full_name) {
       const names = user.full_name.trim().split(' ');
@@ -39,14 +38,12 @@ export default function Avatar({ user, size = 'medium', style }: AvatarProps) {
   };
 
   const getBackgroundColor = () => {
-    // Generate a consistent color based on the user's name/handle
     const name = user.full_name || user.handle || 'default';
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
     
-    // Generate a color from the hash
     const hue = Math.abs(hash) % 360;
     return `hsl(${hue}, 70%, 50%)`;
   };

@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 export const handler = serve(async (req) => {
   try {
@@ -37,25 +37,21 @@ export const handler = serve(async (req) => {
 });
 
 async function getDashboard(supabase: any) {
-  // Get training summary
   const { data: summary } = await supabase
     .from('ml_training_summary')
     .select('*');
 
-  // Get recent jobs
   const { data: recentJobs } = await supabase
     .from('ml_training_jobs')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(10);
 
-  // Get active models
   const { data: activeModels } = await supabase
     .from('ml_model_versions')
     .select('*')
     .eq('is_active', true);
 
-  // Get system metrics
   const { data: systemMetrics } = await supabase
     .from('recs_metrics_summary')
     .select('*');
@@ -121,7 +117,6 @@ async function getModelVersions(supabase: any) {
     throw new Error(`Failed to get model versions: ${error.message}`);
   }
 
-  // Group by model type
   const groupedModels = (models || []).reduce((acc: any, model: any) => {
     if (!acc[model.model_type]) {
       acc[model.model_type] = [];
@@ -140,20 +135,17 @@ async function getModelVersions(supabase: any) {
 }
 
 async function getTrainingMetrics(supabase: any) {
-  // Get training job metrics over time
   const { data: jobMetrics } = await supabase
     .from('ml_training_jobs')
     .select('model_type, status, created_at, metrics')
     .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .order('created_at', { ascending: true });
 
-  // Get model performance metrics
   const { data: modelMetrics } = await supabase
     .from('ml_model_versions')
     .select('model_type, version, metrics, deployed_at')
     .eq('is_active', true);
 
-  // Calculate success rates
   const successRates = (jobMetrics || []).reduce((acc: any, job: any) => {
     if (!acc[job.model_type]) {
       acc[job.model_type] = { total: 0, successful: 0 };
@@ -165,7 +157,6 @@ async function getTrainingMetrics(supabase: any) {
     return acc;
   }, {});
 
-  // Calculate average training times
   const avgTrainingTimes = (jobMetrics || [])
     .filter(job => job.status === 'completed' && job.metrics?.training_duration_ms)
     .reduce((acc: any, job: any) => {
@@ -176,7 +167,6 @@ async function getTrainingMetrics(supabase: any) {
       return acc;
     }, {});
 
-  // Calculate averages
   Object.keys(avgTrainingTimes).forEach(modelType => {
     const times = avgTrainingTimes[modelType];
     avgTrainingTimes[modelType] = {
@@ -199,13 +189,11 @@ async function getTrainingMetrics(supabase: any) {
 }
 
 async function getSystemHealth(supabase: any) {
-  // Check database connectivity
   const { data: dbCheck } = await supabase
     .from('ml_training_jobs')
     .select('count')
     .limit(1);
 
-  // Check function health
   const functionChecks = await Promise.allSettled([
     checkFunctionHealth(supabase, 'recommend'),
     checkFunctionHealth(supabase, 'embeddings'),
@@ -219,7 +207,6 @@ async function getSystemHealth(supabase: any) {
     error: result.status === 'rejected' ? result.reason.message : null
   }));
 
-  // Get recent error rates
   const { data: recentErrors } = await supabase
     .from('ml_training_jobs')
     .select('status, created_at')

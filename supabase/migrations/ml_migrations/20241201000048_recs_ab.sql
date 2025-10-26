@@ -1,6 +1,4 @@
--- A/B testing tables for recommendation system
 
--- Experiments table
 create table if not exists public.recs_experiments (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
@@ -15,12 +13,11 @@ create table if not exists public.recs_experiments (
 
 create index if not exists recs_experiments_enabled_idx on public.recs_experiments(enabled, start_date, end_date);
 
--- User assignments to experiments
 create table if not exists public.recs_experiment_assignments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
   experiment_id uuid not null references public.recs_experiments(id) on delete cascade,
-  variant text not null, -- 'control', 'treatment', 'variant_a', etc.
+  variant text not null,
   assigned_at timestamptz not null default now(),
   unique(user_id, experiment_id)
 );
@@ -28,11 +25,9 @@ create table if not exists public.recs_experiment_assignments (
 create index if not exists recs_experiment_assignments_user_idx on public.recs_experiment_assignments(user_id);
 create index if not exists recs_experiment_assignments_experiment_idx on public.recs_experiment_assignments(experiment_id, variant);
 
--- RLS for experiments
 alter table public.recs_experiments enable row level security;
 alter table public.recs_experiment_assignments enable row level security;
 
--- Allow read access to experiments for all authenticated users
 create policy recs_experiments_read on public.recs_experiments
 for select
 using (true);
@@ -42,7 +37,6 @@ for all
 using (auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 with check (auth.uid() = (select u.auth_id from public.users u where u.id = user_id));
 
--- Function to get user's experiment variant
 create or replace function public.get_user_experiment_variant(
   p_user_id uuid,
   p_experiment_name text
@@ -70,7 +64,6 @@ begin
 end;
 $$;
 
--- Function to assign user to experiment variant
 create or replace function public.assign_user_to_experiment(
   p_user_id uuid,
   p_experiment_name text,
@@ -85,7 +78,6 @@ declare
   variants text[];
   random_variant text;
 begin
-  -- Get experiment details
   select id, params
   into experiment_record
   from public.recs_experiments
@@ -95,10 +87,9 @@ begin
     and (end_date is null or end_date >= now());
   
   if not found then
-    return 'control'; -- Default to control if experiment not found
+    return 'control';
   end if;
   
-  -- Check if user is already assigned
   select variant
   into assigned_variant
   from public.recs_experiment_assignments
@@ -108,22 +99,18 @@ begin
     return assigned_variant;
   end if;
   
-  -- Determine variant
   if p_variant is not null then
     assigned_variant := p_variant;
   else
-    -- Get available variants from experiment params
     variants := coalesce(
       (experiment_record.params->>'variants')::text[],
       ARRAY['control', 'treatment']
     );
     
-    -- Simple random assignment (can be made more sophisticated)
     random_variant := variants[1 + floor(random() * array_length(variants, 1))];
     assigned_variant := random_variant;
   end if;
   
-  -- Assign user to variant
   insert into public.recs_experiment_assignments (user_id, experiment_id, variant)
   values (p_user_id, experiment_record.id, assigned_variant)
   on conflict (user_id, experiment_id) do nothing;
@@ -132,7 +119,6 @@ begin
 end;
 $$;
 
--- Function to get experiment parameters for user
 create or replace function public.get_experiment_params(
   p_user_id uuid,
   p_experiment_name text
@@ -145,7 +131,6 @@ declare
   variant_params jsonb;
   result_params jsonb;
 begin
-  -- Get base experiment parameters
   select params
   into experiment_params
   from public.recs_experiments
@@ -158,7 +143,6 @@ begin
     return '{}'::jsonb;
   end if;
   
-  -- Get user's variant
   select variant
   into variant_params
   from public.recs_experiment_assignments ea
@@ -166,13 +150,11 @@ begin
   where ea.user_id = p_user_id
     and e.name = p_experiment_name;
   
-  -- Merge base params with variant-specific params
   result_params := experiment_params;
   
   if variant_params is not null then
     result_params := result_params || jsonb_build_object('variant', variant_params);
     
-    -- Add variant-specific parameters if they exist
     if experiment_params ? 'variants' and experiment_params->'variants' ? variant_params::text then
       result_params := result_params || (experiment_params->'variants'->variant_params::text);
     end if;
@@ -182,7 +164,6 @@ begin
 end;
 $$;
 
--- Insert some example experiments
 insert into public.recs_experiments (name, description, params, enabled) values
 (
   'social_weight_test',

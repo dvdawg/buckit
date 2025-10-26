@@ -39,7 +39,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
 
-  // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
@@ -47,7 +46,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   useEffect(() => {
     if (visible && challengeId) {
       fetchChallengeData();
-      // Start expand animation
       Animated.parallel([
         Animated.timing(scaleAnim, {
           toValue: 1,
@@ -66,7 +64,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         }),
       ]).start();
     } else if (!visible) {
-      // Reset animations when closing
       scaleAnim.setValue(0);
       opacityAnim.setValue(0);
       blurAnim.setValue(0);
@@ -82,7 +79,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
     try {
       setLoading(true);
       
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) {
         Alert.alert('Error', 'User not authenticated');
@@ -90,7 +86,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         return;
       }
 
-      // First get the challenge data
       const { data: challengeData, error: challengeError } = await supabase
         .from('items')
         .select(`
@@ -110,10 +105,8 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
 
       if (challengeData) {
         setChallenge(challengeData);
-        // Initialize photos array from challenge data
         setPhotos(challengeData.photos || []);
         
-        // Now fetch the bucket data with permissions using the same RPC as bucket detail page
         const { data: bucketData, error: bucketError } = await supabase
           .rpc('get_bucket_by_id', {
             p_bucket_id: challengeData.bucket_id
@@ -121,7 +114,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
 
         if (bucketError) {
           console.error('Error fetching bucket:', bucketError);
-          // Set basic bucket info without permissions
           setBucket({
             id: challengeData.bucket_id,
             title: 'Unknown Bucket',
@@ -142,7 +134,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   };
 
   const handleClose = () => {
-    // Start collapse animation
     Animated.parallel([
       Animated.timing(scaleAnim, {
         toValue: 0,
@@ -171,7 +162,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
     }
     
     if (challenge) {
-      // Navigate to create challenge page with pre-filled data
       const params = new URLSearchParams({
         edit: 'true',
         challengeId: challenge.id,
@@ -182,7 +172,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         targetDate: challenge.target_date ? new Date(challenge.target_date).toISOString().split('T')[0] : '',
       });
       router.push(`/create-challenge?${params.toString()}`);
-      onClose(); // Close the modal
+      onClose();
     }
   };
 
@@ -199,7 +189,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   };
 
   const handleRatingSuccess = () => {
-    // Refresh challenge data
     if (challengeId) {
       fetchChallengeData();
     }
@@ -212,14 +201,12 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
 
   const pickImage = async () => {
     try {
-      // Request permission to access media library
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Required', 'Please grant camera roll permissions to add photos.');
         return;
       }
 
-      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -246,19 +233,16 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
     try {
       setUploadingPhoto(true);
 
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) {
         Alert.alert('Error', 'User not authenticated');
         return;
       }
 
-      // Create a unique filename
       const fileExt = imageAsset.uri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${challengeId}_${Date.now()}.${fileExt}`;
       const filePath = `challenge-photos/${fileName}`;
 
-      // Use FormData approach for React Native compatibility
       const formData = new FormData();
       formData.append('file', {
         uri: imageAsset.uri,
@@ -266,10 +250,8 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         name: fileName,
       } as any);
 
-      // Get the Supabase URL from environment
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
       
-      // Upload using fetch with FormData
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         Alert.alert('Error', 'User not authenticated');
@@ -294,12 +276,10 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         return;
       }
 
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('challenge-photos')
         .getPublicUrl(filePath);
 
-      // Update the challenge with the new photo
       const updatedPhotos = [...photos, publicUrl];
       const { error: updateError } = await supabase
         .from('items')
@@ -312,7 +292,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         return;
       }
 
-      // Update local state
       setPhotos(updatedPhotos);
       setChallenge({ ...challenge, photos: updatedPhotos });
       Alert.alert('Success', 'Photo added to challenge!');
@@ -360,7 +339,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                 </View>
               ) : challenge ? (
                 <>
-                  {/* Header */}
+                  {}
                   <View style={styles.modalHeader}>
                     <View style={styles.modalTitleSection}>
                       <Text style={styles.modalTitle}>{challenge.title}</Text>
@@ -384,7 +363,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                     </View>
                   </View>
 
-                  {/* Details */}
+                  {}
                   <View style={styles.modalDetailsSection}>
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalLocationPin}>🪣</Text>
@@ -406,10 +385,10 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                     )}
                   </View>
 
-                  {/* Separator */}
+                  {}
                   <View style={styles.modalSeparator} />
 
-                  {/* Description */}
+                  {}
                   <View style={styles.modalDescriptionSection}>
                     <Text style={styles.modalDescriptionTitle}>Challenge Description</Text>
                     <Text style={styles.modalDescriptionText}>
@@ -417,13 +396,13 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                     </Text>
                   </View>
 
-                  {/* Photo Album */}
+                  {}
                   <View style={styles.modalPhotoAlbumSection}>
                     <Text style={styles.modalPhotoAlbumTitle}>
                       Photo Album ({photos.length})
                     </Text>
                     <View style={styles.modalPhotoGrid}>
-                      {/* Upload Button - Only show if user can edit */}
+                      {}
                       {bucket?.can_edit && (
                         <TouchableOpacity 
                           style={[styles.uploadButton, uploadingPhoto && styles.uploadButtonDisabled]}
@@ -441,7 +420,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                         </TouchableOpacity>
                       )}
                       
-                      {/* Existing Photos */}
+                      {}
                       {photos.map((photo: string, index: number) => (
                         <Image
                           key={index}
@@ -459,12 +438,12 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
               )}
             </ScrollView>
 
-            {/* Close Button */}
+            {}
             <TouchableOpacity style={styles.modalCloseButton} onPress={handleClose}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             
-            {/* Edit Button - Only show if user can edit */}
+            {}
             {bucket?.can_edit && (
               <TouchableOpacity 
                 style={styles.modalEditButton}
@@ -477,7 +456,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
         </BlurView>
       </Animated.View>
 
-      {/* Rating Modal */}
+      {}
       <ChallengeRatingModal
         visible={ratingModalVisible}
         onClose={() => setRatingModalVisible(false)}

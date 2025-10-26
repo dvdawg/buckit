@@ -41,7 +41,7 @@ export default function FriendsCompletionCard({ completion, onPress }: FriendsCo
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
-      {/* User Profile Header */}
+      {}
       <View style={styles.userHeader}>
         <View style={styles.userInfo}>
           <View style={styles.avatarContainer}>
@@ -65,17 +65,17 @@ export default function FriendsCompletionCard({ completion, onPress }: FriendsCo
         </View>
       </View>
 
-      {/* Challenge Title */}
+      {}
       <Text style={styles.challengeTitle}>{completion.item_title}</Text>
       
-      {/* Challenge Description */}
+      {}
       {completion.item_description && (
         <Text style={styles.challengeDescription} numberOfLines={2}>
           {completion.item_description}
         </Text>
       )}
 
-      {/* Location */}
+      {}
       {completion.item_location_name && (
         <View style={styles.locationContainer}>
           <Ionicons name="location-outline" size={14} color="#A0A0A0" />
@@ -83,19 +83,19 @@ export default function FriendsCompletionCard({ completion, onPress }: FriendsCo
         </View>
       )}
 
-      {/* Completion Photo */}
+      {}
       {completion.completion_photo_url && (
         <View style={styles.photoContainer}>
           <Image source={{ uri: completion.completion_photo_url }} style={styles.completionPhoto} />
         </View>
       )}
 
-      {/* Completion Caption */}
+      {}
       {completion.completion_caption && (
         <Text style={styles.caption}>{completion.completion_caption}</Text>
       )}
 
-      {/* Rating */}
+      {}
       {renderStars(completion.satisfaction_rating)}
     </TouchableOpacity>
   );

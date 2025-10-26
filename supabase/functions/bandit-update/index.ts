@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 export const handler = serve(async (req) => {
   try {
@@ -16,7 +16,6 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Map event types to rewards
     const rewardMap: Record<string, number> = {
       'impression': 0.0,
       'view': 0.1,
@@ -30,11 +29,10 @@ export const handler = serve(async (req) => {
 
     const reward = rewardMap[eventType] || 0.0;
 
-    // Update bandit arm with reward
     const { error } = await supabase.rpc('update_bandit_arm', {
       p_user_id: userId,
       p_item_id: itemId,
-      p_features: features || [0, 0, 0, 0, 0, 0], // Default features if not provided
+      p_features: features || [0, 0, 0, 0, 0, 0],
       p_reward: reward,
       p_alpha: 1.0
     });

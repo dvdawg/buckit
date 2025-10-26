@@ -14,11 +14,9 @@ function AuthGate() {
 
   useEffect(() => {
     if (!loading && !hasRedirected) {
-      // Check if session is invalid (only show error if there's actually a session error)
       if (!isSessionValid && sessionError) {
         console.log('Invalid session detected:', sessionError);
         
-        // If we're signing out, just redirect to login without showing error
         if (isSigningOut) {
           console.log('Sign out in progress, redirecting to login without error');
           markRedirected();
@@ -28,7 +26,6 @@ function AuthGate() {
         
         markRedirected();
         
-        // Only show alert if we haven't shown it yet
         if (!hasShownAlert) {
           markAlertShown();
           Alert.alert(
@@ -45,7 +42,6 @@ function AuthGate() {
             ]
           );
         } else {
-          // If we've already shown the alert, just redirect
           console.log('Redirecting to login due to invalid session (no alert)');
           router.replace('/login');
         }
@@ -66,7 +62,6 @@ function AuthGate() {
     }
   }, [user, loading, isSessionValid, sessionError, hasRedirected, hasShownAlert]);
 
-  // Show loading while session is being validated
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
@@ -75,10 +70,7 @@ function AuthGate() {
     );
   }
 
-  // If we have a session error and haven't redirected yet, automatically redirect after a short delay
-  // Skip error page if we're signing out
   if (!isSessionValid && sessionError && !hasRedirected && !isSigningOut) {
-    // Auto-redirect after 2 seconds if alert doesn't work
     setTimeout(() => {
       if (!hasRedirected) {
         console.log('Auto-redirecting to login due to session error');
@@ -101,7 +93,6 @@ function AuthGate() {
     );
   }
 
-  // Show splash screen initially
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />

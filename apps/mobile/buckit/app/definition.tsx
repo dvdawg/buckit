@@ -20,7 +20,6 @@ export default function DefinitionScreen() {
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Start animation sequence
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -34,7 +33,6 @@ export default function DefinitionScreen() {
       }),
     ]).start();
 
-    // Show button after 3 seconds
     const timer = setTimeout(() => {
       Animated.timing(buttonOpacity, {
         toValue: 1,
@@ -61,7 +59,7 @@ export default function DefinitionScreen() {
           }
         ]}
       >
-        {/* Dictionary Definition */}
+        {}
         <View style={styles.definitionContainer}>
           <Text style={styles.wordTitle}>Buckit</Text>
           
@@ -77,7 +75,7 @@ export default function DefinitionScreen() {
         </View>
       </Animated.View>
 
-      {/* Next Arrow - Outside content container */}
+      {}
       <Animated.View style={[styles.arrowContainer, { opacity: buttonOpacity }]}>
         <TouchableOpacity style={styles.arrowButton} onPress={handleNext}>
           <Ionicons name="chevron-forward" size={20} color="#9BA1A6" />

@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 interface TrainingJob {
   id: string;
@@ -47,7 +47,6 @@ export const handler = serve(async (req) => {
 });
 
 async function handleTraining(supabase: any, modelType: string) {
-  // Create training job record
   const { data: job, error: jobError } = await supabase
     .from('ml_training_jobs')
     .insert({
@@ -62,7 +61,6 @@ async function handleTraining(supabase: any, modelType: string) {
     throw new Error(`Failed to create training job: ${jobError.message}`);
   }
 
-  // Start training asynchronously
   startTrainingAsync(supabase, job.id, modelType);
 
   return new Response(JSON.stringify({
@@ -77,7 +75,6 @@ async function handleTraining(supabase: any, modelType: string) {
 
 async function startTrainingAsync(supabase: any, jobId: string, modelType: string) {
   try {
-    // Update job status to running
     await supabase
       .from('ml_training_jobs')
       .update({
@@ -101,7 +98,6 @@ async function startTrainingAsync(supabase: any, jobId: string, modelType: strin
         throw new Error(`Unknown model type: ${modelType}`);
     }
 
-    // Update job as completed
     await supabase
       .from('ml_training_jobs')
       .update({
@@ -116,7 +112,6 @@ async function startTrainingAsync(supabase: any, jobId: string, modelType: strin
   } catch (error) {
     console.error(`Training job ${jobId} failed:`, error);
     
-    // Update job as failed
     await supabase
       .from('ml_training_jobs')
       .update({
@@ -131,7 +126,6 @@ async function startTrainingAsync(supabase: any, jobId: string, modelType: strin
 async function trainAppealHeadModel(supabase: any) {
   console.log("Starting appeal head model training...");
   
-  // Call the Python training script
   const trainingScript = `
 import sys
 import os
@@ -176,11 +170,8 @@ print(json.dumps({
 }))
 `;
 
-  // Execute training script (this would need to be adapted for your Python environment)
-  // For now, we'll simulate the training process
   const modelVersion = `v${Date.now()}`;
   
-  // Simulate training metrics
   const metrics = {
     training_samples: 1000,
     model_accuracy: 0.85,
@@ -197,13 +188,11 @@ print(json.dumps({
 async function refreshUserVectors(supabase: any) {
   console.log("Refreshing user vectors...");
   
-  // Refresh materialized views
   const { error } = await supabase.rpc('refresh_recs_materialized');
   if (error) {
     throw new Error(`Failed to refresh user vectors: ${error.message}`);
   }
 
-  // Get updated count
   const { count } = await supabase
     .from('user_vectors')
     .select('*', { count: 'exact', head: true });
@@ -220,7 +209,6 @@ async function refreshUserVectors(supabase: any) {
 async function refreshEmbeddings(supabase: any) {
   console.log("Refreshing embeddings...");
   
-  // Call embeddings function
   const embeddingsResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/embeddings`, {
     method: 'POST',
     headers: {
@@ -280,7 +268,6 @@ async function handleDeployment(supabase: any, modelVersion: string | null) {
     });
   }
 
-  // Update active model version
   const { error } = await supabase
     .from('ml_model_versions')
     .upsert({

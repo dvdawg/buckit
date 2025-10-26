@@ -68,7 +68,6 @@ export default function ColdStartModal({ visible, onComplete, onSkip }: ColdStar
 
     setLoading(true);
     try {
-      // Initialize user trait vector based on selected preferences
       await initializeUserPreferences({
         selectedThemes,
         priceComfort,
@@ -99,7 +98,7 @@ export default function ColdStartModal({ visible, onComplete, onSkip }: ColdStar
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Theme Selection */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>What interests you? (Select 3-5)</Text>
             <View style={styles.themeGrid}>
@@ -124,7 +123,7 @@ export default function ColdStartModal({ visible, onComplete, onSkip }: ColdStar
             </View>
           </View>
 
-          {/* Price Comfort */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>What's your typical budget?</Text>
             {PRICE_OPTIONS.map(option => (
@@ -152,7 +151,7 @@ export default function ColdStartModal({ visible, onComplete, onSkip }: ColdStar
             ))}
           </View>
 
-          {/* Max Distance */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>How far are you willing to travel?</Text>
             {DISTANCE_OPTIONS.map(option => (
@@ -201,11 +200,9 @@ export default function ColdStartModal({ visible, onComplete, onSkip }: ColdStar
 }
 
 async function initializeUserPreferences(preferences: ColdStartPreferences) {
-  // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  // Store preferences in user profile and mark as completed
   const { error } = await supabase
     .from('users')
     .update({

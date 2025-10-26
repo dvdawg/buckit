@@ -15,7 +15,6 @@ export default function PerformancePage() {
   const { me, loading: meLoading } = useMe();
   const { items, loading: itemsLoading } = useItems();
 
-  // Show loading state
   if (performanceLoading || bucketsLoading || meLoading || itemsLoading) {
     return (
       <View style={styles.container}>
@@ -33,13 +32,11 @@ export default function PerformancePage() {
     );
   }
 
-  // Calculate real user data
   const challengesMade = items.length;
   const challengesCompleted = items.filter(item => item.is_completed).length;
   const bucketsMade = buckets.length;
   const bucketsCompleted = buckets.filter(bucket => bucket.completion_percentage === 100).length;
   
-  // Calculate bucket data with real completion percentages
   const bucketData = buckets.map(bucket => ({
     bucket: bucket.title,
     completion: bucket.completion_percentage / 100,
@@ -54,7 +51,6 @@ export default function PerformancePage() {
   const totalCompletions = me?.total_completions || 0;
   const growthRate = performance?.growthRate || 0;
 
-  // Generate monthly histogram data (last 6 months)
   const generateMonthlyHistogram = () => {
     const months = [];
     const now = new Date();
@@ -63,7 +59,6 @@ export default function PerformancePage() {
       const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
       
-      // Count completed challenges in this month
       const completedInMonth = items.filter(item => {
         if (!item.completed_at) return false;
         const completedDate = new Date(item.completed_at);
@@ -82,7 +77,6 @@ export default function PerformancePage() {
   const monthlyData = generateMonthlyHistogram();
   const maxCompleted = Math.max(...monthlyData.map(m => m.completed), 1);
 
-  // Calculate momentum (challenges completed in last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const sixtyDaysAgo = new Date();
@@ -100,22 +94,18 @@ export default function PerformancePage() {
     return completedDate >= sixtyDaysAgo && completedDate < thirtyDaysAgo;
   }).length;
 
-  // Check if user has been active for less than 30 days (first month)
   const accountCreated = me?.created_at ? new Date(me.created_at) : new Date();
   const daysSinceAccount = Math.floor((new Date().getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24));
   const isFirstMonth = daysSinceAccount < 30;
 
-  // Calculate momentum percentage change
   let momentumDisplay, momentumLabel;
   if (isFirstMonth) {
     momentumDisplay = '--';
     momentumLabel = 'vs last month';
   } else if (previousPeriodMomentum === 0) {
-    // If no previous data, show current count
     momentumDisplay = currentPeriodMomentum;
     momentumLabel = 'vs last month';
   } else {
-    // Calculate percentage change
     const percentageChange = ((currentPeriodMomentum - previousPeriodMomentum) / previousPeriodMomentum) * 100;
     momentumDisplay = `${percentageChange > 0 ? '+' : ''}${Math.round(percentageChange)}%`;
     momentumLabel = 'vs last month';
@@ -123,7 +113,7 @@ export default function PerformancePage() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -133,7 +123,7 @@ export default function PerformancePage() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* First Row - 4 Stats Boxes */}
+        {}
         <View style={styles.statsRow}>
           <View style={[styles.statBox, { borderColor: '#8EC5FC' }]}>
             <Text style={styles.statValue}>{challengesMade}</Text>
@@ -153,7 +143,7 @@ export default function PerformancePage() {
           </View>
         </View>
 
-        {/* Section 1 - Challenges by Bucket */}
+        {}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Challenges by Bucket</Text>
@@ -161,7 +151,6 @@ export default function PerformancePage() {
           
           <View style={styles.stackedChartContainer}>
             {bucketData.length > 0 ? bucketData.map((bucket, index) => {
-              // Get actual challenge counts for this bucket
               const bucketChallenges = items.filter(item => item.bucket_id === buckets[index]?.id);
               const completedChallenges = bucketChallenges.filter(item => item.is_completed).length;
               const totalChallenges = bucketChallenges.length;
@@ -208,7 +197,7 @@ export default function PerformancePage() {
           </View>
         </View>
 
-        {/* Monthly Histogram */}
+        {}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Challenges Completed (Last 6 Months)</Text>
@@ -237,7 +226,7 @@ export default function PerformancePage() {
           </View>
         </View>
 
-        {/* Streak and Momentum Row */}
+        {}
         <View style={styles.streakMomentumRow}>
           <View style={[styles.streakMomentumBox, { borderColor: '#6b7280' }]}>
             <View style={styles.streakMomentumIcon}>
@@ -498,8 +487,8 @@ const styles = StyleSheet.create({
   chartArea: {
     flex: 1,
     position: 'relative',
-    paddingBottom: 30, // Space for labels
-    paddingTop: 20, // Space for values
+    paddingBottom: 30,
+    paddingTop: 20,
   },
   dataPointContainer: {
     position: 'absolute',
@@ -511,7 +500,7 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: '#1e40af',
     opacity: 0.6,
-    transform: [{ translateY: -1 }], // Center the line on the dot
+    transform: [{ translateY: -1 }],
   },
   lineDot: {
     width: 8,
@@ -520,21 +509,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     borderWidth: 2,
     borderColor: '#fff',
-    transform: [{ translateX: -4 }, { translateY: -4 }], // Center the dot
+    transform: [{ translateX: -4 }, { translateY: -4 }],
   },
   lineLabel: {
     fontSize: 11,
     color: '#9BA1A6',
     position: 'absolute',
     bottom: -25,
-    transform: [{ translateX: -15 }], // Center the label
+    transform: [{ translateX: -15 }],
   },
   lineValue: {
     fontSize: 10,
     color: '#fff',
     fontWeight: '600',
     position: 'absolute',
-    transform: [{ translateX: -8 }], // Center the value
+    transform: [{ translateX: -8 }],
   },
   loadingContainer: {
     flex: 1,
@@ -553,7 +542,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
-  // New styles for stats row
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -580,7 +568,6 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
     textAlign: 'center',
   },
-  // Histogram styles
   histogramContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -614,7 +601,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  // Streak and momentum styles
   streakMomentumRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,

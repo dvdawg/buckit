@@ -39,7 +39,6 @@ export default function CreateBucketScreen() {
   const { getCollaborators, removeCollaborator } = useBucketCollaborators();
   const [existingCollaborators, setExistingCollaborators] = useState<any[]>([]);
 
-  // Fetch existing collaborators when in edit mode
   useEffect(() => {
     const fetchExistingCollaborators = async () => {
       if (isEditMode && bucketId) {
@@ -60,7 +59,6 @@ export default function CreateBucketScreen() {
     try {
       const success = await removeCollaborator(bucketId as string, collaboratorId);
       if (success) {
-        // Remove from local state
         setExistingCollaborators(prev => 
           prev.filter(collab => collab.user_id !== collaboratorId)
         );
@@ -93,7 +91,6 @@ export default function CreateBucketScreen() {
     setLoading(true);
     try {
       if (isEditMode && bucketId) {
-        // Update existing bucket
         
         const { error } = await supabase
           .from('buckets')
@@ -114,7 +111,6 @@ export default function CreateBucketScreen() {
         Alert.alert('Success', 'Bucket updated successfully!');
         router.back();
       } else {
-        // Create new bucket
         
         const { data, error } = await supabase.rpc('create_bucket_secure', {
           p_title: formData.title,
@@ -128,7 +124,6 @@ export default function CreateBucketScreen() {
           return;
         }
 
-        // Update the bucket with cover photo
         if (data && formData.photo) {
           const { error: updateError } = await supabase
             .from('buckets')
@@ -137,12 +132,10 @@ export default function CreateBucketScreen() {
           
           if (updateError) {
             console.error('Error updating bucket photo:', updateError);
-            // Don't fail the whole operation, just log the error
           }
         }
 
         
-        // Add collaborators if any were selected
         if (formData.invitedFriends.length > 0 && data) {
           for (const friend of formData.invitedFriends) {
             try {
@@ -153,7 +146,6 @@ export default function CreateBucketScreen() {
               
               if (collaboratorError) {
                 console.error('Error adding collaborator:', friend.full_name, collaboratorError);
-                // Don't fail the whole operation, just log the error
               } else {
               }
             } catch (error) {
@@ -216,7 +208,7 @@ export default function CreateBucketScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -231,7 +223,7 @@ export default function CreateBucketScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Photo Upload Section */}
+        {}
         <View style={styles.photoSection}>
           <Text style={styles.photoLabel}>Cover *</Text>
           <TouchableOpacity style={styles.photoContainer} onPress={pickImage}>
@@ -246,7 +238,7 @@ export default function CreateBucketScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Form */}
+        {}
         <View style={styles.formCard}>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Title *</Text>
@@ -298,7 +290,7 @@ export default function CreateBucketScreen() {
               <Ionicons name="chevron-forward" size={16} color="#8EC5FC" />
             </TouchableOpacity>
             
-            {/* Selected Friends Preview */}
+            {}
             {formData.invitedFriends.length > 0 && (
               <View style={styles.selectedFriendsContainer}>
                 <Text style={styles.selectedFriendsLabel}>Invited:</Text>
@@ -332,7 +324,7 @@ export default function CreateBucketScreen() {
           </View>
 
 
-          {/* Existing Collaborators Section (Edit Mode Only) */}
+          {}
           {isEditMode && existingCollaborators.length > 0 && (
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Current Collaborators</Text>
@@ -372,7 +364,7 @@ export default function CreateBucketScreen() {
           )}
         </View>
 
-        {/* Save Button */}
+        {}
         <TouchableOpacity 
           style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
           onPress={handleSave}
@@ -386,7 +378,7 @@ export default function CreateBucketScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Friends Selection Modal */}
+      {}
       <FriendsSelectionModal
         visible={showFriendsModal}
         onClose={() => setShowFriendsModal(false)}
@@ -517,7 +509,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#666',
     opacity: 0.6,
   },
-  // Friends invitation styles
   inviteButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -583,7 +574,6 @@ const styles = StyleSheet.create({
   removeFriendButton: {
     padding: 2,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -654,7 +644,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
-  // Collaborator styles
   collaboratorsContainer: {
     marginTop: 8,
   },

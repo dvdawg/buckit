@@ -17,13 +17,12 @@ import { supabase } from '@/lib/supabase';
 import { useSession } from '@/hooks/useSession';
 import Avatar from '@/components/Avatar';
 
-// Dummy friends data
 const dummyFriends = [
   {
     id: '1',
     username: 'alex_adventures',
     fullName: 'Alex Johnson',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+    avatar: 'https:
     location: 'San Francisco, CA',
     isInvited: false,
   },
@@ -31,7 +30,7 @@ const dummyFriends = [
     id: '2',
     username: 'sarah_explorer',
     fullName: 'Sarah Chen',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786',
+    avatar: 'https:
     location: 'Berkeley, CA',
     isInvited: false,
   },
@@ -39,7 +38,7 @@ const dummyFriends = [
     id: '3',
     username: 'mike_fitness',
     fullName: 'Mike Rodriguez',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e',
+    avatar: 'https:
     location: 'Oakland, CA',
     isInvited: false,
   },
@@ -47,7 +46,7 @@ const dummyFriends = [
     id: '4',
     username: 'emma_travels',
     fullName: 'Emma Wilson',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
+    avatar: 'https:
     location: 'Palo Alto, CA',
     isInvited: false,
   },
@@ -55,7 +54,7 @@ const dummyFriends = [
     id: '5',
     username: 'david_foodie',
     fullName: 'David Kim',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+    avatar: 'https:
     location: 'San Jose, CA',
     isInvited: false,
   },
@@ -86,7 +85,6 @@ export default function InviteFriendsScreen() {
     
     setLoading(true);
     try {
-      // Fetch user's friends
       const { data: friendsData, error } = await supabase.rpc('get_friends');
 
       if (error) {
@@ -95,7 +93,6 @@ export default function InviteFriendsScreen() {
         return;
       }
 
-      // Transform the data
       const friendsList = (friendsData || []).map((friend: any) => ({
         id: friend.id,
         full_name: friend.full_name,
@@ -205,7 +202,7 @@ export default function InviteFriendsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -214,7 +211,7 @@ export default function InviteFriendsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Bucket Info */}
+      {}
       <View style={styles.bucketInfoCard}>
         <View style={styles.bucketIcon}>
           <Ionicons name="folder" size={24} color="#8EC5FC" />
@@ -227,7 +224,7 @@ export default function InviteFriendsScreen() {
         </View>
       </View>
 
-      {/* Friends List */}
+      {}
       <View style={styles.friendsContainer}>
         <Text style={styles.friendsTitle}>Your Friends</Text>
         <Text style={styles.friendsSubtitle}>
@@ -259,7 +256,7 @@ export default function InviteFriendsScreen() {
         )}
       </View>
 
-      {/* Send Invites Button */}
+      {}
       {invitedFriends.length > 0 && (
         <View style={styles.sendInvitesContainer}>
           <TouchableOpacity style={styles.sendInvitesButton} onPress={handleSendAllInvites}>

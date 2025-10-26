@@ -1,4 +1,3 @@
--- RPC: candidates by user trait ANN + geo + visibility + social
 create or replace function public.get_recommendation_candidates(
   p_user_id uuid,
   p_lat double precision,
@@ -51,7 +50,6 @@ returns table (
     from public.item_popularity
   ),
   friends as (
-    -- accepted friends of the user
     select case
              when f.user_id = p_user_id then f.friend_id
              when f.friend_id = p_user_id then f.user_id

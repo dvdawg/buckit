@@ -29,7 +29,7 @@ interface FriendsSelectionModalProps {
   onClose: () => void;
   onConfirm: (selectedFriends: Friend[]) => void;
   initialSelectedFriends?: Friend[];
-  bucketId?: string; // For editing existing bucket
+  bucketId?: string;
 }
 
 export default function FriendsSelectionModal({
@@ -56,7 +56,6 @@ export default function FriendsSelectionModal({
     
     setLoading(true);
     try {
-      // Fetch user's friends
       const { data: friendsData, error } = await supabase.rpc('get_friends');
 
       if (error) {
@@ -65,7 +64,6 @@ export default function FriendsSelectionModal({
         return;
       }
 
-      // Transform the data and mark selected friends
       const friendsList = (friendsData || []).map((friend: any) => ({
         id: friend.id,
         full_name: friend.full_name,
@@ -132,7 +130,7 @@ export default function FriendsSelectionModal({
     >
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          {/* Header */}
+          {}
           <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#fff" />
@@ -143,7 +141,7 @@ export default function FriendsSelectionModal({
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
+          {}
           <View style={styles.content}>
             {loading ? (
               <View style={styles.loadingContainer}>

@@ -13,7 +13,6 @@ export function useSessionMonitor() {
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
   useEffect(() => {
-    // Only check session validity after loading is complete and we haven't shown alert yet
     if (!loading && !isSessionValid && sessionError && !hasShownAlert) {
       console.log('SessionMonitor: Invalid session detected:', sessionError);
       setHasShownAlert(true);

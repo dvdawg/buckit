@@ -8,7 +8,7 @@ import { useBucketCollaborators } from '@/hooks/useBucketCollaborators';
 import { useState, useEffect } from 'react';
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 60) / 2; // 2 columns with padding
+const cardWidth = (width - 60) / 2;
 
 export default function MyBuckets() {
   const router = useRouter();
@@ -16,7 +16,6 @@ export default function MyBuckets() {
   const { getCollaborators } = useBucketCollaborators();
   const [bucketCollaborators, setBucketCollaborators] = useState<{[key: string]: any[]}>({});
 
-  // Fetch collaborators for all buckets
   useEffect(() => {
     const fetchAllCollaborators = async () => {
       if (buckets.length > 0) {
@@ -39,12 +38,9 @@ export default function MyBuckets() {
     fetchAllCollaborators();
   }, [buckets, getCollaborators]);
 
-  // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      // Refresh buckets data
       refresh();
-      // Also refresh collaborators
       if (buckets.length > 0) {
         const collaboratorsMap: {[key: string]: any[]} = {};
         
@@ -61,7 +57,7 @@ export default function MyBuckets() {
         setBucketCollaborators(collaboratorsMap);
       }
     },
-    minDuration: 1000, // 1 second minimum for smooth transition
+    minDuration: 1000,
   });
 
   const handleBucketPress = (bucketId: string) => {
@@ -73,10 +69,9 @@ export default function MyBuckets() {
   };
 
   const renderBucketCard = (bucket: any) => {
-    // Use cover_url if available, otherwise use a placeholder
     const imageSource = bucket.cover_url 
       ? { uri: bucket.cover_url }
-      : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
+      : { uri: 'https:
 
     const collaborators = bucketCollaborators[bucket.id] || [];
     const hasCollaborators = collaborators.length > 0;
@@ -93,7 +88,7 @@ export default function MyBuckets() {
           style={styles.bucketGradient}
         />
         
-        {/* Collaborators Section */}
+        {}
         {hasCollaborators && (
           <View style={styles.collaboratorsSection}>
             <View style={styles.collaboratorsHeader}>
@@ -123,7 +118,7 @@ export default function MyBuckets() {
           </View>
         )}
         
-        {/* Bucket Info */}
+        {}
         <View style={styles.bucketInfo}>
           <View style={styles.bucketTitleRow}>
             <Text style={styles.bucketTitle}>{bucket.title}</Text>
@@ -156,7 +151,7 @@ export default function MyBuckets() {
 
   return (
     <View style={styles.container}>
-      {/* Navigation Header - No back button, tab bar persists */}
+      {}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>My Buckets</Text>
         <TouchableOpacity style={styles.addButton} onPress={handleAddBucket}>
@@ -164,7 +159,7 @@ export default function MyBuckets() {
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
+      {}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -202,7 +197,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 100, // Space for tab bar
+    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
@@ -235,7 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 20,
-    minHeight: 400, // Ensure minimum height for proper scrolling
+    minHeight: 400,
   },
   bucketCard: {
     width: cardWidth,
@@ -334,7 +329,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-  // Collaborator styles
   collaboratorsSection: {
     position: 'absolute',
     top: 12,

@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
 
@@ -18,7 +18,6 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Get user trait vector
     const { data: uv } = await supabase
       .from("user_vectors")
       .select("emb")
@@ -36,7 +35,6 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Get top 5 items by trait similarity
     const { data: items, error } = await supabase
       .from("items")
       .select("id, title, description, embedding, embedding_vec")

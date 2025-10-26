@@ -22,7 +22,6 @@ import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
-// Custom Bucket Icon Component (Filled)
 const BucketIcon = ({ size = 14, color = '#8EC5FC' }) => (
   <Svg width={size} height={size * 0.6} viewBox="0 0 159 171" fill="none">
     <Path 
@@ -32,7 +31,6 @@ const BucketIcon = ({ size = 14, color = '#8EC5FC' }) => (
   </Svg>
 );
 
-// Dummy data for recommended content
 const recommendedContent = [
   {
     id: '1',
@@ -41,7 +39,7 @@ const recommendedContent = [
     description: 'Capture stunning moments and improve your photography skills',
     category: 'Creative',
     applicabilityScore: 95,
-    cover: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd',
+    cover: 'https:
     challenges: 8,
     participants: 1247,
   },
@@ -63,7 +61,7 @@ const recommendedContent = [
     description: 'Complete fitness journey with workout routines and nutrition plans',
     category: 'Health',
     applicabilityScore: 92,
-    cover: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b',
+    cover: 'https:
     challenges: 12,
     participants: 2156,
   },
@@ -85,7 +83,7 @@ const recommendedContent = [
     description: 'Build skills and experiences for remote work and travel',
     category: 'Lifestyle',
     applicabilityScore: 78,
-    cover: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828',
+    cover: 'https:
     challenges: 15,
     participants: 892,
   },
@@ -107,7 +105,6 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const { location, loading: locationLoading } = useLocation();
 
-  // Get real recommendations
   const { 
     items: recommendations, 
     loading: recommendationsLoading, 
@@ -124,7 +121,6 @@ export default function ExploreScreen() {
     enabled: !!location
   });
 
-  // Get popular themes
   const { 
     themes: popularThemes, 
     loading: themesLoading, 
@@ -132,19 +128,18 @@ export default function ExploreScreen() {
     refetch: refetchThemes
   } = usePopularThemes();
 
-  // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
       await Promise.all([refetchRecommendations(), refetchThemes()]);
     },
-    minDuration: 1200, // 1.2 seconds minimum for smooth transition
+    minDuration: 1200,
   });
 
   const getApplicabilityColor = (score: number) => {
-    if (score >= 90) return '#4ade80'; // Green
-    if (score >= 80) return '#8EC5FC'; // Light blue
-    if (score >= 70) return '#f59e0b'; // Orange
-    return '#ef4444'; // Red
+    if (score >= 90) return '#4ade80';
+    if (score >= 80) return '#8EC5FC';
+    if (score >= 70) return '#f59e0b';
+    return '#ef4444';
   };
 
   const getApplicabilityText = (score: number) => {
@@ -166,23 +161,23 @@ export default function ExploreScreen() {
         style={styles.cardGradient}
       />
       
-      {/* Applicability Score */}
+      {}
       <View style={[styles.applicabilityBadge, { backgroundColor: getApplicabilityColor(item.applicabilityScore) }]}>
         <Text style={styles.applicabilityScore}>{item.applicabilityScore}%</Text>
         <Text style={styles.applicabilityText}>{getApplicabilityText(item.applicabilityScore)}</Text>
       </View>
 
-      {/* Category Badge */}
+      {}
       <View style={styles.categoryBadge}>
         <Text style={styles.categoryText}>{item.category}</Text>
       </View>
 
-      {/* Card Content */}
+      {}
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{item.title}</Text>
         <Text style={styles.cardDescription}>{item.description}</Text>
         
-        {/* Stats */}
+        {}
         <View style={styles.cardStats}>
           <View style={styles.statItem}>
             <Ionicons name="checkmark-circle" size={16} color="#4ade80" />
@@ -203,7 +198,7 @@ export default function ExploreScreen() {
       style={styles.challengeCard}
       onPress={() => router.push(`/challenges/${item.id}`)}
     >
-      {/* Rating Badge - Top Right Corner */}
+      {}
       <View style={[styles.challengeApplicabilityBadge, { backgroundColor: getApplicabilityColor(item.applicabilityScore) }]}>
         <Text style={styles.applicabilityScore}>{item.applicabilityScore}%</Text>
       </View>
@@ -234,12 +229,12 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>Explore</Text>
       </View>
 
-      {/* Search Bar */}
+      {}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#9BA1A6" style={styles.searchIcon} />
         <TextInput
@@ -251,7 +246,7 @@ export default function ExploreScreen() {
         />
       </View>
 
-      {/* Categories Section */}
+      {}
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
@@ -270,7 +265,7 @@ export default function ExploreScreen() {
           <Text style={styles.sectionTitle}>Browse Categories</Text>
         </View>
 
-        {/* Dynamic Popular Categories */}
+        {}
         <View style={styles.section}>
           <Text style={styles.subsectionTitle}>Popular Categories</Text>
         </View>
@@ -307,7 +302,7 @@ export default function ExploreScreen() {
           </View>
         )}
 
-        {/* Additional Popular Themes */}
+        {}
         {popularThemes.length > 6 && (
           <>
             <View style={styles.section}>
@@ -339,7 +334,7 @@ export default function ExploreScreen() {
           </>
         )}
 
-        {/* Recommended Content Section */}
+        {}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recommended for You</Text>
           <Text style={styles.sectionSubtitle}>
@@ -347,7 +342,7 @@ export default function ExploreScreen() {
           </Text>
         </View>
 
-        {/* Content Grid */}
+        {}
         <View style={styles.contentGrid}>
           {recommendationsLoading ? (
             <View style={styles.loadingContainer}>
@@ -367,11 +362,10 @@ export default function ExploreScreen() {
                 style={styles.challengeCard}
                 onPress={() => {
                   logView(item.id);
-                  // Navigate to item details
                   router.push(`/buckets/${item.id}`);
                 }}
               >
-                {/* Score Badge - Top Right Corner */}
+                {}
                 <View style={[styles.challengeApplicabilityBadge, { backgroundColor: getApplicabilityColor(item.score ? Math.round(item.score * 100) : 0) }]}>
                   <Text style={styles.applicabilityScore}>{item.score ? Math.round(item.score * 100) : 0}%</Text>
                 </View>
@@ -458,7 +452,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 100,
   },
   section: {
     marginBottom: 24,
@@ -591,7 +585,7 @@ const styles = StyleSheet.create({
   },
   challengeHeader: {
     marginBottom: 12,
-    paddingRight: 60, // Space for the rating badge
+    paddingRight: 60,
   },
   challengeTitle: {
     fontSize: 16,
@@ -670,7 +664,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
-  // Niche categories styles
   nicheCategoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

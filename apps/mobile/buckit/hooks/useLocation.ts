@@ -34,7 +34,6 @@ export function useLocation(): UseLocationReturn {
     setError(null);
 
     try {
-      // Check if permission is granted
       const { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted') {
         const granted = await requestPermission();
@@ -45,7 +44,6 @@ export function useLocation(): UseLocationReturn {
         }
       }
 
-      // Get current location
       const locationResult = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
         timeInterval: 10000,

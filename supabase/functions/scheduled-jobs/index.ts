@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 export const handler = serve(async (req) => {
   try {
@@ -50,7 +50,6 @@ export const handler = serve(async (req) => {
 async function runEmbeddingsJob(supabase: any) {
   console.log("Running embeddings job...");
   
-  // Call the embeddings function
   const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/embeddings`, {
     method: 'POST',
     headers: {
@@ -92,7 +91,6 @@ async function runRefreshMaterializedJob(supabase: any) {
 async function runAppealPrecomputeJob(supabase: any) {
   console.log("Running appeal precompute job...");
   
-  // Call the appeal-precompute function
   const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/appeal-precompute`, {
     method: 'POST',
     headers: {
@@ -115,13 +113,12 @@ async function runAppealPrecomputeJob(supabase: any) {
 async function runBanditDecayJob(supabase: any) {
   console.log("Running bandit decay job...");
   
-  // Decay old bandit arms (reduce confidence over time)
   const { data, error } = await supabase
     .from('recs_bandit_arms')
     .update({ 
-      alpha: supabase.sql`alpha * 0.99` // Slight decay
+      alpha: supabase.sql`alpha * 0.99`
     })
-    .lt('last_updated', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // 7 days ago
+    .lt('last_updated', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .select();
 
   if (error) {
@@ -163,7 +160,6 @@ async function runAllJobs(supabase: any) {
   const results = [];
   
   try {
-    // Run jobs in sequence to avoid overwhelming the system
     results.push(await runRefreshMaterializedJob(supabase));
     results.push(await runEmbeddingsJob(supabase));
     results.push(await runAppealPrecomputeJob(supabase));

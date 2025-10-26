@@ -1,4 +1,3 @@
-// Alternative embedding function using Hugging Face
 export async function getHuggingFaceEmbedding(text: string): Promise<number[]> {
   const hfApiKey = Deno.env.get("HUGGINGFACE_API_KEY");
   
@@ -7,7 +6,7 @@ export async function getHuggingFaceEmbedding(text: string): Promise<number[]> {
   }
 
   try {
-    const response = await fetch("https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2", {
+    const response = await fetch("https:
       method: "POST",
       headers: {
         "Authorization": `Bearer ${hfApiKey}`,
@@ -26,7 +25,7 @@ export async function getHuggingFaceEmbedding(text: string): Promise<number[]> {
     }
 
     const data = await response.json();
-    return data[0]; // Returns 384-dimensional embedding
+    return data[0];
   } catch (error) {
     console.error("Hugging Face embedding error:", error);
     throw error;

@@ -1,9 +1,7 @@
--- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "postgis";
 CREATE EXTENSION IF NOT EXISTS "vector";
 
--- Create users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     auth_id UUID UNIQUE NOT NULL,
@@ -14,7 +12,6 @@ CREATE TABLE users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create buckets table
 CREATE TABLE buckets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -26,7 +23,6 @@ CREATE TABLE buckets (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create items table
 CREATE TABLE items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bucket_id UUID NOT NULL REFERENCES buckets(id) ON DELETE CASCADE,
@@ -49,7 +45,6 @@ CREATE TABLE items (
     ) STORED
 );
 
--- Create bucket_collaborators table
 CREATE TABLE bucket_collaborators (
     bucket_id UUID NOT NULL REFERENCES buckets(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -57,7 +52,6 @@ CREATE TABLE bucket_collaborators (
     PRIMARY KEY (bucket_id, user_id)
 );
 
--- Create completions table
 CREATE TABLE completions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     item_id UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
@@ -69,7 +63,6 @@ CREATE TABLE completions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create friendships table
 CREATE TABLE friendships (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -79,7 +72,6 @@ CREATE TABLE friendships (
     CHECK (user_id != friend_id)
 );
 
--- Create feed_events table
 CREATE TABLE feed_events (
     id BIGSERIAL PRIMARY KEY,
     actor_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -90,7 +82,6 @@ CREATE TABLE feed_events (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes for performance
 CREATE INDEX idx_buckets_owner_id ON buckets(owner_id);
 CREATE INDEX idx_buckets_visibility ON buckets(visibility);
 CREATE INDEX idx_items_bucket_id ON items(bucket_id);
@@ -108,5 +99,4 @@ CREATE INDEX idx_feed_events_actor_id ON feed_events(actor_id);
 CREATE INDEX idx_feed_events_created_at ON feed_events(created_at);
 CREATE INDEX idx_feed_events_audience ON feed_events(audience);
 
--- Create spatial index for location_point
 CREATE INDEX idx_items_location_point ON items USING GIST(location_point);

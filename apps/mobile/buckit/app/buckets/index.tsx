@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useBuckets } from '@/hooks/useBuckets';
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 60) / 2; // 2 columns with padding
+const cardWidth = (width - 60) / 2;
 
 export default function Buckets() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function Buckets() {
 
   return (
     <View style={styles.container}>
-      {/* Navigation Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -38,7 +38,7 @@ export default function Buckets() {
         </TouchableOpacity>
       </View>
 
-      {/* Buckets Grid */}
+      {}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.gridContainer}
@@ -55,10 +55,9 @@ export default function Buckets() {
           </View>
         ) : (
           buckets.map((bucket) => {
-            // Use cover_url if available, otherwise use a placeholder
             const imageSource = bucket.cover_url 
               ? { uri: bucket.cover_url }
-              : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
+              : { uri: 'https:
 
             return (
               <TouchableOpacity
@@ -72,7 +71,7 @@ export default function Buckets() {
                   style={styles.bucketGradient}
                 />
                 
-                {/* Bucket Info */}
+                {}
                 <View style={styles.bucketInfo}>
                   <Text style={styles.bucketTitle}>{bucket.title}</Text>
                   <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>

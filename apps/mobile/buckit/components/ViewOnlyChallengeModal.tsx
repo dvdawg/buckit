@@ -48,7 +48,7 @@ export default function ViewOnlyChallengeModal({
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
               {challenge && (
                 <>
-                  {/* Header */}
+                  {}
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>{challenge.title}</Text>
                     <View style={styles.modalCompletionBadge}>
@@ -68,7 +68,7 @@ export default function ViewOnlyChallengeModal({
 
                   <View style={styles.modalSeparator} />
 
-                  {/* Details */}
+                  {}
                   <View style={styles.modalDetailsSection}>
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalLocationPin}>🪣</Text>
@@ -98,7 +98,7 @@ export default function ViewOnlyChallengeModal({
 
                   <View style={styles.modalSeparator} />
 
-                  {/* Description */}
+                  {}
                   <View style={styles.modalDescriptionSection}>
                     <Text style={styles.modalDescriptionTitle}>Challenge Description</Text>
                     <Text style={styles.modalDescriptionText}>
@@ -108,7 +108,7 @@ export default function ViewOnlyChallengeModal({
 
                   <View style={styles.modalSeparator} />
 
-                  {/* Photos Section - View Only */}
+                  {}
                   <View style={styles.modalPhotosSection}>
                     <Text style={styles.modalPhotosTitle}>Photos</Text>
                     <View style={styles.modalPhotoGrid}>
@@ -120,13 +120,13 @@ export default function ViewOnlyChallengeModal({
                     </View>
                   </View>
 
-                  {/* Extra spacing at bottom */}
+                  {}
                   <View style={{ height: 20 }} />
                 </>
               )}
             </ScrollView>
 
-            {/* Close Button */}
+            {}
             <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
@@ -164,11 +164,11 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     padding: 24,
-    paddingBottom: 80, // Extra space for close button
+    paddingBottom: 80,
   },
   modalHeader: {
     marginBottom: 20,
-    paddingRight: 60, // Add space for close button
+    paddingRight: 60,
   },
   modalTitle: {
     fontSize: 24,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#B0B0B0',
     lineHeight: 24,
-    minHeight: 60, // Ensure minimum height for description
+    minHeight: 60,
   },
   modalPhotosSection: {
     marginBottom: 20,

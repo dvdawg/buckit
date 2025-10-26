@@ -68,7 +68,6 @@ export default function Settings() {
   }, [me]);
 
   const validateForm = () => {
-    // Basic validation
     if (formData.handle && formData.handle.length < 3) {
       Alert.alert('Validation Error', 'Handle must be at least 3 characters long');
       return false;
@@ -79,13 +78,11 @@ export default function Settings() {
       return false;
     }
 
-    // Phone number validation (optional but if provided, should be valid)
     if (formData.phone_number && !isValidPhoneNumber(formData.phone_number)) {
       Alert.alert('Validation Error', 'Please enter a valid phone number');
       return false;
     }
 
-    // Birthday validation (optional but if provided, should be valid date)
     if (formData.birthday && !isValidDate(formData.birthday)) {
       Alert.alert('Validation Error', 'Please enter a valid birthday (YYYY-MM-DD)');
       return false;
@@ -95,7 +92,6 @@ export default function Settings() {
   };
 
   const isValidPhoneNumber = (phone: string) => {
-    // Check if it's 10 digits (US phone number)
     const phoneRegex = /^\d{10}$/;
     return phoneRegex.test(phone);
   };
@@ -104,19 +100,16 @@ export default function Settings() {
     const date = new Date(dateString);
     const today = new Date();
     
-    // Check if it's a valid date
     if (isNaN(date.getTime())) {
       return false;
     }
     
-    // Check if date is not in the future
     if (date > today) {
       return false;
     }
     
-    // Check if date is not too far in the past (reasonable age limit)
     const minDate = new Date();
-    minDate.setFullYear(today.getFullYear() - 120); // 120 years ago
+    minDate.setFullYear(today.getFullYear() - 120);
     if (date < minDate) {
       return false;
     }
@@ -127,7 +120,7 @@ export default function Settings() {
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
     if (selectedDate) {
-      const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const formattedDate = selectedDate.toISOString().split('T')[0];
       setFormData({ ...formData, birthday: formattedDate });
     }
   };
@@ -141,15 +134,12 @@ export default function Settings() {
   };
 
   const formatPhoneNumber = (value: string) => {
-    // Remove all non-digits
     const digits = value.replace(/\D/g, '');
     
-    // If no digits, return empty string
     if (digits.length === 0) {
       return '';
     }
     
-    // Return just the digits (no formatting)
     return digits;
   };
 
@@ -193,11 +183,9 @@ export default function Settings() {
 
       console.log('Settings: User data updated successfully');
 
-      // Update original data to reflect the saved state
       setOriginalData({ ...formData });
       setIsEditing(false);
       
-      // Refresh user data to ensure UI is updated
       refresh();
       
       Alert.alert('Success', 'Profile updated successfully');
@@ -210,7 +198,6 @@ export default function Settings() {
   };
 
   const handleCancel = () => {
-    // Reset to original data
     setFormData({ ...originalData });
     setIsEditing(false);
   };
@@ -227,7 +214,6 @@ export default function Settings() {
 
   const pickImage = async () => {
     try {
-      // Request permission to access media library
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (permissionResult.granted === false) {
@@ -242,7 +228,6 @@ export default function Settings() {
         return;
       }
 
-      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -262,12 +247,10 @@ export default function Settings() {
   const uploadImage = async (imageUri: string) => {
     setIsUploadingImage(true);
     try {
-      // Create a unique filename and determine proper MIME type
       const fileExt = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${me?.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // Map file extensions to proper MIME types
       const mimeTypeMap: { [key: string]: string } = {
         'jpg': 'image/jpeg',
         'jpeg': 'image/jpeg',
@@ -278,12 +261,10 @@ export default function Settings() {
       
       const contentType = mimeTypeMap[fileExt] || 'image/jpeg';
 
-      // For React Native, we can use the imageUri directly with fetch
       const response = await fetch(imageUri);
       const arrayBuffer = await response.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
 
-      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('avatars')
         .upload(filePath, bytes, {
@@ -297,12 +278,10 @@ export default function Settings() {
         return;
       }
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update user's avatar_url in database
       const { error: updateError } = await supabase
         .from('users')
         .update({ avatar_url: publicUrl })
@@ -314,7 +293,6 @@ export default function Settings() {
         return;
       }
 
-      // Refresh user data
       refresh();
       Alert.alert('Success', 'Avatar updated successfully!');
     } catch (error) {
@@ -335,7 +313,7 @@ export default function Settings() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -347,11 +325,11 @@ export default function Settings() {
         <View style={styles.headerRight} />
       </View>
 
-      {/* Profile Section */}
+      {}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Profile</Text>
         
-        {/* Avatar */}
+        {}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
             <Avatar user={me || {}} size="large" />
@@ -369,7 +347,7 @@ export default function Settings() {
           </TouchableOpacity>
         </View>
 
-        {/* Form Fields */}
+        {}
         <TouchableOpacity 
           style={styles.formContainer}
           activeOpacity={1}
@@ -519,7 +497,7 @@ export default function Settings() {
 
         </TouchableOpacity>
 
-        {/* Action Buttons */}
+        {}
         <TouchableOpacity 
           style={styles.actionButtons}
           activeOpacity={1}
@@ -555,7 +533,7 @@ export default function Settings() {
         </TouchableOpacity>
       </View>
 
-      {/* Account Section */}
+      {}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
@@ -587,7 +565,7 @@ export default function Settings() {
         </TouchableOpacity>
       </View>
 
-      {/* App Section */}
+      {}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App</Text>
         
@@ -608,7 +586,7 @@ export default function Settings() {
         </TouchableOpacity>
       </View>
 
-      {/* Sign Out Section */}
+      {}
       <View style={styles.section}>
         <TouchableOpacity 
           style={styles.signOutButton} 

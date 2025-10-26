@@ -59,7 +59,6 @@ export default function SupabaseTest() {
     try {
       addResult('Testing RPC functions...');
       
-      // Test me_user_id
       const { data: meData, error: meError } = await supabase.rpc('me_user_id');
       if (meError) {
         addResult(`me_user_id failed: ${meError.message}`, false);
@@ -67,7 +66,6 @@ export default function SupabaseTest() {
         addResult(`me_user_id returned: ${meData}`);
       }
 
-      // Test home_feed
       const { data: feedData, error: feedError } = await supabase.rpc('home_feed', { 
         limit_rows: 5, 
         offset_rows: 0 
@@ -86,7 +84,6 @@ export default function SupabaseTest() {
     try {
       addResult('Testing database operations...');
       
-      // Test reading from users table
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*')
@@ -94,7 +91,6 @@ export default function SupabaseTest() {
       if (usersError) throw usersError;
       addResult(`Users table: ${usersData?.length || 0} records accessible`);
 
-      // Test reading from buckets table
       const { data: bucketsData, error: bucketsError } = await supabase
         .from('buckets')
         .select('*')
@@ -102,7 +98,6 @@ export default function SupabaseTest() {
       if (bucketsError) throw bucketsError;
       addResult(`Buckets table: ${bucketsData?.length || 0} records accessible`);
 
-      // Test reading from items table
       const { data: itemsData, error: itemsError } = await supabase
         .from('items')
         .select('*')
@@ -128,7 +123,6 @@ export default function SupabaseTest() {
     
     if (user) {
       addResult('User is authenticated, testing user-specific operations...');
-      // Add more tests here for authenticated users
     } else {
       addResult('User not authenticated, skipping user-specific tests');
     }

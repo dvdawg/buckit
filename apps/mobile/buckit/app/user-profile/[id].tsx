@@ -40,13 +40,11 @@ export default function UserProfileScreen() {
   const loadUserProfile = async () => {
     try {
       setLoading(true);
-      // For now, we'll use the id as handle - in a real app you'd have a proper user lookup
       const userData = await getUserByHandle(id as string);
       if (userData) {
         setUser(userData);
         setFriendshipStatus(userData.friendship_status);
         
-        // Fetch the user's buckets
         await loadUserBuckets(userData.id);
       } else {
         Alert.alert('Error', 'User not found');
@@ -173,21 +171,17 @@ export default function UserProfileScreen() {
     );
   }
 
-  // Show user's buckets based on friendship status and visibility
   const visibleBuckets = userBuckets.filter(bucket => {
-    // Always show public buckets
     if (bucket.visibility === 'public') return true;
     
-    // Show private buckets if we're friends
     if (bucket.visibility === 'private' && friendshipStatus === 'accepted') return true;
     
-    // Don't show private buckets unless it's the current user (which shouldn't happen in this view)
     return false;
   });
 
   return (
     <View style={styles.container}>
-      {/* Profile Header */}
+      {}
       <View style={styles.headerContainer}>
         {user.avatar_url ? (
           <Image 
@@ -219,7 +213,7 @@ export default function UserProfileScreen() {
         </View>
       </View>
 
-      {/* Header with back button */}
+      {}
       <View style={styles.topHeader}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -229,7 +223,7 @@ export default function UserProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
+      {}
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -249,7 +243,7 @@ export default function UserProfileScreen() {
                   onPress={() => router.push(`/buckets/${bucket.id}`)}
                 >
                   <Image
-                    source={{ uri: bucket.cover_url || 'https://via.placeholder.com/150x100/6B7280/FFFFFF?text=Bucket' }}
+                    source={{ uri: bucket.cover_url || 'https:
                     style={styles.bucketImage}
                   />
                   <View style={styles.bucketInfo}>

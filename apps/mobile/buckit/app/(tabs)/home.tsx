@@ -18,7 +18,6 @@ export default function Home() {
   const { needsPreferences, loading: preferencesLoading } = useUserPreferences();
   const [showColdStart, setShowColdStart] = useState(false);
   
-  // Friends feed data
   const { 
     completions, 
     loading: feedLoading, 
@@ -28,36 +27,29 @@ export default function Home() {
     refresh: refreshFeed 
   } = useFriendsFeed();
 
-  // Recommendations removed - now only on explore page
 
-  // Check if user needs cold start (only if preferences not completed)
   useEffect(() => {
     if (user && !preferencesLoading && needsPreferences) {
       setShowColdStart(true);
     }
   }, [user, preferencesLoading, needsPreferences]);
 
-  // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      // Refresh friends feed
       await refreshFeed();
       
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
     },
-    minDuration: 1200, // 1.2 seconds minimum for smooth transition
+    minDuration: 1200,
   });
 
   useEffect(() => {
-    // If no valid session, redirect to splash
     if (!user || !isSessionValid) {
       console.log('Home: No valid session, redirecting to splash');
       router.replace('/splash');
     }
   }, [user, isSessionValid, router]);
 
-  // If no valid session, show loading
   if (!user || !isSessionValid) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
@@ -76,12 +68,12 @@ export default function Home() {
         onSkip={() => setShowColdStart(false)}
       />
       
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <Text style={styles.appTitle}>Buckit</Text>
       </View>
 
-      {/* Posts Feed */}
+      {}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -95,9 +87,9 @@ export default function Home() {
           />
         }
       >
-        {/* Recommendations moved to explore page */}
+        {}
         
-        {/* Friends Feed Section */}
+        {}
         <View style={styles.feedSection}>
           <Text style={styles.sectionTitle}>Friends' Activity</Text>
           
@@ -124,19 +116,22 @@ export default function Home() {
               </Text>
             </View>
           ) : (
-            completions.map((completion, index) => (
-              <FriendsCompletionCard
-                key={`${completion.completion_id}-${completion.item_id}-${completion.completed_by_user_id}-${index}`}
-                completion={completion}
-                onPress={() => {
-                  // Navigate to challenge detail
-                  router.push(`/buckets/${completion.bucket_id}/challenges/${completion.item_id}`);
-                }}
-              />
-            ))
+            completions
+              .filter((completion, index, self) => 
+                self.findIndex(c => c.completion_id === completion.completion_id) === index
+              )
+              .map((completion, index) => (
+                <FriendsCompletionCard
+                  key={`${completion.completion_id}-${completion.item_id}-${completion.completed_by_user_id}-${index}`}
+                  completion={completion}
+                  onPress={() => {
+                    router.push(`/buckets/${completion.bucket_id}/challenges/${completion.item_id}`);
+                  }}
+                />
+              ))
           )}
           
-          {/* Load More Button */}
+          {}
           {hasMore && completions.length > 0 && (
             <TouchableOpacity 
               style={styles.loadMoreButton} 
@@ -165,7 +160,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 100,
   },
   header: {
     paddingTop: 60,
@@ -186,7 +181,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
     marginBottom: 16,
   },
-  // Friends feed styles
   feedSection: {
     paddingHorizontal: 20,
   },

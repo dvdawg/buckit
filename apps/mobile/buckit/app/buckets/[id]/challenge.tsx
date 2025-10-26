@@ -35,7 +35,6 @@ export default function ChallengeDetail() {
     try {
       setLoading(true);
       
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) {
         Alert.alert('Error', 'User not authenticated');
@@ -43,7 +42,6 @@ export default function ChallengeDetail() {
         return;
       }
 
-      // Fetch the challenge data
       const { data: challengeData, error: challengeError } = await supabase
         .from('items')
         .select(`
@@ -69,7 +67,6 @@ export default function ChallengeDetail() {
       if (challengeData) {
         setChallenge(challengeData);
         setBucket(challengeData.bucket);
-        // Initialize photos array from challenge data
         setPhotos(challengeData.photos || []);
       }
     } catch (error) {
@@ -87,7 +84,6 @@ export default function ChallengeDetail() {
 
   const handleCompleteChallenge = () => {
     if (challenge?.is_completed) {
-      // If already completed, show option to uncomplete
       Alert.alert(
         'Uncomplete Challenge',
         'Do you want to mark this challenge as incomplete?',
@@ -97,14 +93,12 @@ export default function ChallengeDetail() {
         ]
       );
     } else {
-      // If not completed, show rating modal
       setRatingModalVisible(true);
     }
   };
 
   const handleUncompleteChallenge = async () => {
     try {
-      // Use the secure RPC function to uncomplete the item
       const { error } = await supabase.rpc('uncomplete_item', {
         p_item_id: challengeId
       });
@@ -115,7 +109,6 @@ export default function ChallengeDetail() {
         return;
       }
 
-      // Update local state
       setChallenge((prev: any) => ({
         ...prev,
         is_completed: false,
@@ -142,7 +135,6 @@ export default function ChallengeDetail() {
     console.log('Challenge data before update:', challenge);
 
     try {
-      // First, let's test the database connection
       console.log('Testing database connection...');
       const { data: testData, error: testError } = await supabase.rpc('me_user_id');
       console.log('User ID test result:', { testData, testError });
@@ -153,7 +145,6 @@ export default function ChallengeDetail() {
         return;
       }
 
-      // Use the secure RPC function to update satisfaction rating
       console.log('Calling update_item_satisfaction_rating RPC...');
       const { data: updateData, error } = await supabase.rpc('update_item_satisfaction_rating', {
         p_item_id: challengeId,
@@ -169,7 +160,6 @@ export default function ChallengeDetail() {
         return;
       }
 
-      // Verify the update by fetching the item again
       console.log('Verifying update by fetching item...');
       const { data: verifyData, error: verifyError } = await supabase
         .from('items')
@@ -179,7 +169,6 @@ export default function ChallengeDetail() {
 
       console.log('Verification result:', { verifyData, verifyError });
 
-      // Update local state
       setChallenge((prev: any) => ({
         ...prev,
         is_completed: true,
@@ -187,7 +176,6 @@ export default function ChallengeDetail() {
         completed_at: new Date().toISOString()
       }));
 
-      // Close modal and reset
       setRatingModalVisible(false);
       setTempRating(0);
 
@@ -206,14 +194,12 @@ export default function ChallengeDetail() {
 
   const pickImage = async () => {
     try {
-      // Request permission to access media library
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Required', 'Please grant camera roll permissions to add photos.');
         return;
       }
 
-      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -240,19 +226,16 @@ export default function ChallengeDetail() {
     try {
       setUploadingPhoto(true);
 
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) {
         Alert.alert('Error', 'User not authenticated');
         return;
       }
 
-      // Create a unique filename
       const fileExt = imageAsset.uri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${challengeId}_${Date.now()}.${fileExt}`;
       const filePath = `challenge-photos/${fileName}`;
 
-      // Use FormData approach for React Native compatibility
       const formData = new FormData();
       formData.append('file', {
         uri: imageAsset.uri,
@@ -260,10 +243,8 @@ export default function ChallengeDetail() {
         name: fileName,
       } as any);
 
-      // Get the Supabase URL from environment
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
       
-      // Upload using fetch with FormData
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         Alert.alert('Error', 'User not authenticated');
@@ -288,12 +269,10 @@ export default function ChallengeDetail() {
         return;
       }
 
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('challenge-photos')
         .getPublicUrl(filePath);
 
-      // Update the challenge with the new photo
       const updatedPhotos = [...photos, publicUrl];
       const { error: updateError } = await supabase
         .from('items')
@@ -306,7 +285,6 @@ export default function ChallengeDetail() {
         return;
       }
 
-      // Update local state
       setPhotos(updatedPhotos);
       setChallenge({ ...challenge, photos: updatedPhotos });
       Alert.alert('Success', 'Photo added to challenge!');
@@ -371,7 +349,7 @@ export default function ChallengeDetail() {
       <BlurView intensity={20} style={styles.blurContainer}>
         <View style={styles.modalContainer}>
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            {/* Header */}
+            {}
             <View style={styles.header}>
               <View style={styles.titleRow}>
                 <Text style={styles.challengeTitle}>{challenge.title}</Text>
@@ -389,7 +367,7 @@ export default function ChallengeDetail() {
             </View>
 
 
-            {/* Details */}
+            {}
             <View style={styles.detailsSection}>
               <View style={styles.detailRow}>
                 <Text style={styles.locationPin}>🪣</Text>
@@ -422,15 +400,15 @@ export default function ChallengeDetail() {
               )}
             </View>
 
-            {/* Separator */}
+            {}
             <View style={styles.separator} />
 
-            {/* Description */}
+            {}
             <View style={styles.descriptionSection}>
               <Text style={styles.descriptionText}>{challenge.description || 'No description available'}</Text>
             </View>
 
-            {/* Photo Album */}
+            {}
             <View style={styles.photoAlbumSection}>
               <Text style={styles.photoAlbumTitle}>Photo Album ({photos.length})</Text>
               <View style={styles.photoGrid}>
@@ -449,7 +427,7 @@ export default function ChallengeDetail() {
                   </Text>
                 </TouchableOpacity>
                 
-                {/* Existing Photos */}
+                {}
                 {photos.map((photo: string, index: number) => (
                   <Image
                     key={index}
@@ -461,14 +439,14 @@ export default function ChallengeDetail() {
             </View>
           </ScrollView>
 
-          {/* Close Button */}
+          {}
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Ionicons name="close" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </BlurView>
 
-      {/* Rating Modal */}
+      {}
       <Modal
         visible={ratingModalVisible}
         transparent={true}
@@ -668,7 +646,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  // Rating modal styles
   ratingModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',

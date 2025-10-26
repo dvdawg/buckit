@@ -8,7 +8,6 @@ export default function RecommendationsScreen() {
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Get user location
   React.useEffect(() => {
     (async () => {
       try {
@@ -47,10 +46,8 @@ export default function RecommendationsScreen() {
   });
 
   const handleItemPress = (itemId: string) => {
-    // Log view event
     logView(itemId);
     
-    // Navigate to item details (implement navigation as needed)
     Alert.alert('Item Details', `Navigate to item: ${itemId}`);
   };
 

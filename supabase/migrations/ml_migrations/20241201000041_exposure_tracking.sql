@@ -1,4 +1,3 @@
--- Exposure tracking for diversity and dampening
 create table if not exists public.exposure_tracking (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
@@ -13,7 +12,6 @@ create table if not exists public.exposure_tracking (
 create index if not exists exposure_tracking_user_idx on public.exposure_tracking(user_id, last_exposed_at desc);
 create index if not exists exposure_tracking_item_idx on public.exposure_tracking(item_id);
 
--- RLS for exposure tracking
 alter table public.exposure_tracking enable row level security;
 
 create policy exposure_tracking_owner_rw on public.exposure_tracking
@@ -21,7 +19,6 @@ for all
 using (auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 with check (auth.uid() = (select u.auth_id from public.users u where u.id = user_id));
 
--- Function to update exposure tracking
 create or replace function public.update_exposure_tracking(
   p_user_id uuid,
   p_item_id uuid,
@@ -45,7 +42,6 @@ begin
 end;
 $$;
 
--- Function to get exposure dampening factor
 create or replace function public.get_exposure_dampening(
   p_user_id uuid,
   p_item_id uuid,
@@ -65,16 +61,15 @@ begin
   where user_id = p_user_id and item_id = p_item_id;
   
   if not found then
-    return 1.0; -- No exposure history
+    return 1.0;
   end if;
   
-  -- Check if item was seen too many times with no action
   if exposure_record.exposure_count > p_max_exposures and 
      (exposure_record.last_action_at is null or 
       exposure_record.last_action_at < now() - interval '1 day' * p_dampening_days) then
-    dampening_factor := 0.3; -- Heavy dampening
+    dampening_factor := 0.3;
   elsif exposure_record.exposure_count > p_max_exposures / 2 then
-    dampening_factor := 0.7; -- Light dampening
+    dampening_factor := 0.7;
   end if;
   
   return dampening_factor;

@@ -1,5 +1,3 @@
--- Fix get_friends function to prevent duplicate results
--- The original function had a CASE statement in the JOIN that could cause duplicates
 
 CREATE OR REPLACE FUNCTION get_friends()
 RETURNS TABLE (

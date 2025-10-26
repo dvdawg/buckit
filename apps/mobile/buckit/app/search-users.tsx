@@ -29,7 +29,7 @@ export default function SearchUsersScreen() {
     if (searchTerm.trim()) {
       const timeoutId = setTimeout(() => {
         searchUsers(searchTerm);
-      }, 300); // Debounce search
+      }, 300);
 
       return () => clearTimeout(timeoutId);
     }
@@ -39,7 +39,6 @@ export default function SearchUsersScreen() {
     try {
       await sendFriendRequest(userId);
       Alert.alert('Success', 'Friend request sent!');
-      // Update friendship status
       setFriendshipStatuses(prev => ({
         ...prev,
         [userId]: 'pending'
@@ -96,7 +95,7 @@ export default function SearchUsersScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -108,7 +107,7 @@ export default function SearchUsersScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      {/* Search Bar */}
+      {}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#9BA1A6" style={styles.searchIcon} />
         <TextInput
@@ -129,7 +128,7 @@ export default function SearchUsersScreen() {
         )}
       </View>
 
-      {/* Search Results */}
+      {}
       <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
         {loading && (
           <View style={styles.loadingContainer}>

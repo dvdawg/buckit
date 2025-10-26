@@ -1,4 +1,3 @@
--- Add function to get a specific bucket by ID with visibility checks
 DROP FUNCTION IF EXISTS get_bucket_by_id(UUID);
 CREATE FUNCTION get_bucket_by_id(p_bucket_id UUID)
 RETURNS TABLE (
@@ -34,11 +33,8 @@ AS $$
     FROM buckets b
     WHERE b.id = p_bucket_id
     AND (
-        -- User can see their own buckets
         b.owner_id = me_user_id()
-        -- Or bucket is public
         OR b.visibility = 'public'
-        -- Or bucket is private and user is friends with the bucket owner
         OR (b.visibility = 'private' AND EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
@@ -48,7 +44,6 @@ AS $$
     );
 $$;
 
--- Add function to get items for a specific bucket with visibility checks
 DROP FUNCTION IF EXISTS get_bucket_items(UUID);
 CREATE FUNCTION get_bucket_items(p_bucket_id UUID)
 RETURNS TABLE (
@@ -97,11 +92,8 @@ AS $$
     JOIN buckets b ON i.bucket_id = b.id
     WHERE i.bucket_id = p_bucket_id
     AND (
-        -- User can see items in their own buckets
         b.owner_id = me_user_id()
-        -- Or bucket is public
         OR b.visibility = 'public'
-        -- Or bucket is private and user is friends with the bucket owner
         OR (b.visibility = 'private' AND EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())

@@ -1,5 +1,3 @@
--- Update create_item_secure function to support location coordinates
--- This migration adds support for location_point coordinates in addition to location_name
 
 CREATE OR REPLACE FUNCTION create_item_secure(
     p_bucket_id UUID,
@@ -24,12 +22,10 @@ BEGIN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
     
-    -- Convert location_point string to geography if provided
     IF p_location_point IS NOT NULL THEN
         BEGIN
             location_geography := ST_GeogFromText(p_location_point);
         EXCEPTION WHEN OTHERS THEN
-            -- If parsing fails, set to NULL and continue
             location_geography := NULL;
         END;
     END IF;
@@ -60,7 +56,6 @@ BEGIN
 END;
 $$;
 
--- Also create an update function for items with location support
 CREATE OR REPLACE FUNCTION update_item_secure(
     p_item_id UUID,
     p_title TEXT DEFAULT NULL,
@@ -84,17 +79,14 @@ BEGIN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
     
-    -- Convert location_point string to geography if provided
     IF p_location_point IS NOT NULL THEN
         BEGIN
             location_geography := ST_GeogFromText(p_location_point);
         EXCEPTION WHEN OTHERS THEN
-            -- If parsing fails, set to NULL and continue
             location_geography := NULL;
         END;
     END IF;
     
-    -- Update only the fields that are provided (not NULL)
     UPDATE items 
     SET 
         title = COALESCE(p_title, title),
@@ -111,7 +103,6 @@ BEGIN
 END;
 $$;
 
--- Create a function to get items with location data
 CREATE OR REPLACE FUNCTION get_items_with_location_secure()
 RETURNS TABLE (
     id UUID,

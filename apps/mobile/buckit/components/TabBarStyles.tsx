@@ -3,9 +3,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View } from 'react-native';
 
-// Glass morphism options for the tab bar
 export const TabBarStyles = {
-  // Option 1: Light Glass (current implementation)
   lightGlass: {
     tabBarStyle: {
       backgroundColor: 'transparent',
@@ -47,7 +45,6 @@ export const TabBarStyles = {
     tabBarInactiveTintColor: 'rgba(0, 0, 0, 0.6)',
   },
 
-  // Option 2: Dark Glass (current active)
   darkGlass: {
     tabBarStyle: {
       backgroundColor: 'transparent',
@@ -90,7 +87,6 @@ export const TabBarStyles = {
     tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
   },
 
-  // Option 3: Gradient Glass
   gradientGlass: {
     tabBarStyle: {
       backgroundColor: 'transparent',
@@ -146,7 +142,6 @@ export const TabBarStyles = {
     tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
   },
 
-  // Option 4: Subtle Dark Glass
   subtleDarkGlass: {
     tabBarStyle: {
       backgroundColor: 'transparent',
@@ -189,7 +184,6 @@ export const TabBarStyles = {
     tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
   },
 
-  // Option 5: Ultra Light Glass
   ultraLightGlass: {
     tabBarStyle: {
       backgroundColor: 'transparent',
@@ -231,7 +225,6 @@ export const TabBarStyles = {
     tabBarInactiveTintColor: 'rgba(0, 0, 0, 0.7)',
   },
 
-  // Option 6: Original White (for comparison)
   originalWhite: {
     tabBarStyle: {
       backgroundColor: '#fff',
@@ -262,7 +255,6 @@ export const TabBarStyles = {
   },
 };
 
-// Helper function to get the current style
 export const getCurrentTabBarStyle = (styleName: keyof typeof TabBarStyles = 'darkGlass') => {
   return TabBarStyles[styleName];
 };

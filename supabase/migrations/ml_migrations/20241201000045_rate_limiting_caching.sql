@@ -1,4 +1,3 @@
--- Rate limiting table
 create table if not exists public.recs_rate_limit (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users(id) on delete cascade,
@@ -13,7 +12,6 @@ create table if not exists public.recs_rate_limit (
 create index if not exists recs_rate_limit_user_idx on public.recs_rate_limit(user_id, window_start desc);
 create index if not exists recs_rate_limit_ip_idx on public.recs_rate_limit(ip_address, window_start desc);
 
--- RLS for rate limiting
 alter table public.recs_rate_limit enable row level security;
 
 create policy recs_rate_limit_owner_rw on public.recs_rate_limit
@@ -21,12 +19,11 @@ for all
 using (auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 with check (auth.uid() = (select u.auth_id from public.users u where u.id = user_id));
 
--- Recommendations cache table
 create table if not exists public.recs_cache (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
-  geohash5 text not null, -- 5-character geohash for location bucketing
-  hour_bucket integer not null, -- Hour of day (0-23)
+  geohash5 text not null,
+  hour_bucket integer not null,
   payload jsonb not null,
   expires_at timestamptz not null,
   created_at timestamptz not null default now(),
@@ -36,7 +33,6 @@ create table if not exists public.recs_cache (
 create index if not exists recs_cache_user_idx on public.recs_cache(user_id, expires_at desc);
 create index if not exists recs_cache_expires_idx on public.recs_cache(expires_at);
 
--- RLS for cache
 alter table public.recs_cache enable row level security;
 
 create policy recs_cache_owner_rw on public.recs_cache
@@ -44,7 +40,6 @@ for all
 using (auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 with check (auth.uid() = (select u.auth_id from public.users u where u.id = user_id));
 
--- Function to check rate limit
 create or replace function public.check_rate_limit(
   p_user_id uuid,
   p_ip_address inet,
@@ -66,7 +61,6 @@ declare
 begin
   window_start := date_trunc('minute', now() - interval '1 minute' * p_window_minutes);
   
-  -- Check user rate limit
   select request_count
   into user_record
   from public.recs_rate_limit
@@ -74,7 +68,6 @@ begin
   order by window_start desc
   limit 1;
   
-  -- Check IP rate limit
   select request_count
   into ip_record
   from public.recs_rate_limit
@@ -92,7 +85,6 @@ begin
 end;
 $$;
 
--- Function to increment rate limit counter
 create or replace function public.increment_rate_limit(
   p_user_id uuid,
   p_ip_address inet
@@ -105,13 +97,11 @@ declare
 begin
   window_start := date_trunc('minute', now());
   
-  -- Increment user counter
   insert into public.recs_rate_limit (user_id, window_start, request_count)
   values (p_user_id, window_start, 1)
   on conflict (user_id, window_start)
   do update set request_count = recs_rate_limit.request_count + 1;
   
-  -- Increment IP counter
   insert into public.recs_rate_limit (ip_address, window_start, request_count)
   values (p_ip_address, window_start, 1)
   on conflict (ip_address, window_start)
@@ -119,7 +109,6 @@ begin
 end;
 $$;
 
--- Function to get cached recommendations
 create or replace function public.get_cached_recommendations(
   p_user_id uuid,
   p_lat double precision,
@@ -133,7 +122,6 @@ declare
   hour_bucket integer;
   cache_record record;
 begin
-  -- Generate 5-character geohash (simplified)
   geohash5 := substring(md5(p_lat::text || p_lon::text), 1, 5);
   hour_bucket := extract(hour from now());
   
@@ -153,7 +141,6 @@ begin
 end;
 $$;
 
--- Function to cache recommendations
 create or replace function public.cache_recommendations(
   p_user_id uuid,
   p_lat double precision,
@@ -180,7 +167,6 @@ begin
 end;
 $$;
 
--- Cleanup function for expired cache entries
 create or replace function public.cleanup_expired_cache()
 returns integer
 language plpgsql

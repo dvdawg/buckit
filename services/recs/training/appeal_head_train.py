@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Appeal Head Trainer
 Trains a small MLP to predict item appeal from text embeddings.
@@ -32,7 +31,6 @@ class AppealHeadTrainer:
         
     def get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using Claude or OpenAI."""
-        # Try Claude first if available
         claude_api_key = os.getenv("ANTHROPIC_API_KEY")
         if claude_api_key:
             try:
@@ -62,7 +60,6 @@ class AppealHeadTrainer:
             except Exception as e:
                 logger.error(f"Error getting Claude embedding: {e}")
         
-        # Fallback to OpenAI
         try:
             response = requests.post(
                 "https://api.openai.com/v1/embeddings",
@@ -84,7 +81,6 @@ class AppealHeadTrainer:
     
     def fetch_training_data(self) -> pd.DataFrame:
         """Fetch items with events for training."""
-        # Get items with text content
         items_response = requests.post(
             f"{self.supabase_url}/rest/v1/rpc/get_items_with_events",
             headers={
@@ -95,7 +91,6 @@ class AppealHeadTrainer:
         )
         
         if items_response.status_code != 200:
-            # Fallback: get items and events separately
             items_response = requests.get(
                 f"{self.supabase_url}/rest/v1/items",
                 headers={
@@ -114,7 +109,6 @@ class AppealHeadTrainer:
         items = items_response.json()
         logger.info(f"Fetched {len(items)} items")
         
-        # Get events for appeal scoring
         events_response = requests.get(
             f"{self.supabase_url}/rest/v1/events",
             headers={
@@ -132,14 +126,12 @@ class AppealHeadTrainer:
         events = events_response.json()
         logger.info(f"Fetched {len(events)} events")
         
-        # Process events into appeal scores
         item_events = {}
         for event in events:
             item_id = event['item_id']
             if item_id not in item_events:
                 item_events[item_id] = {'positive': 0, 'negative': 0}
             
-            # Time decay
             import datetime
             event_time = datetime.datetime.fromisoformat(event['created_at'].replace('Z', '+00:00'))
             age_days = (datetime.datetime.now(datetime.timezone.utc) - event_time).days
@@ -150,7 +142,6 @@ class AppealHeadTrainer:
             elif event['event_type'] in ['hide', 'skip']:
                 item_events[item_id]['negative'] += abs(event['strength']) * decay
         
-        # Create training data
         training_data = []
         for item in items:
             item_id = item['id']
@@ -182,7 +173,6 @@ class AppealHeadTrainer:
         """Train the appeal prediction model."""
         logger.info(f"Training on {len(df)} samples")
         
-        # Get embeddings for all texts
         embeddings = []
         for text in df['text']:
             embedding = self.get_embedding(text)
@@ -191,17 +181,14 @@ class AppealHeadTrainer:
         X = np.array(embeddings)
         y = df['appeal_score'].values
         
-        # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
         
-        # Scale features
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
         
-        # Train MLP
         model = MLPRegressor(
             hidden_layer_sizes=(256, 128),
             activation='relu',
@@ -215,7 +202,6 @@ class AppealHeadTrainer:
         
         model.fit(X_train_scaled, y_train)
         
-        # Evaluate
         y_pred = model.predict(X_test_scaled)
         mse = mean_squared_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
@@ -226,10 +212,8 @@ class AppealHeadTrainer:
     
     def export_onnx(self, model: MLPRegressor, scaler: StandardScaler, output_path: str):
         """Export model to ONNX format."""
-        # Create ONNX model
         initial_type = [('float_input', FloatTensorType([None, self.embed_dim]))]
         
-        # Combine scaler and model into a pipeline
         from sklearn.pipeline import Pipeline
         pipeline = Pipeline([
             ('scaler', scaler),
@@ -242,7 +226,6 @@ class AppealHeadTrainer:
             target_opset=11
         )
         
-        # Save ONNX model
         with open(output_path, 'wb') as f:
             f.write(onnx_model.SerializeToString())
         
@@ -252,21 +235,17 @@ class AppealHeadTrainer:
         """Run the complete training pipeline."""
         os.makedirs(output_dir, exist_ok=True)
         
-        # Fetch data
         df = self.fetch_training_data()
         
         if len(df) < 10:
             logger.warning("Not enough training data. Using fallback approach.")
             return
         
-        # Train model
         model, scaler = self.train_model(df)
         
-        # Save models
         joblib.dump(model, os.path.join(output_dir, "appeal_model.pkl"))
         joblib.dump(scaler, os.path.join(output_dir, "appeal_scaler.pkl"))
         
-        # Export to ONNX
         self.export_onnx(model, scaler, os.path.join(output_dir, "appeal_model.onnx"))
         
         logger.info("Training completed successfully!")

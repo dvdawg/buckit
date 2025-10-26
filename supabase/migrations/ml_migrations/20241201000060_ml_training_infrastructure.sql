@@ -1,7 +1,4 @@
--- ML Training Infrastructure
--- Tables for managing model training jobs and deployments
 
--- Training jobs table
 create table if not exists public.ml_training_jobs (
   id uuid primary key default gen_random_uuid(),
   model_type text not null check (model_type in ('appeal_head', 'user_vectors', 'embeddings')),
@@ -18,13 +15,12 @@ create table if not exists public.ml_training_jobs (
 create index if not exists ml_training_jobs_status_idx on public.ml_training_jobs(status, created_at desc);
 create index if not exists ml_training_jobs_model_type_idx on public.ml_training_jobs(model_type, created_at desc);
 
--- Model versions table
 create table if not exists public.ml_model_versions (
   id uuid primary key default gen_random_uuid(),
   model_type text not null check (model_type in ('appeal_head', 'user_vectors', 'embeddings')),
   version text not null,
   is_active boolean not null default false,
-  model_path text, -- Path to stored model file
+  model_path text,
   model_size_bytes bigint,
   training_job_id uuid references public.ml_training_jobs(id) on delete set null,
   metrics jsonb default '{}',
@@ -36,7 +32,6 @@ create table if not exists public.ml_model_versions (
 create index if not exists ml_model_versions_active_idx on public.ml_model_versions(model_type, is_active);
 create index if not exists ml_model_versions_deployed_idx on public.ml_model_versions(deployed_at desc);
 
--- Model storage table for binary data
 create table if not exists public.ml_model_storage (
   id uuid primary key default gen_random_uuid(),
   model_version_id uuid not null references public.ml_model_versions(id) on delete cascade,
@@ -47,7 +42,6 @@ create table if not exists public.ml_model_storage (
 
 create index if not exists ml_model_storage_version_idx on public.ml_model_storage(model_version_id);
 
--- Training schedules table
 create table if not exists public.ml_training_schedules (
   id uuid primary key default gen_random_uuid(),
   model_type text not null check (model_type in ('appeal_head', 'user_vectors', 'embeddings')),
@@ -61,13 +55,11 @@ create table if not exists public.ml_training_schedules (
 
 create index if not exists ml_training_schedules_enabled_idx on public.ml_training_schedules(is_enabled, next_run);
 
--- RLS policies
 alter table public.ml_training_jobs enable row level security;
 alter table public.ml_model_versions enable row level security;
 alter table public.ml_model_storage enable row level security;
 alter table public.ml_training_schedules enable row level security;
 
--- Allow service role full access
 create policy ml_training_jobs_service_rw on public.ml_training_jobs
 for all using (true) with check (true);
 
@@ -80,14 +72,12 @@ for all using (true) with check (true);
 create policy ml_training_schedules_service_rw on public.ml_training_schedules
 for all using (true) with check (true);
 
--- Allow authenticated users to read training jobs and model versions
 create policy ml_training_jobs_read on public.ml_training_jobs
 for select using (true);
 
 create policy ml_model_versions_read on public.ml_model_versions
 for select using (true);
 
--- Function to get active model version
 create or replace function public.get_active_model_version(p_model_type text)
 returns text
 language plpgsql
@@ -107,7 +97,6 @@ begin
 end;
 $$;
 
--- Function to create training job
 create or replace function public.create_training_job(
   p_model_type text,
   p_created_by uuid default null
@@ -126,7 +115,6 @@ begin
 end;
 $$;
 
--- Function to update training job status
 create or replace function public.update_training_job_status(
   p_job_id uuid,
   p_status text,
@@ -150,7 +138,6 @@ begin
 end;
 $$;
 
--- Function to deploy model version
 create or replace function public.deploy_model_version(
   p_model_type text,
   p_version text
@@ -159,12 +146,10 @@ returns void
 language plpgsql
 as $$
 begin
-  -- Deactivate all other versions of this model type
   update public.ml_model_versions
   set is_active = false
   where model_type = p_model_type;
   
-  -- Activate the specified version
   update public.ml_model_versions
   set 
     is_active = true,
@@ -174,7 +159,6 @@ begin
 end;
 $$;
 
--- Function to get next scheduled training jobs
 create or replace function public.get_next_training_jobs()
 returns table (
   id uuid,
@@ -195,13 +179,11 @@ begin
 end;
 $$;
 
--- Insert default training schedules
 insert into public.ml_training_schedules (model_type, cron_expression, is_enabled) values
-('appeal_head', '0 2 * * *', true),  -- Daily at 2 AM
-('user_vectors', '0 */6 * * *', true),  -- Every 6 hours
-('embeddings', '0 1 * * *', true);  -- Daily at 1 AM
+('appeal_head', '0 2 * * *', true),
+('user_vectors', '0 */6 * * *', true),
+('embeddings', '0 1 * * *', true);
 
--- Create view for training job summary
 create or replace view public.ml_training_summary as
 select 
   model_type,

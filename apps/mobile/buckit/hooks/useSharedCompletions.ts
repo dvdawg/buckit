@@ -79,7 +79,6 @@ export function useSharedCompletions(bucketId: string) {
       });
       if (error) throw error;
       
-      // Refresh completions and stats
       await Promise.all([fetchCompletions(), fetchStats()]);
       return data;
     } catch (err) {
@@ -104,7 +103,6 @@ export function useSharedCompletions(bucketId: string) {
       });
       if (error) throw error;
       
-      // Refresh completions to get updated rating
       await fetchCompletions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to rate completion');

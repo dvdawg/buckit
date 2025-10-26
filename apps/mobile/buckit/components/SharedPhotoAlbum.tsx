@@ -16,7 +16,7 @@ import Avatar from './Avatar';
 import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
-const PHOTO_SIZE = (width - 60) / 3; // 3 photos per row with padding
+const PHOTO_SIZE = (width - 60) / 3;
 
 interface Photo {
   id: string;
@@ -65,14 +65,12 @@ export default function SharedPhotoAlbum({
 
   const handleAddPhoto = async () => {
     try {
-      // Request camera permissions
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Required', 'Please grant camera roll permissions to add photos.');
         return;
       }
 
-      // Pick an image
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -171,7 +169,7 @@ export default function SharedPhotoAlbum({
         {photos.map((photo, index) => renderPhoto(photo, index))}
       </ScrollView>
 
-      {/* Photo Detail Modal */}
+      {}
       <Modal
         visible={selectedPhoto !== null}
         transparent

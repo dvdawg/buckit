@@ -58,7 +58,6 @@ export function useBucket(bucketId: string) {
       setLoading(true);
       setError(null);
       
-      // Get the bucket using the secure RPC function that respects visibility
       console.log('Fetching bucket with ID:', bucketId);
       
       const { data: bucketData, error: bucketError } = await supabase
@@ -79,7 +78,6 @@ export function useBucket(bucketId: string) {
         return;
       }
 
-      // Now fetch the items for this bucket
       console.log('Fetching items for bucket:', bucketId);
       
       const { data: itemsData, error: itemsError } = await supabase
@@ -116,7 +114,6 @@ export function useBucket(bucketId: string) {
   const recalculateCount = async () => {
     if (!user || !bucketId) return;
     
-    // Only allow recalculating count if user can edit the bucket
     if (!bucket?.can_edit) {
       console.log('User cannot edit bucket, skipping count recalculation');
       return;
@@ -132,7 +129,6 @@ export function useBucket(bucketId: string) {
         console.error('Error recalculating count:', error);
       } else {
         console.log('Successfully recalculated bucket count');
-        // Refresh the bucket to get updated count
         refresh();
       }
     } catch (error) {

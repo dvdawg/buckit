@@ -30,14 +30,12 @@ export interface EventLogParams {
   context?: Record<string, any>;
 }
 
-// Get current user ID from auth
 async function getCurrentUserId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
   
-  // Get the internal user ID from the users table
   const { data: userData, error } = await supabase
     .from('users')
     .select('id')
@@ -51,7 +49,6 @@ async function getCurrentUserId(): Promise<string> {
   return userData.id;
 }
 
-// Fetch recommendations from the Edge Function
 export async function fetchRecommendations(params: RecommendationParams): Promise<RecommendationResponse> {
   try {
     const userId = await getCurrentUserId();
@@ -77,7 +74,6 @@ export async function fetchRecommendations(params: RecommendationParams): Promis
   }
 }
 
-// Log user events for implicit feedback
 export async function logEvent(params: EventLogParams): Promise<void> {
   try {
     const userId = await getCurrentUserId();
@@ -94,15 +90,12 @@ export async function logEvent(params: EventLogParams): Promise<void> {
 
     if (error) {
       console.error('Error logging event:', error);
-      // Don't throw here as event logging shouldn't break the UI
     }
   } catch (error) {
     console.error('Error logging event:', error);
-    // Don't throw here as event logging shouldn't break the UI
   }
 }
 
-// Get default strength values for different event types
 function getDefaultStrength(eventType: string): number {
   const strengths: Record<string, number> = {
     impression: 0.0,
@@ -119,17 +112,14 @@ function getDefaultStrength(eventType: string): number {
   return strengths[eventType] ?? 0.0;
 }
 
-// Debounced view logging to avoid spam
 let viewTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
 export function logViewDebounced(itemId: string, delay = 800): void {
-  // Clear existing timeout for this item
   const existingTimeout = viewTimeouts.get(itemId);
   if (existingTimeout) {
     clearTimeout(existingTimeout);
   }
   
-  // Set new timeout
   const timeout = setTimeout(() => {
     logEvent({ itemId, eventType: 'view' });
     viewTimeouts.delete(itemId);
@@ -138,7 +128,6 @@ export function logViewDebounced(itemId: string, delay = 800): void {
   viewTimeouts.set(itemId, timeout);
 }
 
-// Helper to log completion (both to events and completions table)
 export async function logCompletion(
   itemId: string, 
   photoUrl?: string, 
@@ -148,14 +137,12 @@ export async function logCompletion(
   try {
     const userId = await getCurrentUserId();
     
-    // Log to events table for recommendation learning
     await logEvent({ 
       itemId, 
       eventType: 'complete', 
       strength: 3.0 
     });
     
-    // Also log to completions table for verification/media
     const { error } = await supabase
       .from('completions')
       .insert({
@@ -164,7 +151,7 @@ export async function logCompletion(
         photo_url: photoUrl,
         caption: caption,
         tagged_friend_ids: taggedFriendIds,
-        verified: false, // Will be verified later
+        verified: false,
       });
 
     if (error) {

@@ -1,6 +1,4 @@
--- Metrics views for recommendation system monitoring
 
--- CTR (Click-Through Rate) over 7 days
 create or replace view public.recs_ctr_7d as
 select 
   date_trunc('day', e.created_at) as date,
@@ -18,7 +16,6 @@ where e.created_at >= now() - interval '7 days'
 group by date_trunc('day', e.created_at)
 order by date desc;
 
--- CPR (Completions Per 1k Impressions) over 7 days
 create or replace view public.recs_cpr_7d as
 select 
   date_trunc('day', e.created_at) as date,
@@ -36,7 +33,6 @@ where e.created_at >= now() - interval '7 days'
 group by date_trunc('day', e.created_at)
 order by date desc;
 
--- Coverage K (unique items in top-K per day)
 create or replace view public.recs_coverage_k as
 with daily_recommendations as (
   select 
@@ -50,7 +46,7 @@ with daily_recommendations as (
 top_k_items as (
   select date, item_id
   from daily_recommendations
-  where rank <= 10 -- Top 10 items per user per day
+  where rank <= 10
 )
 select 
   date,
@@ -60,7 +56,6 @@ from top_k_items
 group by date
 order by date desc;
 
--- Diversity K (category entropy in top-K)
 create or replace view public.recs_diversity_k as
 with daily_recommendations as (
   select 
@@ -109,7 +104,6 @@ from entropy_calc
 group by date, total_items, entropy
 order by date desc;
 
--- Performance metrics (latency tracking)
 create table if not exists public.recs_performance_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users(id) on delete cascade,
@@ -123,7 +117,6 @@ create table if not exists public.recs_performance_logs (
 create index if not exists recs_performance_logs_created_idx on public.recs_performance_logs(created_at desc);
 create index if not exists recs_performance_logs_function_idx on public.recs_performance_logs(function_name, created_at desc);
 
--- RLS for performance logs
 alter table public.recs_performance_logs enable row level security;
 
 create policy recs_performance_logs_owner_rw on public.recs_performance_logs
@@ -131,7 +124,6 @@ for all
 using (auth.uid() = (select u.auth_id from public.users u where u.id = user_id))
 with check (auth.uid() = (select u.auth_id from public.users u where u.id = user_id));
 
--- P95 latency view
 create or replace view public.recs_latency_p95 as
 select 
   function_name,
@@ -147,7 +139,6 @@ where created_at >= now() - interval '24 hours'
 group by function_name, date_trunc('hour', created_at)
 order by hour desc, function_name;
 
--- Function to log performance metrics
 create or replace function public.log_performance_metric(
   p_user_id uuid,
   p_function_name text,
@@ -167,7 +158,6 @@ begin
 end;
 $$;
 
--- Overall metrics summary
 create or replace view public.recs_metrics_summary as
 select 
   'ctr_7d' as metric_name,

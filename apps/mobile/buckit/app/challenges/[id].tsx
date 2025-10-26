@@ -24,14 +24,12 @@ export default function ChallengeDetail() {
     try {
       setLoading(true);
       
-      // Get user ID
       const { data: uid } = await supabase.rpc('me_user_id');
       if (!uid) {
         setLoading(false);
         return;
       }
 
-      // Fetch the challenge data
       const { data: challengeData, error: challengeError } = await supabase
         .from('items')
         .select(`
@@ -57,7 +55,6 @@ export default function ChallengeDetail() {
         setChallenge(challengeData);
         setBucket(challengeData.bucket);
         
-        // If we have bucket data, redirect to the proper bucket challenge route
         if (challengeData.bucket?.id) {
           router.replace(`/buckets/${challengeData.bucket.id}/challenge?challengeId=${id}`);
           return;

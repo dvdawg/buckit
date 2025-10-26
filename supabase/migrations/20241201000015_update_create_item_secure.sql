@@ -1,4 +1,3 @@
--- Update create_item_secure function to support deadline
 CREATE OR REPLACE FUNCTION create_item_secure(
     p_bucket_id UUID,
     p_title TEXT,

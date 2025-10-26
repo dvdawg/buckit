@@ -1,7 +1,4 @@
--- Fix duplicate 'Smith' names in friends activity
--- Update the test users with diverse last names
 
--- Update users with diverse last names
 UPDATE users 
 SET 
     full_name = CASE 
@@ -58,7 +55,6 @@ WHERE id IN (
     '20ce621f-1a1c-479f-944c-9127d051ab7d'
 );
 
--- Log the update results
 DO $$
 DECLARE
     updated_count INTEGER;

@@ -1,14 +1,12 @@
--- Create storage bucket for avatars
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'avatars',
   'avatars',
   true,
-  5242880, -- 5MB limit
+  5242880,
   ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 );
 
--- Create storage policies for avatars bucket
 CREATE POLICY "Users can upload their own avatars" ON storage.objects
 FOR INSERT WITH CHECK (
   bucket_id = 'avatars' 

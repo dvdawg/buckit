@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 type ThemeAnalysis = {
   theme: string;
@@ -25,7 +25,6 @@ export const handler = serve(async (req) => {
       }
     );
 
-    // Get user ID from auth
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       console.error('Auth error:', authError);
@@ -38,7 +37,6 @@ export const handler = serve(async (req) => {
     const userId = user.id;
     console.log('User authenticated:', userId);
 
-    // Define theme categories based on challenge data patterns
     const themeCategories = [
       { theme: 'Fitness & Health', icon: '💪', color: '#ef4444', keywords: ['fitness', 'gym', 'workout', 'yoga', 'running', 'swimming', 'cycling', 'dance', 'martial', 'health', 'wellness', 'meditation', 'doctor', 'dental', 'massage', 'spa'] },
       { theme: 'Learning & Growth', icon: '📚', color: '#8EC5FC', keywords: ['learn', 'course', 'language', 'workshop', 'podcast', 'documentary', 'ted', 'book', 'coding', 'skill', 'education', 'study'] },
@@ -50,13 +48,11 @@ export const handler = serve(async (req) => {
       { theme: 'Home & Lifestyle', icon: '🏠', color: '#6b7280', keywords: ['home', 'garden', 'organization', 'cleaning', 'diy', 'furniture', 'decor', 'plant', 'garage', 'kitchen', 'lifestyle'] }
     ];
 
-    // Analyze user activity and popular themes
     const themeAnalysis: ThemeAnalysis[] = [];
     
     console.log(`Starting theme analysis for user: ${userId}`);
 
     for (const category of themeCategories) {
-      // Get challenges that match this theme
       const keywordQuery = category.keywords.map(keyword => `title.ilike.%${keyword}%,description.ilike.%${keyword}%`).join(',');
       console.log(`Searching for theme ${category.theme} with keywords: ${category.keywords.slice(0, 3).join(', ')}...`);
       
@@ -84,21 +80,18 @@ export const handler = serve(async (req) => {
         continue;
       }
 
-      // Filter out challenges without buckets
       const validChallenges = themeChallenges.filter(c => c.buckets);
       if (validChallenges.length === 0) {
         console.log(`No valid challenges found for theme: ${category.theme}`);
         continue;
       }
 
-      // Calculate popularity metrics
       const totalChallenges = validChallenges.length;
       const completedChallenges = validChallenges.filter(c => c.is_completed).length;
       const completionRate = totalChallenges > 0 ? (completedChallenges / totalChallenges) * 100 : 0;
       
       console.log(`Completion rate for ${category.theme}: ${completedChallenges}/${totalChallenges} (${completionRate.toFixed(1)}%)`);
 
-      // Get recent activity (last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
@@ -108,7 +101,6 @@ export const handler = serve(async (req) => {
       
       console.log(`Recent challenges for ${category.theme}: ${recentChallenges} in last 30 days`);
 
-      // Get user's interaction with this theme
       const { data: userInteractions } = await supabase
         .from('feed_events')
         .select('verb, created_at')
@@ -119,7 +111,6 @@ export const handler = serve(async (req) => {
       const userActivity = userInteractions?.length || 0;
       console.log(`User activity for ${category.theme}: ${userActivity} interactions`);
 
-      // Calculate popularity score (weighted combination of metrics)
       const popularityScore = Math.min(100, 
         (completionRate * 0.4) + 
         (recentChallenges * 2) + 
@@ -142,15 +133,12 @@ export const handler = serve(async (req) => {
       themeAnalysis.push(themeData);
     }
 
-    // Sort by popularity score
     themeAnalysis.sort((a, b) => b.popularity_score - a.popularity_score);
 
-    // Return top themes (at least return some default themes if none found)
     const topThemes = themeAnalysis.length > 0 ? themeAnalysis.slice(0, 8) : [];
     
     console.log(`Found ${themeAnalysis.length} themes, returning top ${topThemes.length}`);
 
-    // If no themes found, return some default themes
     if (topThemes.length === 0) {
       console.log('No themes found, returning default themes');
       const defaultThemes = [

@@ -44,12 +44,10 @@ export function useRecommendations(options: UseRecommendationsOptions): UseRecom
     }
   }, [options.lat, options.lon, options.radiusKm, options.k, options.enabled]);
 
-  // Initial fetch
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Refetch interval
   useEffect(() => {
     if (!options.refetchInterval || !options.enabled) return;
     
@@ -79,7 +77,7 @@ export function useRecommendations(options: UseRecommendationsOptions): UseRecom
       await logCompletion(itemId, photoUrl, caption, taggedFriendIds);
     } catch (err) {
       console.error('Error logging completion:', err);
-      throw err; // Re-throw for UI handling
+      throw err;
     }
   }, []);
 

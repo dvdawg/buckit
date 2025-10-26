@@ -22,9 +22,9 @@ export function RecommendationCard({
   };
 
   const getScoreColor = (score: number) => {
-    if (score > 0.5) return '#4CAF50'; // Green
-    if (score > 0.2) return '#FF9800'; // Orange
-    return '#F44336'; // Red
+    if (score > 0.5) return '#4CAF50';
+    if (score > 0.2) return '#FF9800';
+    return '#F44336';
   };
 
   return (

@@ -15,64 +15,62 @@ import { useEffect, useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
-// Dummy data
 const dummyUser = {
   name: "Brandon",
   location: "Berkeley, CA",
-  profileImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+  profileImage: "https:
   buckets: [
     {
       id: "1",
       title: "Jits",
-      cover: "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+      cover: "https:
       challenges: 6,
     },
     {
       id: "2",
       title: "Family",
-      cover: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+      cover: "https:
       challenges: 3,
     },
     {
       id: "3",
       title: "Cafes",
-      cover: "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
+      cover: "https:
       challenges: 9,
     },
     {
       id: "4",
       title: "Travel",
-      cover: "https://images.unsplash.com/photo-1488646953014-85cb44e25828",
+      cover: "https:
       challenges: 12,
     },
     {
       id: "5",
       title: "Fitness",
-      cover: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+      cover: "https:
       challenges: 8,
     },
     {
       id: "6",
       title: "Food",
-      cover: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b",
+      cover: "https:
       challenges: 15,
     },
     {
       id: "7",
       title: "Art",
-      cover: "https://images.unsplash.com/photo-1541961017774-22349e4a1262",
+      cover: "https:
       challenges: 5,
     },
     {
       id: "8",
       title: "Music",
-      cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f",
+      cover: "https:
       challenges: 7,
     },
   ],
 };
 
-// All Challenges dummy data
 const allChallenges = [
   {
     id: "1",
@@ -199,36 +197,27 @@ export default function Profile() {
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
 
-  // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      // Refresh all data
       await refresh();
       await refreshBuckets();
       const count = await getFriendCount();
       setFriendCount(count);
     },
-    minDuration: 1000, // 1 second minimum for smooth transition
+    minDuration: 1000,
   });
   
-  // Monitor session validity
   useSessionMonitor();
 
-  // Track if we need to refresh when coming back from settings
   const [shouldRefresh, setShouldRefresh] = useState(false);
 
-  // Track navigation state to determine when to refresh
   const [lastNavigationTime, setLastNavigationTime] = useState(0);
 
-  // Only refresh when we actually need to (not on every focus)
   useFocusEffect(
     useCallback(() => {
       const now = Date.now();
       const timeSinceLastNavigation = now - lastNavigationTime;
       
-      // Only refresh if:
-      // 1. We explicitly set shouldRefresh (returning from settings)
-      // 2. It's been more than 5 seconds since last navigation (fresh tab switch)
       if (shouldRefresh || timeSinceLastNavigation > 5000) {
         console.log('Profile: Refreshing data after navigation');
         refresh();
@@ -239,7 +228,6 @@ export default function Profile() {
     }, [shouldRefresh, refresh, refreshBuckets, lastNavigationTime])
   );
 
-  // Debug logging for user data
   useEffect(() => {
     console.log('Profile: User data updated:', {
       full_name: me?.full_name,
@@ -250,7 +238,6 @@ export default function Profile() {
     });
   }, [me, loading]);
 
-  // Load friend count on mount
   useEffect(() => {
     const loadFriendCount = async () => {
       const count = await getFriendCount();
@@ -260,14 +247,12 @@ export default function Profile() {
   }, [getFriendCount]);
 
   useEffect(() => {
-    // If no valid session, redirect to splash
     if (!user || !isSessionValid) {
       console.log('Profile: No valid session, redirecting to splash');
       router.replace('/splash');
     }
   }, [user, isSessionValid, router]);
 
-  // If no valid session, show loading
   if (!user || !isSessionValid) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
@@ -297,7 +282,7 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      {/* Profile Header with Full-Width Image */}
+      {}
       <View style={styles.headerContainer}>
         {me?.avatar_url ? (
           <Image 
@@ -361,7 +346,7 @@ export default function Profile() {
         </View>
           </View>
 
-      {/* Scrollable Content */}
+      {}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -375,10 +360,10 @@ export default function Profile() {
           />
         }
       >
-        {/* Performance Preview */}
+        {}
         <PerformancePreview />
 
-      {/* Buckets Section */}
+      {}
       <View style={styles.section}>
         <TouchableOpacity style={styles.sectionHeader} onPress={() => {
           console.log('Navigating to /buckets');
@@ -406,10 +391,9 @@ export default function Profile() {
             </View>
           ) : (
             buckets.slice(0, 6).map((bucket) => {
-              // Use cover_url if available, otherwise use a placeholder
               const imageSource = bucket.cover_url 
                 ? { uri: bucket.cover_url }
-                : { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24' }; // Default placeholder
+                : { uri: 'https:
 
               return (
                 <TouchableOpacity
@@ -440,7 +424,7 @@ export default function Profile() {
         </ScrollView>
       </View>
 
-      {/* All Challenges Section */}
+      {}
       <View style={styles.section}>
         <TouchableOpacity style={styles.sectionHeader} onPress={handleAllChallenges}>
           <Text style={[styles.sectionTitle, { fontFamily: 'Poppins' }]}>All Challenges</Text>
@@ -450,7 +434,7 @@ export default function Profile() {
           </View>
         </TouchableOpacity>
         
-        {/* Challenges Preview Grid */}
+        {}
         <View style={styles.challengesGrid}>
           {itemsLoading ? (
             <View style={styles.loadingContainer}>
@@ -503,7 +487,7 @@ export default function Profile() {
         </View>
       </View>
 
-      {/* Challenge Detail Modal */}
+      {}
       <ChallengeDetailModal
         visible={challengeModalVisible}
         challengeId={selectedChallengeId}
@@ -523,7 +507,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 100,
   },
   headerContainer: {
     height: 300,
@@ -634,7 +618,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   bucketCard: {
-    width: (width - 60) / 3, // Show exactly 3 buckets
+    width: (width - 60) / 3,
     height: 200,
     marginRight: 16,
     borderRadius: 16,
@@ -778,8 +762,8 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    width: width - 40, // Full width minus horizontal padding
-    height: 200, // Same height as bucket cards
+    width: width - 40,
+    height: 200,
   },
   emptyText: {
     color: '#fff',

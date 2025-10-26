@@ -1,11 +1,7 @@
--- Update policies to enforce private accounts by default
--- All accounts are private - only friends can see buckets and items
 
--- Drop existing public visibility policies
 DROP POLICY IF EXISTS "Users can view public buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view public items" ON items;
 
--- Update buckets policies to only allow friends to see buckets
 DROP POLICY IF EXISTS "Users can view their own buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view friend's buckets" ON buckets;
 CREATE POLICY "Users can view their own buckets" ON buckets
@@ -22,7 +18,6 @@ CREATE POLICY "Users can view friend's buckets" ON buckets
         )
     );
 
--- Update items policies to only allow friends to see items
 DROP POLICY IF EXISTS "Users can view their own items" ON items;
 DROP POLICY IF EXISTS "Users can view friend's items" ON items;
 CREATE POLICY "Users can view their own items" ON items
@@ -39,7 +34,6 @@ CREATE POLICY "Users can view friend's items" ON items
         )
     );
 
--- Update feed events to only show to friends
 DROP POLICY IF EXISTS "Users can view relevant feed events" ON feed_events;
 
 CREATE POLICY "Users can view relevant feed events" ON feed_events
@@ -54,7 +48,6 @@ CREATE POLICY "Users can view relevant feed events" ON feed_events
         ))
     );
 
--- Update user search function to only return basic profile info
 CREATE OR REPLACE FUNCTION search_users(search_term TEXT, limit_count INTEGER DEFAULT 20)
 RETURNS TABLE (
     id UUID,
@@ -95,7 +88,6 @@ AS $$
     LIMIT limit_count;
 $$;
 
--- Update get_user_by_handle to only return basic profile info
 CREATE OR REPLACE FUNCTION get_user_by_handle(p_handle TEXT)
 RETURNS TABLE (
     id UUID,
@@ -132,7 +124,6 @@ AS $$
     WHERE u.handle = p_handle;
 $$;
 
--- Add a function to get user's buckets (only for friends)
 CREATE OR REPLACE FUNCTION get_user_buckets(p_user_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -161,9 +152,7 @@ AS $$
     FROM buckets b
     WHERE b.owner_id = p_user_id
     AND (
-        -- User can see their own buckets
         p_user_id = me_user_id()
-        -- Or user is friends with the bucket owner
         OR EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
@@ -174,7 +163,6 @@ AS $$
     ORDER BY b.created_at DESC;
 $$;
 
--- Add a function to get user's items (only for friends)
 CREATE OR REPLACE FUNCTION get_user_items(p_user_id UUID, p_bucket_id UUID DEFAULT NULL)
 RETURNS TABLE (
     id UUID,
@@ -208,9 +196,7 @@ AS $$
     WHERE i.owner_id = p_user_id
     AND (p_bucket_id IS NULL OR i.bucket_id = p_bucket_id)
     AND (
-        -- User can see their own items
         p_user_id = me_user_id()
-        -- Or user is friends with the item owner
         OR EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())

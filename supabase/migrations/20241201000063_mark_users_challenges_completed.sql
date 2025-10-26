@@ -1,14 +1,10 @@
--- Mark all challenges as completed for specific users
--- This migration marks all items (challenges) as completed for the 15 users shown in the image
 
--- First, let's create a temporary table with the user UUIDs from the image
 CREATE TEMP TABLE target_users (
     uuid TEXT,
     handle TEXT,
     full_name TEXT
 );
 
--- Insert the user data from the image with diverse names
 INSERT INTO target_users (uuid, handle, full_name) VALUES
     ('0104e50a-53f4-4ae8-bf93-d15c6b65d262', 'johnsmith266', 'John Smith'),
     ('01efb100-3292-4ee8-80cb-359d4339a236', 'rachelwilson312', 'Rachel Wilson'),
@@ -26,20 +22,16 @@ INSERT INTO target_users (uuid, handle, full_name) VALUES
     ('1ca6553d-8d24-441b-8aed-d6f962dd68e', 'arthurharris816', 'Arthur Harris'),
     ('20ce621f-1a1c-479f-944c-9127d051ab7d', 'amymartin344', 'Amy Martin');
 
--- Mark all items as completed for these users
--- Set completed_at to a recent timestamp (within the last 7 days)
 UPDATE items 
 SET 
     is_completed = TRUE,
-    completed_at = NOW() - INTERVAL '1 day' * (RANDOM() * 7) -- Random completion within last 7 days
+    completed_at = NOW() - INTERVAL '1 day' * (RANDOM() * 7)
 WHERE owner_id IN (
     SELECT u.id 
     FROM users u 
     JOIN target_users tu ON u.id::text = tu.uuid
 );
 
--- Create completion records for each completed item
--- This ensures the completions table has records for all completed items
 INSERT INTO completions (item_id, user_id, verified, created_at)
 SELECT 
     i.id as item_id,
@@ -55,8 +47,6 @@ AND NOT EXISTS (
     WHERE c.item_id = i.id AND c.user_id = i.owner_id
 );
 
--- Update user statistics for these users
--- Update total_completions count
 UPDATE users 
 SET total_completions = (
     SELECT COUNT(*) 
@@ -69,7 +59,6 @@ WHERE id IN (
     JOIN target_users tu ON u.id::text = tu.uuid
 );
 
--- Update current_streak to a reasonable value (7 days since they completed recently)
 UPDATE users 
 SET 
     current_streak = 7,
@@ -81,8 +70,6 @@ WHERE id IN (
     JOIN target_users tu ON u.id::text = tu.uuid
 );
 
--- Update bucket progress for all buckets owned by these users
--- This will recalculate completion percentages
 DO $$
 DECLARE
     user_record RECORD;
@@ -101,7 +88,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create user activity records for the last 7 days to reflect recent activity
 INSERT INTO user_activity (user_id, activity_date, completions_count)
 SELECT 
     u.id as user_id,
@@ -112,7 +98,6 @@ JOIN target_users tu ON u.id::text = tu.uuid
 ON CONFLICT (user_id, activity_date) 
 DO UPDATE SET completions_count = user_activity.completions_count + EXCLUDED.completions_count;
 
--- Log the migration results
 DO $$
 DECLARE
     completed_count INTEGER;
@@ -131,5 +116,4 @@ BEGIN
     RAISE NOTICE 'Migration completed: Marked % items as completed for % users', completed_count, user_count;
 END $$;
 
--- Clean up temporary table
 DROP TABLE target_users;

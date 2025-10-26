@@ -1,36 +1,26 @@
--- Update visibility options to use 'public' and 'private' instead of 'manual' and 'friends'
--- This migration updates the database schema to support the new visibility model
 
--- Update buckets table to use new visibility options
 ALTER TABLE buckets DROP CONSTRAINT IF EXISTS buckets_visibility_check;
 ALTER TABLE buckets ADD CONSTRAINT buckets_visibility_check 
     CHECK (visibility IN ('public', 'private'));
 
--- Update default visibility to 'private'
 ALTER TABLE buckets ALTER COLUMN visibility SET DEFAULT 'private';
 
--- Update existing buckets to use 'private' instead of 'manual' and 'friends'
 UPDATE buckets SET visibility = 'private' WHERE visibility = 'manual';
 UPDATE buckets SET visibility = 'private' WHERE visibility = 'friends';
 
--- Update items table to use new visibility options
 ALTER TABLE items DROP CONSTRAINT IF EXISTS items_visibility_check;
 ALTER TABLE items ADD CONSTRAINT items_visibility_check 
     CHECK (visibility IN ('public', 'private'));
 
--- Update default visibility for items to 'private'
 ALTER TABLE items ALTER COLUMN visibility SET DEFAULT 'private';
 
--- Update existing items to use 'private' instead of 'manual' and 'friends'
 UPDATE items SET visibility = 'private' WHERE visibility = 'manual';
 UPDATE items SET visibility = 'private' WHERE visibility = 'friends';
 
--- Update buckets policies for new visibility model
 DROP POLICY IF EXISTS "Users can view friend's buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view public buckets" ON buckets;
 DROP POLICY IF EXISTS "Users can view private buckets" ON buckets;
 
--- Create new policies for public and private buckets
 CREATE POLICY "Users can view public buckets" ON buckets
     FOR SELECT USING (visibility = 'public');
 
@@ -46,13 +36,11 @@ CREATE POLICY "Users can view private buckets" ON buckets
         )
     );
 
--- Update items policies to respect bucket visibility
 DROP POLICY IF EXISTS "Users can view friend's items" ON items;
 DROP POLICY IF EXISTS "Users can view public items" ON items;
 DROP POLICY IF EXISTS "Users can view items in public buckets" ON items;
 DROP POLICY IF EXISTS "Users can view items in private buckets" ON items;
 
--- Create new policies for items based on bucket visibility
 CREATE POLICY "Users can view items in public buckets" ON items
     FOR SELECT USING (
         EXISTS (
@@ -78,7 +66,6 @@ CREATE POLICY "Users can view items in private buckets" ON items
         )
     );
 
--- Update the get_user_buckets function to use new visibility options
 DROP FUNCTION IF EXISTS get_user_buckets(UUID);
 CREATE FUNCTION get_user_buckets(p_user_id UUID)
 RETURNS TABLE (
@@ -110,11 +97,8 @@ AS $$
     FROM buckets b
     WHERE b.owner_id = p_user_id
     AND (
-        -- User can see their own buckets
         p_user_id = me_user_id()
-        -- Or bucket is public
         OR b.visibility = 'public'
-        -- Or bucket is private and user is friends with the bucket owner
         OR (b.visibility = 'private' AND EXISTS (
             SELECT 1 FROM friendships f
             WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
@@ -125,7 +109,6 @@ AS $$
     ORDER BY b.created_at DESC;
 $$;
 
--- Update the create_bucket_secure function to use new visibility options
 DROP FUNCTION IF EXISTS create_bucket_secure(TEXT, TEXT, TEXT);
 CREATE FUNCTION create_bucket_secure(
     p_title TEXT,
@@ -140,14 +123,12 @@ DECLARE
     bucket_id UUID;
     user_id UUID;
 BEGIN
-    -- Get the current user's ID
     user_id := (SELECT id FROM users WHERE auth_id = auth.uid());
     
     IF user_id IS NULL THEN
         RAISE EXCEPTION 'User not found';
     END IF;
     
-    -- Validate visibility option
     IF p_visibility NOT IN ('public', 'private') THEN
         RAISE EXCEPTION 'Invalid visibility option. Must be "public" or "private"';
     END IF;
@@ -160,7 +141,6 @@ BEGIN
 END;
 $$;
 
--- Add function to get bucket visibility options
 DROP FUNCTION IF EXISTS get_bucket_visibility_options();
 CREATE FUNCTION get_bucket_visibility_options()
 RETURNS TABLE (

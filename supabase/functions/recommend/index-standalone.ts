@@ -1,11 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 type Params = { userId: string; lat: number; lon: number; radiusKm?: number; k?: number };
 
 const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
 
-// MMR Selection function (embedded)
 function mmrSelect<T extends { embedding?: number[]; score: number }>(
   candidates: T[], k: number, lambda = 0.7
 ): T[] {
@@ -44,7 +43,6 @@ function cosine(a?: number[], b?: number[]) {
   return s / (Math.sqrt(na)*Math.sqrt(nb) + 1e-8);
 }
 
-// LinUCB Bandit function (embedded)
 function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: string) {
   return {
     async injectExplore<T extends { id: string; score: number; reasons: any }>(
@@ -59,7 +57,6 @@ function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: s
       
       if (pool.length === 0) return current;
       
-      // Compute UCB scores for exploration candidates
       const ucbCandidates = await Promise.all(
         pool.map(async (candidate) => {
           try {
@@ -84,7 +81,6 @@ function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: s
             };
           } catch (error) {
             console.error('Error computing UCB score for item:', candidate.id, error);
-            // Return original candidate with default UCB score if computation fails
             return {
               ...candidate,
               ucbScore: 0
@@ -93,13 +89,11 @@ function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: s
         })
       );
       
-      // Sort by UCB score and pick top exploreK
       const sortedByUCB = ucbCandidates.sort((a, b) => b.ucbScore - a.ucbScore);
       const picks = sortedByUCB.slice(0, exploreK);
       
       const out = [...current];
       
-      // Inject exploration items at strategic positions
       if (picks[0]) out.splice(Math.min(3, out.length), 0, picks[0]);
       if (picks[1]) out.splice(Math.min(7, out.length), 0, picks[1]);
       
@@ -140,12 +134,10 @@ export const handler = serve(async (req) => {
     const radiusKm = body.radiusKm ?? 15;
     const k = body.k ?? 20;
 
-    // Get client IP for rate limiting
     const clientIP = req.headers.get('x-forwarded-for') || 
                     req.headers.get('x-real-ip') || 
                     '127.0.0.1';
 
-    // Check rate limit
     let rateLimitCheck = null;
     try {
       const { data: rateLimitData, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
@@ -157,13 +149,11 @@ export const handler = serve(async (req) => {
       
       if (rateLimitError) {
         console.error('Rate limit check error:', rateLimitError);
-        // Continue without rate limiting if the RPC fails
       } else {
         rateLimitCheck = rateLimitData;
       }
     } catch (error) {
       console.error('Rate limit check failed:', error);
-      // Continue without rate limiting if the check fails
     }
 
     if (rateLimitCheck && Array.isArray(rateLimitCheck) && rateLimitCheck.length > 0 && !(rateLimitCheck[0] as any).allowed) {
@@ -175,18 +165,16 @@ export const handler = serve(async (req) => {
         status: 429,
         headers: { 
           "Content-Type": "application/json",
-          "Retry-After": "600" // 10 minutes
+          "Retry-After": "600"
         },
       });
     }
 
-    // Get A/B test parameters
     let experimentParams: any = {};
     let experimentId: string | null = null;
     let variant: string | null = null;
     
     try {
-      // First, try to get existing assignment
       const { data: abParams, error: abError } = await supabase.rpc('get_user_experiment_variant', {
         p_user_id: body.userId,
         p_experiment_name: 'social_weight_test'
@@ -194,14 +182,12 @@ export const handler = serve(async (req) => {
       
       if (abError) {
         console.error('A/B test params error:', abError);
-        // Continue with default parameters
       } else if (abParams && abParams.length > 0) {
         const exp = abParams[0];
         experimentParams = exp.params || {};
         experimentId = exp.experiment_id;
         variant = exp.variant;
       } else {
-        // No assignment yet, assign user to experiment
         const { data: assignedVariant, error: assignError } = await supabase.rpc('assign_user_to_experiment', {
           p_user_id: body.userId,
           p_experiment_name: 'social_weight_test'
@@ -211,7 +197,6 @@ export const handler = serve(async (req) => {
           console.error('Error assigning user to experiment:', assignError);
         } else {
           variant = assignedVariant;
-          // Get the experiment params now
           const { data: newParams } = await supabase.rpc('get_user_experiment_variant', {
             p_user_id: body.userId,
             p_experiment_name: 'social_weight_test'
@@ -226,10 +211,8 @@ export const handler = serve(async (req) => {
       }
     } catch (error) {
       console.error('A/B test params failed:', error);
-      // Continue with default parameters
     }
 
-    // Check cache first (include experiment variant in cache key)
     const cacheKey = `${body.userId}_${body.lat}_${body.lon}_${variant || 'control'}`;
     let cachedResult = null;
     
@@ -242,17 +225,14 @@ export const handler = serve(async (req) => {
       
       if (cacheError) {
         console.error('Cache check error:', cacheError);
-        // Continue without cache
       } else {
         cachedResult = cacheData;
       }
     } catch (error) {
       console.error('Cache check failed:', error);
-      // Continue without cache
     }
 
     if (cachedResult) {
-      // Increment rate limit counter
       try {
         await supabase.rpc('increment_rate_limit', {
           p_user_id: body.userId,
@@ -260,7 +240,6 @@ export const handler = serve(async (req) => {
         });
       } catch (error) {
         console.error('Error incrementing rate limit for cached result:', error);
-        // Don't fail the request if rate limit increment fails
       }
 
       return new Response(JSON.stringify({ 
@@ -274,7 +253,6 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Trait vector
     let uv: any = null;
     try {
       const { data: userVectorData, error: userVectorError } = await supabase
@@ -285,16 +263,13 @@ export const handler = serve(async (req) => {
       
       if (userVectorError) {
         console.error('User vector error:', userVectorError);
-        // Continue without user vector
       } else {
         uv = userVectorData;
       }
     } catch (error) {
       console.error('User vector fetch failed:', error);
-      // Continue without user vector
     }
 
-    // Candidates via schema-aligned RPC
     let candidates = [];
     try {
       const { data: candidatesData, error: candErr } = await supabase.rpc("get_recommendation_candidates", {
@@ -334,7 +309,6 @@ export const handler = serve(async (req) => {
       stateVec = await computeStateVector(supabase, body.userId, EMBED_DIM);
     } catch (error) {
       console.error('State vector computation failed:', error);
-      // Continue without state vector
     }
 
     const enriched = candidates.map((c: any) => {
@@ -342,12 +316,11 @@ export const handler = serve(async (req) => {
       const trait = dot(uv?.emb ?? null, emb);
       const state = dot(stateVec, emb);
 
-      // Enhanced social signals with weights (A/B testable)
       const baseSocialWeight = experimentParams.social_weight || 0.15;
-      const w1 = 0.10; // friend_completes weight
-      const w2 = 0.08; // friend_saves weight  
-      const w3 = 0.06; // friend_likes weight
-      const w4 = 0.05; // collab_hint weight
+      const w1 = 0.10;
+      const w2 = 0.08;
+      const w3 = 0.06;
+      const w4 = 0.05;
       
       const social = baseSocialWeight * (w1 * (c.friend_completes ?? 0) + 
                                         w2 * (c.friend_saves ?? 0) + 
@@ -356,10 +329,8 @@ export const handler = serve(async (req) => {
       const cost = distancePenalty(c.distance_km) + pricePenalty(c.price_min, c.price_max) + difficultyPenalty(c.difficulty);
       const poprec = popularityBoost(c.completes, c.created_at);
       
-      // Appeal score: use precomputed score or fallback to trait similarity
       const appeal = c.appeal_score ?? trait;
 
-      // Final scoring with A/B testable weights
       const appealWeight = experimentParams.appeal_weight || 0.25;
       const traitWeight = experimentParams.trait_weight || 0.25;
       const stateWeight = experimentParams.state_weight || 0.20;
@@ -380,7 +351,6 @@ export const handler = serve(async (req) => {
       };
     });
 
-    // Apply diversity constraints and exposure dampening before MMR
     let diversityFiltered = enriched;
     let exposureFiltered = enriched;
     
@@ -388,17 +358,14 @@ export const handler = serve(async (req) => {
       diversityFiltered = await applyDiversityConstraints(supabase, body.userId, enriched, k);
     } catch (error) {
       console.error('Diversity constraints failed:', error);
-      // Continue with original enriched data
     }
     
     try {
       exposureFiltered = await applyExposureDampening(supabase, body.userId, diversityFiltered);
     } catch (error) {
       console.error('Exposure dampening failed:', error);
-      // Continue with diversity filtered data
     }
     
-    // Use A/B test parameters for MMR and exploration
     const mmrLambda = experimentParams.mmr_lambda || 0.7;
     const exploreSlots = experimentParams.explore_slots || 2;
     
@@ -410,14 +377,12 @@ export const handler = serve(async (req) => {
       final = await bandit.injectExplore(diversified, enriched, exploreSlots);
     } catch (error) {
       console.error('Bandit exploration failed:', error);
-      // Continue with diversified results
     }
 
     try {
       await logImpressions(supabase, body.userId, final.map(x => x.id), body.lat, body.lon, experimentId, variant);
     } catch (error) {
       console.error('Log impressions failed:', error);
-      // Don't fail the request if logging fails
     }
 
     const responseData = { 
@@ -427,7 +392,6 @@ export const handler = serve(async (req) => {
       experiment: { id: experimentId, variant }
     };
 
-    // Cache the results
     try {
       await supabase.rpc('cache_recommendations', {
         p_user_id: body.userId,
@@ -438,10 +402,8 @@ export const handler = serve(async (req) => {
       });
     } catch (error) {
       console.error('Error caching recommendations:', error);
-      // Don't fail the request if caching fails
     }
 
-    // Increment rate limit counter
     try {
       await supabase.rpc('increment_rate_limit', {
         p_user_id: body.userId,
@@ -449,10 +411,8 @@ export const handler = serve(async (req) => {
       });
     } catch (error) {
       console.error('Error incrementing rate limit:', error);
-      // Don't fail the request if rate limit increment fails
     }
 
-    // Log performance metrics
     const duration = Date.now() - startTime;
     try {
       await supabase.rpc('log_performance_metric', {
@@ -463,7 +423,6 @@ export const handler = serve(async (req) => {
       });
     } catch (error) {
       console.error('Error logging performance metrics:', error);
-      // Don't fail the request if logging fails
     }
 
     return new Response(JSON.stringify(responseData), {
@@ -473,7 +432,6 @@ export const handler = serve(async (req) => {
   } catch (error) {
     console.error("Error in recommend function:", error);
     
-    // Log error performance metrics
     const duration = Date.now() - startTime;
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -489,7 +447,6 @@ export const handler = serve(async (req) => {
       });
     } catch (logError) {
       console.error('Error logging performance metrics for error:', logError);
-      // Don't fail on logging errors
     }
 
     return new Response(JSON.stringify({ error: error.message }), {
@@ -499,7 +456,6 @@ export const handler = serve(async (req) => {
   }
 });
 
-// === helpers ===
 function dot(a: number[] | null | undefined, b: number[] | null | undefined) {
   if (!a || !b) return 0;
   let s = 0;
@@ -508,7 +464,6 @@ function dot(a: number[] | null | undefined, b: number[] | null | undefined) {
 }
 
 async function computeStateVector(supabase: any, userId: string, dim: number): Promise<number[] | null> {
-  // Use recent views/likes/saves/starts/completes from events; fallback to completions
   const { data: ev } = await supabase
     .from("events")
     .select("created_at, items:items!inner(embedding)")
@@ -576,7 +531,6 @@ function popularityBoost(completes?: number|null, created_at?: string|null){
 }
 
 async function applyDiversityConstraints(supabase: any, userId: string, candidates: any[], k: number): Promise<any[]> {
-  // Get bucket information for candidates
   const itemIds = candidates.map(c => c.id);
   const { data: items } = await supabase
     .from('items')
@@ -585,7 +539,6 @@ async function applyDiversityConstraints(supabase: any, userId: string, candidat
   
   const itemToBucket = new Map(items?.map((item: any) => [item.id, item.bucket_id]) || []);
   
-  // Per-bucket cap: max 3 items from same bucket
   const bucketCounts = new Map<string, number>();
   const maxPerBucket = 3;
   
@@ -621,7 +574,6 @@ async function applyExposureDampening(supabase: any, userId: string, candidates:
         };
       } catch (error) {
         console.error('Error getting exposure dampening for item:', candidate.id, error);
-        // Return original candidate if dampening fails
         return candidate;
       }
     })
@@ -643,7 +595,6 @@ async function logImpressions(
   if (!itemIds.length) return;
   
   try {
-    // Log to events table with experiment context
     const eventRows = itemIds.map(id => ({
       user_id: userId,
       item_id: id,
@@ -661,7 +612,6 @@ async function logImpressions(
     console.error('Error logging impressions to events table:', error);
   }
   
-  // Update exposure tracking
   for (const itemId of itemIds) {
     try {
       await supabase.rpc('update_exposure_tracking', {

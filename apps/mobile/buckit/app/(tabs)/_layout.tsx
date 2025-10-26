@@ -5,7 +5,6 @@ import FloatingAddButton from '@/components/FloatingAddButton';
 import { getCurrentTabBarStyle } from '@/components/TabBarStyles';
 import Svg, { Path } from 'react-native-svg';
 
-// Custom Bucket Icon Component
 const BucketIcon = ({ size = 24, color = '#9BA1A6' }) => (
   <Svg width={size} height={size} viewBox="0 0 159 171" fill="none">
     <Path 
@@ -17,13 +16,6 @@ const BucketIcon = ({ size = 24, color = '#9BA1A6' }) => (
 );
 
 export default function Layout() {
-  // 🎨 GLASS STYLE OPTIONS - Change the style name below to switch:
-  // 'darkGlass' - Dark blur with white text (current)
-  // 'lightGlass' - Light blur with dark text  
-  // 'gradientGlass' - Gradient blur with color transitions
-  // 'subtleDarkGlass' - Subtle dark blur effect
-  // 'ultraLightGlass' - Very light blur effect
-  // 'originalWhite' - Solid white background (original)
   const currentStyle = getCurrentTabBarStyle('originalWhite');
   
   return (

@@ -13,7 +13,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// config.watchFolders.push(path.resolve(workspaceRoot, 'packages')); // Commented out - packages directory doesn't exist
 
 config.resolver.disableHierarchicalLookup = true;
 

@@ -1,4 +1,3 @@
--- Fix send_friend_request function to ensure consistency with variable naming
 
 CREATE OR REPLACE FUNCTION send_friend_request(p_friend_id UUID)
 RETURNS BOOLEAN
@@ -17,7 +16,6 @@ BEGIN
         RAISE EXCEPTION 'Cannot friend yourself';
     END IF;
     
-    -- Check if friendship already exists
     IF EXISTS (
         SELECT 1 FROM friendships f
         WHERE (f.user_id = current_user_id AND f.friend_id = p_friend_id)

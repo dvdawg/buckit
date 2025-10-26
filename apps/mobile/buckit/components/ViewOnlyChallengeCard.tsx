@@ -21,7 +21,7 @@ export default function ViewOnlyChallengeCard({ challenge, onPress }: ViewOnlyCh
       style={styles.challengeCard}
       onPress={onPress}
     >
-      {/* Completion Status - View Only */}
+      {}
       <View style={styles.challengeIcon}>
         {challenge.is_completed ? (
           <Ionicons name="checkmark-circle" size={24} color="#4ade80" />
@@ -30,12 +30,12 @@ export default function ViewOnlyChallengeCard({ challenge, onPress }: ViewOnlyCh
         )}
       </View>
       
-      {/* View Only Indicator */}
+      {}
       <View style={styles.viewOnlyIndicator}>
         <Ionicons name="eye" size={12} color="#6B7280" />
       </View>
       
-      {/* Challenge Info */}
+      {}
       <View style={styles.challengeInfo}>
         <Text style={styles.challengeTitle}>{challenge.title}</Text>
         <Text style={styles.challengeDescription}>{challenge.description}</Text>

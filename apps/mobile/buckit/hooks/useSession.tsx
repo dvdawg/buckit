@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 import type { Session, User } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
-// Global state to prevent loops
 let globalHasRedirected = false;
 let globalHasShownAlert = false;
 
@@ -45,16 +44,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   const validateSession = (session: Session | null) => {
-    // If no session, this is normal for new users - don't treat as error
     if (!session || !session.user) {
       setIsSessionValid(false);
-      setSessionError(null); // No error for missing session
-      // Clear any cached user data
+      setSessionError(null);
       setSession(null);
       return false;
     }
 
-    // Session is valid
     setIsSessionValid(true);
     setSessionError(null);
     return true;
@@ -69,7 +65,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session first
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session);
       console.log('Session user:', session?.user);
@@ -84,13 +79,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       console.log('Session user:', session?.user);
       console.log('Is signing out:', isSigningOut);
       
-      // If we're signing out, only ignore SIGNED_IN events, allow SIGNED_OUT
       if (isSigningOut && event === 'SIGNED_IN') {
         console.log('Ignoring SIGNED_IN during sign out');
         return;
       }
       
-      // Reset signing out flag when we get a SIGNED_OUT event
       if (isSigningOut && event === 'SIGNED_OUT') {
         console.log('Sign out complete, resetting flag');
         setIsSigningOut(false);
@@ -107,10 +100,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     console.log('Signing out...');
     setIsSigningOut(true);
     
-    // Clear local session state immediately
     setSession(null);
     
-    // Clear session from secure storage
     try {
       await SecureStore.deleteItemAsync('sb-hjgrjdlvbuiodwmognjo-auth-token');
       console.log('Cleared session from storage');
@@ -118,7 +109,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       console.log('Failed to clear storage:', error);
     }
     
-    // Attempt Supabase sign out
     try {
       await supabase.auth.signOut();
       console.log('Supabase sign out successful');
@@ -126,7 +116,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       console.log('Supabase sign out failed, but continuing with local sign out:', error);
     }
     
-    // Set a timeout to reset the flag in case SIGNED_OUT event doesn't fire
     setTimeout(() => {
       console.log('Timeout: Resetting sign out flag');
       setIsSigningOut(false);

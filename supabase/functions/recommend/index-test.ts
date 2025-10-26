@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 type Params = { userId: string; lat: number; lon: number; radiusKm?: number; k?: number };
 
@@ -18,7 +18,6 @@ export const handler = serve(async (req) => {
     
     console.log("Request body:", body);
     
-    // Test basic database connection
     const { data: testData, error: testError } = await supabase
       .from("users")
       .select("id")
@@ -37,7 +36,6 @@ export const handler = serve(async (req) => {
     
     console.log("Database connection successful");
     
-    // Test the RPC function
     const { data: candidatesData, error: candErr } = await supabase.rpc("get_recommendation_candidates", {
       p_user_id: body.userId,
       p_lat: body.lat,

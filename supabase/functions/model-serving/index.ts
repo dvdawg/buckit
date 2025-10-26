@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 interface ModelInferenceRequest {
   model_type: 'appeal_head' | 'user_vectors' | 'embeddings';
@@ -61,7 +61,6 @@ export const handler = serve(async (req) => {
 });
 
 async function runAppealHeadInference(supabase: any, inputs: number[][], version?: string) {
-  // Get active model version if not specified
   let modelVersion = version;
   if (!modelVersion) {
     const { data: activeVersion } = await supabase
@@ -76,22 +75,16 @@ async function runAppealHeadInference(supabase: any, inputs: number[][], version
     modelVersion = activeVersion?.version || 'default';
   }
   
-  // For now, simulate appeal head inference
-  // In production, this would load the actual ONNX model
   const predictions = inputs.map(input => {
-    // Simple heuristic-based appeal scoring
     const avgInput = input.reduce((sum, val) => sum + val, 0) / input.length;
     const variance = input.reduce((sum, val) => sum + Math.pow(val - avgInput, 2), 0) / input.length;
     
-    // Appeal score based on input characteristics
-    let appealScore = 0.5; // Base score
+    let appealScore = 0.5;
     
-    // Higher scores for more "interesting" inputs (higher variance, specific patterns)
     if (variance > 0.1) appealScore += 0.2;
     if (avgInput > 0.1) appealScore += 0.1;
     if (input.length > 100) appealScore += 0.1;
     
-    // Add some randomness to simulate model uncertainty
     appealScore += (Math.random() - 0.5) * 0.1;
     
     return Math.max(0, Math.min(1, appealScore));
@@ -104,9 +97,7 @@ async function runAppealHeadInference(supabase: any, inputs: number[][], version
 }
 
 async function computeUserVectors(supabase: any, inputs: number[][]) {
-  // User vectors are computed from user events, not from direct input
-  // This would typically be called with user IDs
-  const userIds = inputs.map(input => input[0].toString()); // Assuming first element is user ID
+  const userIds = inputs.map(input => input[0].toString());
   
   const userVectors = [];
   for (const userId of userIds) {
@@ -119,7 +110,6 @@ async function computeUserVectors(supabase: any, inputs: number[][]) {
     if (userVector?.emb) {
       userVectors.push(userVector.emb);
     } else {
-      // Return zero vector if no user vector exists
       userVectors.push(new Array(1536).fill(0));
     }
   }
@@ -131,10 +121,7 @@ async function computeUserVectors(supabase: any, inputs: number[][]) {
 }
 
 async function computeEmbeddings(supabase: any, inputs: number[][]) {
-  // This would typically be called with text inputs
-  // For now, simulate embedding computation
   const embeddings = inputs.map(input => {
-    // Simulate embedding by creating a normalized vector
     const magnitude = Math.sqrt(input.reduce((sum, val) => sum + val * val, 0));
     if (magnitude === 0) return new Array(1536).fill(0);
     
@@ -147,7 +134,6 @@ async function computeEmbeddings(supabase: any, inputs: number[][]) {
   };
 }
 
-// Model loading and caching utilities
 class ModelCache {
   private static instance: ModelCache;
   private models: Map<string, any> = new Map();
@@ -166,7 +152,6 @@ class ModelCache {
       return this.models.get(cacheKey);
     }
     
-    // Load model from storage
     const { data: modelData } = await supabase
       .from('ml_model_storage')
       .select('file_data, file_type')
@@ -178,13 +163,10 @@ class ModelCache {
       throw new Error(`Model ${modelType}:${version} not found in storage`);
     }
     
-    // In production, this would load the ONNX model
-    // For now, we'll create a mock model object
     const model = {
       type: modelType,
       version: version,
       loaded_at: new Date(),
-      // Mock inference function
       predict: (inputs: number[][]) => {
         return inputs.map(input => Math.random());
       }
@@ -199,7 +181,6 @@ class ModelCache {
   }
 }
 
-// Health check endpoint
 export async function healthCheck() {
   return new Response(JSON.stringify({
     status: 'healthy',

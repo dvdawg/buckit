@@ -1,4 +1,3 @@
--- Enable Row Level Security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE buckets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
@@ -7,7 +6,6 @@ ALTER TABLE completions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_events ENABLE ROW LEVEL SECURITY;
 
--- Users policies
 CREATE POLICY "Users can view their own profile" ON users
     FOR SELECT USING (auth.uid() = auth_id);
 
@@ -17,7 +15,6 @@ CREATE POLICY "Users can update their own profile" ON users
 CREATE POLICY "Users can insert their own profile" ON users
     FOR INSERT WITH CHECK (auth.uid() = auth_id);
 
--- Buckets policies
 CREATE POLICY "Users can view public buckets" ON buckets
     FOR SELECT USING (visibility = 'public');
 
@@ -45,7 +42,6 @@ CREATE POLICY "Users can update their own buckets" ON buckets
 CREATE POLICY "Users can delete their own buckets" ON buckets
     FOR DELETE USING (auth.uid() = (SELECT auth_id FROM users WHERE id = owner_id));
 
--- Items policies
 CREATE POLICY "Users can view public items" ON items
     FOR SELECT USING (visibility = 'public');
 
@@ -87,7 +83,6 @@ CREATE POLICY "Users can update their own items" ON items
 CREATE POLICY "Users can delete their own items" ON items
     FOR DELETE USING (auth.uid() = (SELECT auth_id FROM users WHERE id = owner_id));
 
--- Bucket collaborators policies
 CREATE POLICY "Users can view bucket collaborators" ON bucket_collaborators
     FOR SELECT USING (
         EXISTS (
@@ -107,7 +102,6 @@ CREATE POLICY "Bucket owners can manage collaborators" ON bucket_collaborators
         )
     );
 
--- Completions policies
 CREATE POLICY "Users can view completions" ON completions
     FOR SELECT USING (
         user_id = (SELECT id FROM users WHERE auth_id = auth.uid())
@@ -124,7 +118,6 @@ CREATE POLICY "Users can create completions" ON completions
 CREATE POLICY "Users can update their own completions" ON completions
     FOR UPDATE USING (auth.uid() = (SELECT auth_id FROM users WHERE id = user_id));
 
--- Friendships policies
 CREATE POLICY "Users can view their friendships" ON friendships
     FOR SELECT USING (
         user_id = (SELECT id FROM users WHERE auth_id = auth.uid())
@@ -140,7 +133,6 @@ CREATE POLICY "Users can update their friendships" ON friendships
         OR friend_id = (SELECT id FROM users WHERE auth_id = auth.uid())
     );
 
--- Feed events policies
 CREATE POLICY "Users can view relevant feed events" ON feed_events
     FOR SELECT USING (
         actor_id = (SELECT id FROM users WHERE auth_id = auth.uid())

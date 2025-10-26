@@ -1,35 +1,27 @@
--- Fix embedding dimension to standardize on EMBED_DIM
--- Check if items.embedding is the correct dimension, if not create embedding_vec
 
 do $$
 declare
   coltype text;
-  embed_dim integer := 1536; -- Default to OpenAI embedding dimension
+  embed_dim integer := 1536;
 begin
-  -- Get the current embedding column type
   select atttypid::regtype::text
   into coltype
   from pg_attribute
   where attrelid = 'public.items'::regclass and attname = 'embedding' and attnum > 0;
 
-  -- If embedding column doesn't match expected dimension, create embedding_vec
   if coltype is null or coltype not like 'vector(' || embed_dim || ')' then
-    -- Create the new vector column with correct dimension
     if not exists (
       select 1 from information_schema.columns
       where table_schema = 'public' and table_name='items' and column_name='embedding_vec'
     ) then
       alter table public.items add column embedding_vec vector(1536);
       
-      -- Copy existing embeddings if they exist and are compatible
       if coltype like 'vector(%' then
-        -- Try to copy existing embeddings (this might fail if dimensions don't match)
         begin
           update public.items 
           set embedding_vec = embedding::vector(1536) 
           where embedding is not null;
         exception when others then
-          -- If copy fails, leave embedding_vec as null for now
           raise notice 'Could not copy existing embeddings due to dimension mismatch';
         end;
       end if;
@@ -37,22 +29,18 @@ begin
   end if;
 end $$;
 
--- Create ANN index on the active vector column
 do $$
 begin
   if exists (select 1 from information_schema.columns
              where table_schema='public' and table_name='items' and column_name='embedding_vec') then
-    -- Use embedding_vec if it exists
     create index if not exists items_embedding_vec_ivfflat_idx
       on public.items using ivfflat (embedding_vec vector_cosine_ops) with (lists=100);
   else
-    -- Use embedding if it's the right dimension
     create index if not exists items_embedding_ivfflat_idx
       on public.items using ivfflat (embedding vector_cosine_ops) with (lists=100);
   end if;
 end $$;
 
--- Update the candidate RPC to use the correct column
 DROP FUNCTION IF EXISTS public.get_recommendation_candidates(uuid, double precision, double precision, double precision, integer);
 create or replace function public.get_recommendation_candidates(
   p_user_id uuid,
@@ -63,7 +51,7 @@ create or replace function public.get_recommendation_candidates(
 )
 returns table (
   id uuid,
-  embedding vector(1536),  -- Always return 1536 dimensions
+  embedding vector(1536),
   distance_km double precision,
   price_min integer,
   price_max integer,
@@ -110,7 +98,6 @@ returns table (
     from public.item_popularity
   ),
   friends as (
-    -- accepted friends of the user
     select case
              when f.user_id = p_user_id then f.friend_id
              when f.friend_id = p_user_id then f.user_id

@@ -14,7 +14,6 @@ import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
-// Custom Bucket Icon Component (Filled - Polygon 3)
 const BucketIcon = ({ size = 20, color = '#666' }) => (
   <Svg width={size} height={size * 0.6} viewBox="0 0 159 171" fill="none">
     <Path 
@@ -82,7 +81,7 @@ export default function FloatingAddButton() {
 
   return (
     <>
-      {/* Add Button */}
+      {}
       <TouchableOpacity
         style={styles.floatingButton}
         onPress={handleAddPress}
@@ -93,7 +92,7 @@ export default function FloatingAddButton() {
         </View>
       </TouchableOpacity>
 
-      {/* Modal */}
+      {}
       <Modal
         visible={showMenu}
         transparent={true}

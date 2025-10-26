@@ -1,7 +1,4 @@
--- Debug migration to help troubleshoot collaborator visibility issues
--- This creates a simple function to check collaborator data
 
--- Function to debug collaborator data
 CREATE OR REPLACE FUNCTION debug_collaborators()
 RETURNS TABLE (
     current_user_id UUID,
@@ -22,16 +19,12 @@ DECLARE
     total_collaborator_records INTEGER;
     user_collaborator_records INTEGER;
 BEGIN
-    -- Get current user ID
     current_user_id := get_current_user_db_id();
     
-    -- Count total buckets
     SELECT COUNT(*) INTO total_buckets FROM buckets;
     
-    -- Count owned buckets
     SELECT COUNT(*) INTO owned_buckets FROM buckets WHERE owner_id = current_user_id;
     
-    -- Count buckets where user is a collaborator
     SELECT COUNT(*) INTO collaborator_buckets 
     FROM buckets b
     WHERE EXISTS (
@@ -41,10 +34,8 @@ BEGIN
         AND bc.accepted_at IS NOT NULL
     );
     
-    -- Count total collaborator records
     SELECT COUNT(*) INTO total_collaborator_records FROM bucket_collaborators;
     
-    -- Count collaborator records for current user
     SELECT COUNT(*) INTO user_collaborator_records 
     FROM bucket_collaborators 
     WHERE user_id = current_user_id;
@@ -59,7 +50,6 @@ BEGIN
 END;
 $$;
 
--- Function to list all collaborator records
 CREATE OR REPLACE FUNCTION list_all_collaborators()
 RETURNS TABLE (
     bucket_id UUID,

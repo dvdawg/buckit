@@ -35,7 +35,6 @@ export function usePerformance() {
         console.log('Fetching performance data...');
         console.log('Current user from session:', user);
         
-        // Get user ID with better error handling
         let finalUid = null;
         
         try {
@@ -54,12 +53,10 @@ export function usePerformance() {
         if (!finalUid) { 
           console.log('No user ID from RPC - checking if user exists in users table...');
           
-          // Let's try to find the user directly
           const { data: authUser } = await supabase.auth.getUser();
           console.log('Auth user:', authUser);
           
           if (authUser?.user?.id) {
-            // Check if user exists in users table
             const { data: existingUser, error: userCheckError } = await supabase
               .from('users')
               .select('id, auth_id')
@@ -87,7 +84,6 @@ export function usePerformance() {
 
         console.log('Using user ID:', finalUid);
 
-        // Fetch user data for basic stats
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('current_streak, total_completions')
@@ -100,13 +96,12 @@ export function usePerformance() {
 
         console.log('User data:', userData);
 
-        // Use real user data where available, dummy data otherwise
         setPerformance({
-          overallProgress: 0.56, // 56% - using dummy data for now
+          overallProgress: 0.56,
           currentStreak: userData?.current_streak || 0,
-          growthRate: 250, // Using dummy data
+          growthRate: 250,
           totalCompletions: userData?.total_completions || 0,
-          activeBuckets: 4, // Using dummy data
+          activeBuckets: 4,
           weeklyProgress: [
             { week: "Week 1", completed: 4 },
             { week: "Week 2", completed: 7 },

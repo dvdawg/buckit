@@ -30,7 +30,6 @@ export default function ChallengesIndex() {
   };
 
   const handleRatingSuccess = () => {
-    // Refresh the items data to reflect the changes
     refresh();
   };
 
@@ -59,7 +58,7 @@ export default function ChallengesIndex() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
@@ -68,7 +67,7 @@ export default function ChallengesIndex() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content */}
+      {}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -97,7 +96,7 @@ export default function ChallengesIndex() {
                   style={styles.challengeCard}
                   onPress={() => handleChallengePress(item)}
                 >
-                  {/* Bucket Name at Top */}
+                  {}
                   <View style={styles.bucketNameContainer}>
                     <Text style={styles.bucketName} numberOfLines={1} ellipsizeMode="tail">
                       {item.bucket?.title || 'Unknown Bucket'}
@@ -107,9 +106,9 @@ export default function ChallengesIndex() {
                     </View>
                   </View>
 
-                  {/* Challenge Content Row */}
+                  {}
                   <View style={styles.challengeContent}>
-                    {/* Completion Status & Icon */}
+                    {}
                     <TouchableOpacity 
                       style={styles.challengeIcon}
                       onPress={() => toggleChallengeCompletion(item)}
@@ -121,7 +120,7 @@ export default function ChallengesIndex() {
                       )}
                     </TouchableOpacity>
                     
-                    {/* Challenge Info */}
+                    {}
                     <View style={styles.challengeInfo}>
                       <Text style={styles.challengeTitle} numberOfLines={2} ellipsizeMode="tail">
                         {item.title}
@@ -150,14 +149,14 @@ export default function ChallengesIndex() {
         )}
       </ScrollView>
 
-      {/* Challenge Detail Modal */}
+      {}
       <ChallengeDetailModal
         visible={challengeModalVisible}
         challengeId={selectedChallengeId}
         onClose={handleCloseChallengeModal}
       />
 
-      {/* Rating Modal */}
+      {}
       <ChallengeRatingModal
         visible={ratingModalVisible}
         onClose={() => setRatingModalVisible(false)}
@@ -204,7 +203,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,

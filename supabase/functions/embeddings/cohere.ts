@@ -1,4 +1,3 @@
-// Alternative embedding function using Cohere
 export async function getCohereEmbedding(text: string): Promise<number[]> {
   const cohereApiKey = Deno.env.get("COHERE_API_KEY");
   
@@ -7,7 +6,7 @@ export async function getCohereEmbedding(text: string): Promise<number[]> {
   }
 
   try {
-    const response = await fetch("https://api.cohere.ai/v1/embed", {
+    const response = await fetch("https:
       method: "POST",
       headers: {
         "Authorization": `Bearer ${cohereApiKey}`,
@@ -15,7 +14,7 @@ export async function getCohereEmbedding(text: string): Promise<number[]> {
       },
       body: JSON.stringify({
         texts: [text],
-        model: "embed-english-v3.0", // 1024 dimensions
+        model: "embed-english-v3.0",
         input_type: "search_document",
         embedding_types: ["float"]
       }),

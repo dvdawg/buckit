@@ -1,4 +1,3 @@
--- Fix the unfriend function with proper variable naming and error handling
 
 CREATE OR REPLACE FUNCTION unfriend(p_friend_id UUID)
 RETURNS BOOLEAN
@@ -9,13 +8,11 @@ DECLARE
     current_user_id UUID;
     friendship_exists BOOLEAN;
 BEGIN
-    -- Get current user ID
     current_user_id := me_user_id();
     IF current_user_id IS NULL THEN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
     
-    -- Check if the friendship exists
     SELECT EXISTS(
         SELECT 1 FROM friendships f
         WHERE (f.user_id = current_user_id AND f.friend_id = p_friend_id)
@@ -26,7 +23,6 @@ BEGIN
         RAISE EXCEPTION 'Friendship not found';
     END IF;
     
-    -- Delete the friendship (both directions)
     DELETE FROM friendships f
     WHERE (f.user_id = current_user_id AND f.friend_id = p_friend_id)
     OR (f.user_id = p_friend_id AND f.friend_id = current_user_id);

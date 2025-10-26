@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https:
+import { createClient } from "https:
 
 type Challenge = {
   id: string;
@@ -32,7 +32,6 @@ export const handler = serve(async (req) => {
       }
     );
 
-    // Get user ID from auth
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -50,7 +49,6 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Define theme keywords mapping
     const themeKeywords: Record<string, string[]> = {
       'Fitness & Health': ['fitness', 'gym', 'workout', 'yoga', 'running', 'swimming', 'cycling', 'dance', 'martial', 'health', 'wellness', 'meditation', 'doctor', 'dental', 'massage', 'spa'],
       'Learning & Growth': ['learn', 'course', 'language', 'workshop', 'podcast', 'documentary', 'ted', 'book', 'coding', 'skill', 'education', 'study'],
@@ -70,13 +68,11 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Build search query - create individual OR conditions for each keyword
     const searchConditions = keywords.flatMap(keyword => [
       `title.ilike.%${keyword}%`,
       `description.ilike.%${keyword}%`
     ]);
 
-    // Fetch challenges matching the theme
     const { data: challenges, error: challengesError } = await supabase
       .from('items')
       .select(`
@@ -111,9 +107,8 @@ export const handler = serve(async (req) => {
       });
     }
 
-    // Transform the data
     const transformedChallenges: Challenge[] = (challenges || [])
-      .filter(challenge => challenge.buckets) // Filter out items without buckets
+      .filter(challenge => challenge.buckets)
       .map(challenge => ({
         id: challenge.id,
         title: challenge.title,

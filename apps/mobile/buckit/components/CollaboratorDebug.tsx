@@ -13,11 +13,9 @@ export default function CollaboratorDebug() {
     console.log('=== COLLABORATOR DEBUG TEST ===');
     
     try {
-      // Step 1: Get auth user
       const { data: authUser } = await supabase.auth.getUser();
       console.log('Auth user:', authUser?.user?.id);
       
-      // Step 2: Get user ID from database
       let userId = null;
       const { data: meUserId } = await supabase.rpc('me_user_id');
       console.log('me_user_id result:', meUserId);
@@ -25,7 +23,6 @@ export default function CollaboratorDebug() {
       if (meUserId) {
         userId = meUserId;
       } else {
-        // Fallback
         if (authUser?.user?.id) {
           const { data: existingUser } = await supabase
             .from('users')
@@ -42,7 +39,6 @@ export default function CollaboratorDebug() {
         return;
       }
       
-      // Step 3: Test the database function directly
       console.log('Testing get_user_buckets_by_id with user ID:', userId);
       const { data: buckets, error: bucketsError } = await supabase.rpc('get_user_buckets_by_id', {
         p_user_id: userId
@@ -50,7 +46,6 @@ export default function CollaboratorDebug() {
       
       console.log('Buckets result:', { buckets, bucketsError });
       
-      // Step 4: Check collaborator records
       const { data: collaborators, error: collabError } = await supabase
         .from('bucket_collaborators')
         .select('*')
@@ -58,7 +53,6 @@ export default function CollaboratorDebug() {
       
       console.log('Collaborator records:', { collaborators, collabError });
       
-      // Step 5: List all buckets and their owners
       const { data: allBuckets, error: allBucketsError } = await supabase
         .from('buckets')
         .select('id, title, owner_id')
@@ -66,7 +60,6 @@ export default function CollaboratorDebug() {
       
       console.log('All buckets:', { allBuckets, allBucketsError });
       
-      // Compile debug info
       const debugData = {
         authUserId: authUser?.user?.id,
         databaseUserId: userId,

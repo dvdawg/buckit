@@ -301,6 +301,9 @@ export default function Profile() {
               <Text style={styles.userLocation}>
                 {me?.location || `Points: ${me?.points || 0}`}
               </Text>
+              <Text style={styles.userFollowers}>
+                53 Friends
+              </Text>
             </View>
             <View style={styles.headerButtons}>
               <TouchableOpacity 
@@ -560,6 +563,11 @@ const styles = StyleSheet.create({
   userLocation: {
     fontSize: 16,
     color: '#9BA1A6',
+  },
+  userFollowers: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    marginTop: 2,
   },
   section: {
     paddingHorizontal: 20,

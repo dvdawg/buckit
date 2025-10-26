@@ -14,8 +14,19 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
+
+// Custom Bucket Icon Component (Filled)
+const BucketIcon = ({ size = 14, color = '#8EC5FC' }) => (
+  <Svg width={size} height={size * 0.6} viewBox="0 0 159 171" fill="none">
+    <Path 
+      d="M20.0024 5H138.036C147.013 5.00009 153.979 12.8323 152.933 21.748L137.565 152.748C136.678 160.304 130.275 166 122.667 166H35.3716C27.7635 166 21.3597 160.304 20.4731 152.748L5.10498 21.748C4.05899 12.8323 11.0256 5.00009 20.0024 5Z" 
+      fill={color}
+    />
+  </Svg>
+);
 
 // Dummy data for recommended content
 const recommendedContent = [
@@ -168,20 +179,20 @@ export default function ExploreScreen() {
       style={styles.challengeCard}
       onPress={() => router.push(`/challenges/${item.id}`)}
     >
+      {/* Rating Badge - Top Right Corner */}
+      <View style={[styles.challengeApplicabilityBadge, { backgroundColor: getApplicabilityColor(item.applicabilityScore) }]}>
+        <Text style={styles.applicabilityScore}>{item.applicabilityScore}%</Text>
+      </View>
+
       <View style={styles.challengeHeader}>
-        <View style={styles.challengeInfo}>
-          <Text style={styles.challengeTitle}>{item.title}</Text>
-          <Text style={styles.challengeDescription}>{item.description}</Text>
-        </View>
-        <View style={[styles.applicabilityBadge, { backgroundColor: getApplicabilityColor(item.applicabilityScore) }]}>
-          <Text style={styles.applicabilityScore}>{item.applicabilityScore}%</Text>
-        </View>
+        <Text style={styles.challengeTitle}>{item.title}</Text>
+        <Text style={styles.challengeDescription}>{item.description}</Text>
       </View>
 
       <View style={styles.challengeDetails}>
         <View style={styles.challengeMeta}>
           <View style={styles.metaItem}>
-            <Ionicons name="folder" size={14} color="#8EC5FC" />
+            <BucketIcon size={14} color="#8EC5FC" />
             <Text style={styles.metaText}>{item.category}</Text>
           </View>
           <View style={styles.metaItem}>
@@ -193,10 +204,6 @@ export default function ExploreScreen() {
             <Text style={styles.metaText}>{item.estimatedTime}</Text>
           </View>
         </View>
-        
-        <View style={styles.difficultyBadge}>
-          <Text style={styles.difficultyText}>{item.difficulty}</Text>
-        </View>
       </View>
     </TouchableOpacity>
   );
@@ -206,7 +213,6 @@ export default function ExploreScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>Explore</Text>
-        <Text style={styles.headerSubtitle}>Discover new challenges and buckets</Text>
       </View>
 
       {/* Search Bar */}
@@ -214,7 +220,7 @@ export default function ExploreScreen() {
         <Ionicons name="search" size={20} color="#9BA1A6" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search challenges, buckets, or categories..."
+          placeholder="Search for your next challenge"
           placeholderTextColor="#9BA1A6"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -238,9 +244,6 @@ export default function ExploreScreen() {
       >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Browse Categories</Text>
-          <Text style={styles.sectionSubtitle}>
-            Discover challenges and buckets by category
-          </Text>
         </View>
 
         {/* Generic Categories */}
@@ -301,8 +304,8 @@ export default function ExploreScreen() {
 
         {/* Content Grid */}
         <View style={styles.contentGrid}>
-          {content.map((item) => (
-            item.type === 'bucket' ? renderBucketCard(item) : renderChallengeCard(item)
+          {content.filter(item => item.type === 'challenge').map((item) => (
+            renderChallengeCard(item)
           ))}
         </View>
       </ScrollView>
@@ -319,6 +322,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 26,
@@ -476,16 +480,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    position: 'relative',
+  },
+  challengeApplicabilityBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    zIndex: 1,
   },
   challengeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 12,
-  },
-  challengeInfo: {
-    flex: 1,
-    marginRight: 12,
+    paddingRight: 60, // Space for the rating badge
   },
   challengeTitle: {
     fontSize: 16,
@@ -517,17 +526,6 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: '#9BA1A6',
-  },
-  difficultyBadge: {
-    backgroundColor: 'rgba(142, 197, 252, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  difficultyText: {
-    fontSize: 12,
-    color: '#8EC5FC',
-    fontWeight: '600',
   },
   categoriesGrid: {
     flexDirection: 'row',

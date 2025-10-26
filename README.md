@@ -1,8 +1,26 @@
 # Buckit
+Buckit is a social app that turns forgotten bucket list items into shared experiences, using AI to find the next challenge you’ll actually follow through on.
+
+We all have those things we’ve been wanting to do, the weekend trip we’ve postponed, the restaurant we’ve been saving “for when we have time.”
+
+But the truth is: we rarely do them.
+
+In a world where the economy is uncertain, workloads are heavier than ever, and burnout has become the norm, most of us feel too consumed by survival in work and school to pursue what actually makes us feel alive.
+
+Buckit is a social bucket list app that helps people discover, organize, and complete new experiences with friends.
+
+Users create buckets, collections of goals or activities they want to try, think "Trip to San Francisco," "Cafes," "Family." Each bucket contains individual items with details like description, location, and timing.
+
+Friends can join buckets, complete challenges together, and track shared progress.
+
+Buckit's AI model drives exploration features of the app.
+
+Try it. Track it. Buckit.
+
 ## Initial Design Mockups
 ![initial_design](./readme_assets/initial_designs.png)
 ## PRD v1.0
-[Read the full document here](https://docs.google.com/document/d/1zJ0PVIeczIu6qECpJUD3cGE9qiwpAGbLtxmicYlJFzo/edit?usp=sharing)
+[Read the full document here (formatted with Chat-GPT)](https://docs.google.com/document/d/1zJ0PVIeczIu6qECpJUD3cGE9qiwpAGbLtxmicYlJFzo/edit?usp=sharing)
 
 ## Technical Design
 ### Scoring

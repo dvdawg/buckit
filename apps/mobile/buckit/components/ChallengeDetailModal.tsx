@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
 
@@ -27,23 +28,12 @@ interface ChallengeDetailModalProps {
 }
 
 export default function ChallengeDetailModal({ visible, challengeId, onClose }: ChallengeDetailModalProps) {
+  const router = useRouter();
   const [challenge, setChallenge] = useState<any>(null);
   const [bucket, setBucket] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [tempRating, setTempRating] = useState(0);
-  const [isEditingChallenge, setIsEditingChallenge] = useState(false);
-  const [editingData, setEditingData] = useState({
-    title: '',
-    description: '',
-    location: '',
-    targetDate: '',
-  });
-  const [editingLocation, setEditingLocation] = useState<{
-    name: string;
-    coordinates: { latitude: number; longitude: number };
-    address?: string;
-  } | null>(null);
 
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -175,70 +165,21 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
     }
     
     if (challenge) {
-      setIsEditingChallenge(true);
-      setEditingData({
-        title: challenge.title,
+      // Navigate to create challenge page with pre-filled data
+      const params = new URLSearchParams({
+        edit: 'true',
+        challengeId: challenge.id,
+        bucketId: challenge.bucket_id,
+        title: challenge.title || '',
         description: challenge.description || '',
         location: challenge.location_name || challenge.location || '',
         targetDate: challenge.target_date ? new Date(challenge.target_date).toISOString().split('T')[0] : '',
       });
-      setEditingLocation(challenge.location_coordinates ? {
-        name: challenge.location_name || challenge.location || '',
-        coordinates: challenge.location_coordinates,
-        address: challenge.location_name || challenge.location || ''
-      } : null);
+      router.push(`/create-challenge?${params.toString()}`);
+      onClose(); // Close the modal
     }
   };
 
-  const handleSaveChallenge = async () => {
-    if (!challenge) return;
-
-    try {
-      // Update the challenge in the database
-      const { error } = await supabase.rpc('update_item_secure', {
-        p_item_id: challenge.id,
-        p_title: editingData.title,
-        p_description: editingData.description,
-        p_location_name: editingLocation?.name || editingData.location,
-        p_location_point: editingLocation ? 
-          `POINT(${editingLocation.coordinates.longitude} ${editingLocation.coordinates.latitude})` : null,
-        p_target_date: editingData.targetDate || null,
-      });
-
-      if (error) {
-        console.error('Error updating challenge:', error);
-        Alert.alert('Error', 'Failed to update challenge. Please try again.');
-        return;
-      }
-
-      // Update local state
-      setChallenge({
-        ...challenge,
-        title: editingData.title,
-        description: editingData.description,
-        location_name: editingLocation?.name || editingData.location,
-        location: editingLocation?.name || editingData.location,
-        location_coordinates: editingLocation?.coordinates,
-        target_date: editingData.targetDate,
-      });
-
-      setIsEditingChallenge(false);
-      Alert.alert('Success', 'Challenge updated successfully!');
-    } catch (error) {
-      console.error('Error in handleSaveChallenge:', error);
-      Alert.alert('Error', 'Failed to update challenge. Please try again.');
-    }
-  };
-
-  const handleCancelEditChallenge = () => {
-    setIsEditingChallenge(false);
-    setEditingData({ title: '', description: '', location: '', targetDate: '' });
-    setEditingLocation(null);
-  };
-
-  const updateEditingData = (field: string, value: string) => {
-    setEditingData(prev => ({ ...prev, [field]: value }));
-  };
 
   const toggleChallengeCompletion = async (challengeId: string) => {
     if (!bucket?.can_edit) {
@@ -348,17 +289,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                   {/* Header */}
                   <View style={styles.modalHeader}>
                     <View style={styles.modalTitleSection}>
-                      {isEditingChallenge ? (
-                        <TextInput
-                          style={styles.modalTitleInput}
-                          value={editingData.title}
-                          onChangeText={(value) => updateEditingData('title', value)}
-                          placeholder="Challenge Title"
-                          placeholderTextColor="#9BA1A6"
-                        />
-                      ) : (
-                        <Text style={styles.modalTitle}>{challenge.title}</Text>
-                      )}
+                      <Text style={styles.modalTitle}>{challenge.title}</Text>
                       <TouchableOpacity 
                         style={[styles.modalCompletionBadge, !bucket?.can_edit && styles.modalCompletionBadgeDisabled]}
                         onPress={() => {
@@ -381,22 +312,6 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                         )}
                       </TouchableOpacity>
                     </View>
-                    {isEditingChallenge && (
-                      <View style={styles.modalHeaderActions}>
-                        <TouchableOpacity 
-                          style={styles.modalActionButton}
-                          onPress={handleSaveChallenge}
-                        >
-                          <Ionicons name="checkmark" size={20} color="#4ade80" />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          style={styles.modalActionButton}
-                          onPress={handleCancelEditChallenge}
-                        >
-                          <Ionicons name="close" size={20} color="#ef4444" />
-                        </TouchableOpacity>
-                      </View>
-                    )}
                   </View>
 
                   {/* Details */}
@@ -407,33 +322,11 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                     </View>
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalLocationPin}>📍</Text>
-                      {isEditingChallenge ? (
-                        <LocationPicker
-                          value={editingLocation}
-                          onLocationSelect={(location) => {
-                            setEditingLocation(location);
-                            updateEditingData('location', location?.name || '');
-                          }}
-                          placeholder="Location"
-                          style={styles.modalLocationPicker}
-                        />
-                      ) : (
-                        <Text style={styles.modalDetailText}>{challenge.location_name || challenge.location}</Text>
-                      )}
+                      <Text style={styles.modalDetailText}>{challenge.location_name || challenge.location}</Text>
                     </View>
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalLocationPin}>📅</Text>
-                      {isEditingChallenge ? (
-                        <TextInput
-                          style={styles.modalDetailInput}
-                          value={editingData.targetDate}
-                          onChangeText={(value) => updateEditingData('targetDate', value)}
-                          placeholder="Target Date (YYYY-MM-DD)"
-                          placeholderTextColor="#9BA1A6"
-                        />
-                      ) : (
-                        <Text style={styles.modalDetailText}>{challenge.target_date ? `Target: ${new Date(challenge.target_date).toLocaleDateString()}` : 'None yet!'}</Text>
-                      )}
+                      <Text style={styles.modalDetailText}>{challenge.target_date ? `Target: ${new Date(challenge.target_date).toLocaleDateString()}` : 'None yet!'}</Text>
                     </View>
                     {challenge.is_completed && (
                       <View style={styles.modalDetailRow}>
@@ -449,21 +342,9 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                   {/* Description */}
                   <View style={styles.modalDescriptionSection}>
                     <Text style={styles.modalDescriptionTitle}>Challenge Description</Text>
-                    {isEditingChallenge ? (
-                      <TextInput
-                        style={styles.modalDescriptionInput}
-                        value={editingData.description}
-                        onChangeText={(value) => updateEditingData('description', value)}
-                        placeholder="Challenge Description"
-                        placeholderTextColor="#9BA1A6"
-                        multiline
-                        numberOfLines={4}
-                      />
-                    ) : (
-                      <Text style={styles.modalDescriptionText}>
-                        {challenge.description}
-                      </Text>
-                    )}
+                    <Text style={styles.modalDescriptionText}>
+                      {challenge.description}
+                    </Text>
                   </View>
 
                   {/* Photo Album */}
@@ -502,7 +383,7 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
             </TouchableOpacity>
             
             {/* Edit Button - Only show if user can edit */}
-            {!isEditingChallenge && bucket?.can_edit && (
+            {bucket?.can_edit && (
               <TouchableOpacity 
                 style={styles.modalEditButton}
                 onPress={handleEditChallenge}
@@ -618,15 +499,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 8,
   },
-  modalTitleInput: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
-  },
   modalCompletionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -651,19 +523,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: '600',
   },
-  modalHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  modalActionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2a2a2a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   modalDetailsSection: {
     marginBottom: 20,
   },
@@ -679,17 +538,6 @@ const styles = StyleSheet.create({
   modalDetailText: {
     fontSize: 16,
     color: '#fff',
-    flex: 1,
-  },
-  modalDetailInput: {
-    fontSize: 16,
-    color: '#fff',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    padding: 8,
-    flex: 1,
-  },
-  modalLocationPicker: {
     flex: 1,
   },
   modalSeparator: {
@@ -710,14 +558,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     lineHeight: 24,
-  },
-  modalDescriptionInput: {
-    fontSize: 16,
-    color: '#fff',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    padding: 12,
-    textAlignVertical: 'top',
   },
   modalPhotoAlbumSection: {
     marginBottom: 20,

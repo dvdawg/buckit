@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import { useBuckets } from '@/hooks/useBuckets';
 import LocationPicker from '@/components/LocationPicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import Svg, { Path } from 'react-native-svg';
+
+const BucketIcon = ({ size = 20, color = '#8EC5FC' }) => (
+  <Svg width={size} height={size * 0.6} viewBox="0 0 159 171" fill="none">
+    <Path 
+      d="M20.0024 5H138.036C147.013 5.00009 153.979 12.8323 152.933 21.748L137.565 152.748C136.678 160.304 130.275 166 122.667 166H35.3716C27.7635 166 21.3597 160.304 20.4731 152.748L5.10498 21.748C4.05899 12.8323 11.0256 5.00009 20.0024 5Z" 
+      fill={color}
+    />
+  </Svg>
+);
 
 export default function CreateChallengeScreen() {
   const router = useRouter();
@@ -25,8 +36,8 @@ export default function CreateChallengeScreen() {
     title: '',
     description: '',
     location: '',
-    date: '',
     category: '',
+    targetDate: null as Date | null,
     bucketId: '',
   });
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -35,11 +46,17 @@ export default function CreateChallengeScreen() {
     address?: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showBucketSelector, setShowBucketSelector] = useState(false);
+  const [showBucketModal, setShowBucketModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleSave = async () => {
-    if (!formData.title || !formData.description) {
-      Alert.alert('Error', 'Please fill in the required fields');
+    if (!formData.title) {
+      Alert.alert('Error', 'Please enter a challenge title');
+      return;
+    }
+    
+    if (!formData.description) {
+      Alert.alert('Error', 'Please enter a description for your challenge');
       return;
     }
     
@@ -62,7 +79,8 @@ export default function CreateChallengeScreen() {
         p_location_name: selectedLocation?.name || formData.location,
         p_location_point: selectedLocation ? 
           `POINT(${selectedLocation.coordinates.longitude} ${selectedLocation.coordinates.latitude})` : 
-          null
+          null,
+        p_target_date: formData.targetDate ? formData.targetDate.toISOString() : null
       });
 
       if (error) {
@@ -82,8 +100,33 @@ export default function CreateChallengeScreen() {
     }
   };
 
-  const updateFormData = (key: string, value: string) => {
+  const updateFormData = (key: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const selectBucket = (bucketId: string) => {
+    setFormData(prev => ({ ...prev, bucketId }));
+    setShowBucketModal(false);
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return 'No target date';
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      updateFormData('targetDate', selectedDate);
+    }
+  };
+
+  const clearTargetDate = () => {
+    setFormData(prev => ({ ...prev, targetDate: null }));
+    setShowDatePicker(false);
   };
 
   return (
@@ -98,9 +141,7 @@ export default function CreateChallengeScreen() {
           <Ionicons name="arrow-back" size={24} color="#8EC5FC" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Challenge</Text>
-        <TouchableOpacity style={styles.closeButton}>
-          <Ionicons name="close" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView 
@@ -109,124 +150,117 @@ export default function CreateChallengeScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Editable Challenge Card - Same as existing Mt. Tam Hike card but with editable fields */}
-        <View style={styles.challengeCard}>
-          <View style={styles.challengeHeader}>
+        {/* Form */}
+        <View style={styles.formCard}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Title *</Text>
             <TextInput
-              style={styles.challengeTitleInput}
-              placeholder="Your Challenge Title"
+              style={styles.textInput}
+              placeholder="e.g., Hike Mt. Tam"
               placeholderTextColor="#9BA1A6"
               value={formData.title}
               onChangeText={(value) => updateFormData('title', value)}
-              maxLength={60}
+              maxLength={50}
             />
-            <View style={styles.statusBadge}>
-              <Ionicons name="checkmark" size={12} color="#fff" />
-              <Text style={styles.statusText}>Draft</Text>
-            </View>
           </View>
 
-          <View style={styles.challengeDetails}>
-            <View style={styles.detailRow}>
-              <Ionicons name="folder" size={16} color="#60A5FA" />
-              <TouchableOpacity 
-                style={styles.bucketSelector}
-                onPress={() => setShowBucketSelector(!showBucketSelector)}
-              >
-                <Text style={styles.bucketSelectorText}>
-                  {formData.bucketId ? 
-                    buckets.find(b => b.id === formData.bucketId)?.title || 'Select Bucket' : 
-                    'Select Bucket'
-                  }
-                </Text>
-                <Ionicons 
-                  name={showBucketSelector ? "chevron-up" : "chevron-down"} 
-                  size={16} 
-                  color="#9BA1A6" 
-                />
-              </TouchableOpacity>
-            </View>
-            
-            {showBucketSelector && (
-              <View style={styles.bucketList}>
-                {bucketsLoading ? (
-                  <ActivityIndicator color="#60A5FA" />
-                ) : buckets.length === 0 ? (
-                  <Text style={styles.noBucketsText}>No buckets available. Create a bucket first.</Text>
-                ) : (
-                  buckets.map((bucket) => (
-                    <TouchableOpacity
-                      key={bucket.id}
-                      style={[
-                        styles.bucketOption,
-                        formData.bucketId === bucket.id && styles.bucketOptionSelected
-                      ]}
-                      onPress={() => {
-                        updateFormData('bucketId', bucket.id);
-                        setShowBucketSelector(false);
-                      }}
-                    >
-                      <Text style={[
-                        styles.bucketOptionText,
-                        formData.bucketId === bucket.id && styles.bucketOptionTextSelected
-                      ]}>
-                        {bucket.title}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </View>
-            )}
-            
-            <View style={styles.detailRow}>
-              <Ionicons name="pricetag" size={16} color="#60A5FA" />
-              <TextInput
-                style={styles.detailInput}
-                placeholder="Category"
-                placeholderTextColor="#9BA1A6"
-                value={formData.category}
-                onChangeText={(value) => updateFormData('category', value)}
-                maxLength={25}
-              />
-            </View>
-            <View style={styles.detailRow}>
-              <LocationPicker
-                value={selectedLocation}
-                onLocationSelect={(location) => {
-                  setSelectedLocation(location);
-                  updateFormData('location', location?.name || '');
-                }}
-                placeholder="Location"
-                style={styles.locationPicker}
-              />
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="star" size={16} color="#F59E0B" />
-              <Text style={styles.detailText}>
-                Satisfaction: 0/5
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Bucket *</Text>
+            <TouchableOpacity 
+              style={styles.bucketButton}
+              onPress={() => setShowBucketModal(true)}
+            >
+              <BucketIcon size={20} color="#8EC5FC" />
+              <Text style={styles.bucketButtonText}>
+                {formData.bucketId ? 
+                  buckets.find(b => b.id === formData.bucketId)?.title || 'Select Bucket' : 
+                  'Select Bucket'
+                }
               </Text>
-            </View>
+              <Ionicons name="chevron-forward" size={16} color="#8EC5FC" />
+            </TouchableOpacity>
           </View>
 
-          <TextInput
-            style={styles.descriptionInput}
-            placeholder="Describe your challenge..."
-            placeholderTextColor="#9BA1A6"
-            value={formData.description}
-            onChangeText={(value) => updateFormData('description', value)}
-            multiline
-            numberOfLines={3}
-            maxLength={500}
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Category</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g., Adventure, Fitness, Learning"
+              placeholderTextColor="#9BA1A6"
+              value={formData.category}
+              onChangeText={(value) => updateFormData('category', value)}
+              maxLength={25}
+            />
+          </View>
 
-          <View style={styles.photoSection}>
-            <Text style={styles.photoTitle}>Photo Album (0)</Text>
-            <View style={styles.photoGrid}>
-              <TouchableOpacity style={styles.addPhotoButton}>
-                <Ionicons name="add" size={24} color="#fff" />
-                <Text style={styles.addPhotoText}>Add Photo</Text>
-              </TouchableOpacity>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Location</Text>
+            <LocationPicker
+              value={selectedLocation}
+              onLocationSelect={(location) => {
+                setSelectedLocation(location);
+                updateFormData('location', location?.name || '');
+              }}
+              placeholder="Search for a location..."
+              style={styles.locationPicker}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Target Date</Text>
+            <TouchableOpacity 
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Ionicons name="calendar" size={20} color="#8EC5FC" />
+              <Text style={[styles.dateButtonText, !formData.targetDate && styles.noDateText]}>
+                {formatDate(formData.targetDate)}
+              </Text>
+              {formData.targetDate ? (
+                <TouchableOpacity 
+                  style={styles.clearDateButton}
+                  onPress={clearTargetDate}
+                >
+                  <Ionicons name="close-circle" size={20} color="#ff6b6b" />
+                </TouchableOpacity>
+              ) : (
+                <Ionicons name="chevron-forward" size={16} color="#8EC5FC" />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Date Picker - Shows when showDatePicker is true */}
+          {showDatePicker && (
+            <View style={styles.datePickerContainer}>
+              <DateTimePicker
+                value={formData.targetDate || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+              />
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity 
+                  style={styles.datePickerButton}
+                  onPress={() => setShowDatePicker(false)}
+                >
+                  <Text style={styles.datePickerButtonText}>Done</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+          )}
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Description *</Text>
+            <TextInput
+              style={[styles.textInput, styles.textArea]}
+              placeholder="Describe your challenge..."
+              placeholderTextColor="#9BA1A6"
+              value={formData.description}
+              onChangeText={(value) => updateFormData('description', value)}
+              multiline
+              numberOfLines={4}
+              maxLength={300}
+            />
           </View>
         </View>
 
@@ -236,20 +270,58 @@ export default function CreateChallengeScreen() {
           onPress={handleSave}
           disabled={loading}
         >
-          <LinearGradient
-            colors={loading ? ['#666', '#666'] : ['#8EC5FC', '#E0C3FC']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.saveButtonGradient}
-          >
-            {loading ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <Text style={styles.saveButtonText}>Create Challenge</Text>
-            )}
-          </LinearGradient>
+          {loading ? (
+            <ActivityIndicator color="#000" />
+          ) : (
+            <Text style={styles.saveButtonText}>Create Challenge</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Bucket Selection Modal */}
+      <Modal
+        visible={showBucketModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowBucketModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Bucket</Text>
+              <TouchableOpacity 
+                onPress={() => setShowBucketModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.bucketsList}>
+              {bucketsLoading ? (
+                <ActivityIndicator color="#8EC5FC" style={styles.loadingIndicator} />
+              ) : buckets.length === 0 ? (
+                <Text style={styles.noBucketsText}>No buckets available. Create a bucket first.</Text>
+              ) : (
+                buckets.map((bucket) => (
+                  <TouchableOpacity
+                    key={bucket.id}
+                    style={[styles.bucketItem, formData.bucketId === bucket.id && styles.bucketItemSelected]}
+                    onPress={() => selectBucket(bucket.id)}
+                  >
+                    <BucketIcon size={24} color="#8EC5FC" />
+                    <Text style={styles.bucketItemName}>{bucket.title}</Text>
+                    {formData.bucketId === bucket.id && (
+                      <Ionicons name="checkmark-circle" size={24} color="#8EC5FC" />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </KeyboardAvoidingView>
   );
 }
@@ -275,8 +347,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
-  closeButton: {
-    padding: 8,
+  headerSpacer: {
+    width: 40,
   },
   scrollView: {
     flex: 1,
@@ -286,119 +358,75 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
   },
-  challengeCard: {
-    backgroundColor: '#1F2937',
+  formCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
-  challengeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  inputGroup: {
+    marginBottom: 20,
   },
-  challengeTitleInput: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    padding: 0,
-  },
-  statusBadge: {
-    backgroundColor: '#10B981',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  challengeDetails: {
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailText: {
-    color: '#fff',
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  detailInput: {
-    color: '#fff',
-    fontSize: 14,
-    marginLeft: 8,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    padding: 0,
-    flex: 1,
-  },
-  descriptionInput: {
-    color: '#fff',
-    fontSize: 14,
-    marginBottom: 16,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    padding: 0,
-    textAlignVertical: 'top',
-  },
-  ratingText: {
-    color: '#fff',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  photoSection: {
-    marginTop: 16,
-  },
-  photoTitle: {
-    color: '#fff',
+  inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
-  },
-  photoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  addPhotoButton: {
-    width: 80,
-    height: 80,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
+    color: '#fff',
     marginBottom: 8,
   },
-  addPhotoText: {
+  textInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    fontSize: 16,
     color: '#fff',
-    fontSize: 12,
-    marginTop: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  bucketButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  bucketButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 12,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    minHeight: 56,
+  },
+  dateButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 12,
   },
   saveButton: {
+    backgroundColor: '#8EC5FC',
     borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 40,
-    overflow: 'hidden',
     shadowColor: '#8EC5FC',
     shadowOffset: {
       width: 0,
@@ -408,61 +436,102 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  saveButtonGradient: {
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   saveButtonText: {
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
   },
   saveButtonDisabled: {
+    backgroundColor: '#666',
     opacity: 0.6,
   },
-  bucketSelector: {
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#1a1a1a',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    flex: 1,
-    marginLeft: 8,
-    paddingVertical: 4,
-  },
-  bucketSelectorText: {
-    color: '#fff',
-    fontSize: 14,
-    flex: 1,
-  },
-  bucketList: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 8,
-    maxHeight: 150,
-  },
-  bucketOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: '#333',
   },
-  bucketOptionSelected: {
-    backgroundColor: 'rgba(96, 165, 250, 0.2)',
-  },
-  bucketOptionText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  bucketOptionTextSelected: {
-    color: '#60A5FA',
+  modalTitle: {
+    fontSize: 18,
     fontWeight: '600',
+    color: '#fff',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  bucketsList: {
+    maxHeight: 400,
+  },
+  bucketItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  bucketItemSelected: {
+    backgroundColor: 'rgba(142, 197, 252, 0.1)',
+  },
+  bucketItemName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 12,
+  },
+  loadingIndicator: {
+    marginVertical: 20,
   },
   noBucketsText: {
     color: '#9BA1A6',
     fontSize: 14,
     textAlign: 'center',
+    padding: 20,
+  },
+  noDateText: {
+    color: '#9BA1A6',
+    fontStyle: 'italic',
+  },
+  clearDateButton: {
+    padding: 4,
+  },
+  datePickerContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
     padding: 16,
+    marginTop: 8,
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  datePickerButton: {
+    backgroundColor: '#8EC5FC',
+    paddingHorizontal: 40,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  datePickerButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   locationPicker: {
     flex: 1,

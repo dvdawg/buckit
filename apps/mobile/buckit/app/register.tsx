@@ -105,10 +105,21 @@ export default function RegisterScreen() {
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
     if (selectedDate) {
       const formattedDate = selectedDate.toISOString().split('T')[0];
       setFormData(prev => ({ ...prev, birthday: formattedDate }));
+      
+      // Clear any existing birthday error when a valid date is selected
+      if (errors.birthday) {
+        setErrors(prev => ({ ...prev, birthday: '' }));
+      }
+    } else if (Platform.OS === 'android' && event.type === 'dismissed') {
+      // Handle case where user cancels on Android
+      setShowDatePicker(false);
     }
   };
 
@@ -622,12 +633,27 @@ export default function RegisterScreen() {
             onPress={openDatePicker}
           >
             <Text style={[styles.dateText, !formData.birthday && styles.placeholderText]}>
-              {formData.birthday ? new Date(formData.birthday).toLocaleDateString() : 'Select your birthday'}
+              {formData.birthday ? new Date(formData.birthday).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }) : 'Select your birthday'}
             </Text>
             <Ionicons name="calendar-outline" size={20} color="#9BA1A6" />
           </TouchableOpacity>
           {showDatePicker && (
-            <View style={styles.datePickerContainer}>
+            <View style={styles.datePickerWrapper}>
+              {Platform.OS === 'ios' && (
+                <View style={styles.datePickerHeader}>
+                  <TouchableOpacity onPress={closeDatePicker} style={styles.datePickerButton}>
+                    <Text style={styles.datePickerButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.datePickerTitle}>Select Birthday</Text>
+                  <TouchableOpacity onPress={closeDatePicker} style={styles.datePickerButton}>
+                    <Text style={styles.datePickerButtonText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               <DateTimePicker
                 value={formData.birthday ? new Date(formData.birthday) : new Date()}
                 mode="date"
@@ -884,11 +910,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  datePickerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
   dateText: {
     fontSize: 16,
     color: '#fff',
@@ -897,6 +918,40 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#9BA1A6',
+    fontFamily: 'Poppins',
+  },
+  datePickerWrapper: {
+    marginTop: 8,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    padding: 8,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    marginBottom: 8,
+  },
+  datePickerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    fontFamily: 'Poppins',
+  },
+  datePickerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    color: '#8EC5FC',
+    fontWeight: '500',
     fontFamily: 'Poppins',
   },
   textInputError: {

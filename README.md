@@ -28,7 +28,17 @@ The scoring system for the recommendation system is as follows:
 
 ![equation](https://latex.codecogs.com/svg.image?%20s(u,i,c)=%5Cunderbrace%7B%5Calpha%5C,%5Ctextbf%7BAppeal%7D_%7B%5Ctext%7BMM%7D%7D(i)%7D_%7B%5Ctext%7BDMN/appeal%7D%7D&plus;%5Cunderbrace%7B%5Cbeta%5C,%5Clangle%5Cmathbf%7Bz%7D%5E%7B%5Ctext%7Btrait%7D%7D_u,%5Cmathbf%7Be%7D_i%5Crangle%7D_%7B%5Ctext%7Bwho%20you%20are%7D%7D&plus;%5Cunderbrace%7B%5Cgamma%5C,%5Clangle%5Cmathbf%7Bz%7D%5E%7B%5Ctext%7Bstate%7D%7D_u(c),%5Cmathbf%7Be%7D_i%5Crangle%7D_%7B%5Ctext%7Bhow%20you%20feel%20now%7D%7D&plus;%5Cunderbrace%7B%5Cdelta%5C,%5Ctext%7BSocialBonus%7D(u,i)%7D_%7B%5Ctext%7BvmPFC%20social%7D%7D-%5Cunderbrace%7B%5Clambda%5C,%5Ctext%7BEffortCost%7D(i,c)%7D_%7B%5Ctext%7Bvalue%20minus%20cost%7D%7D&plus;%5Cunderbrace%7B%5Crho%5C,%5Ctext%7BNovelty/Diversity%7D(i%5Cmid%5Cmathcal%7BL%7D)%7D_%7B%5Ctext%7Bmulti-objective%7D%7D)
 
-where $s$
+where s represents a score given u (the user), i (the item/activity), and c (the context).
+
+Buckit's recommendation system is based off of brain signals - inspired by vmPFC (ventromedial PreFrontal Cortex) signals, modeling social reward and peer influence, and DMM (Default Mode Network) activity associated with intrinsic valuation and aesthetics. These two are modeled by the SocialBonus and Appeal terms respectively. 
+
+For the remaining terms:
+- The z trait represents long term interests constituted by aggregate historical activities and interactions inner producted with the embedding of the input item in the same vector space.
+- The z state represents shorter term interests derived from DIN-style attention describing latent interests similarly inner producted with the item embeddin.
+- The EffortCost represents the "cost" of an item derived from geographical distance and price modeled after vmPFS models on effort vs reward
+- The Novelty/Diversity term creates variety, created from MMR and LinUCB Bandit exploration rewards roughly inspired by dopaminagenic novelty networks.
+
+Combining the effect of all of these factors creates a trained comprehensive score, weighted by coefficients alpha, beta, gamma, delta, lambda, and rho.
 
 ### Reasoning, Inspiration, and Scientific Backing
 The following papers fed into our scoring system design:

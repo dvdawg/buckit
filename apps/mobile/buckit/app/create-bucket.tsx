@@ -18,6 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
+import BucketVisibilitySelector from '@/components/BucketVisibilitySelector';
 
 export default function CreateBucketScreen() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function CreateBucketScreen() {
     title: (title as string) || '',
     description: (description as string) || '',
     photo: (coverUrl as string) || null,
+    visibility: 'manual' as 'manual' | 'friends',
     invitedFriends: [] as Array<{id: string, name: string, avatar?: string}>,
   });
   const [loading, setLoading] = useState(false);
@@ -89,7 +91,7 @@ export default function CreateBucketScreen() {
         const { data, error } = await supabase.rpc('create_bucket_secure', {
           p_title: formData.title,
           p_description: formData.description || null,
-          p_visibility: 'private'
+          p_visibility: formData.visibility
         });
 
         if (error) {
@@ -231,6 +233,14 @@ export default function CreateBucketScreen() {
               multiline
               numberOfLines={4}
               maxLength={300}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Visibility</Text>
+            <BucketVisibilitySelector
+              selectedVisibility={formData.visibility}
+              onVisibilityChange={(visibility) => updateFormData('visibility', visibility)}
             />
           </View>
 

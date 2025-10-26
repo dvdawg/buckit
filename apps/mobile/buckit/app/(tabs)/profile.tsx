@@ -319,10 +319,12 @@ export default function Profile() {
                 onPress={() => router.push('/friends-list')}
                 style={styles.followersContainer}
               >
+              <View style={styles.followersRow}>
                 <Text style={styles.userFollowers}>
                   {friendCount} Friends
                 </Text>
                 <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
+              </View>
               </TouchableOpacity>
             </View>
             <View style={styles.headerButtons}>
@@ -596,9 +598,11 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
   },
   followersContainer: {
+    marginTop: 2,
+  },
+  followersRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
   },
   userFollowers: {
     fontSize: 16,

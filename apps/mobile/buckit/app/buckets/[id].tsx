@@ -6,8 +6,11 @@ import { BlurView } from 'expo-blur';
 import { useState, useRef, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { useBucket } from '@/hooks/useBucket';
+import { useSharedCompletions } from '@/hooks/useSharedCompletions';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
+import SharedPhotoAlbum from '@/components/SharedPhotoAlbum';
+import CompletionRatingModal from '@/components/CompletionRatingModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,6 +18,14 @@ export default function BucketDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { bucket, items, loading, error, recalculateCount } = useBucket(id as string);
+  const { 
+    completions, 
+    stats, 
+    completeItem, 
+    rateCompletion, 
+    getPhotosForItem, 
+    getAverageRatingForItem 
+  } = useSharedCompletions(id as string);
   
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
@@ -22,6 +33,8 @@ export default function BucketDetail() {
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [challengeToRate, setChallengeToRate] = useState<any>(null);
   const [tempRating, setTempRating] = useState(0);
+  const [completionRatingModalVisible, setCompletionRatingModalVisible] = useState(false);
+  const [completionToRate, setCompletionToRate] = useState<any>(null);
   const [isEditingChallenge, setIsEditingChallenge] = useState(false);
   const [editingData, setEditingData] = useState({
     title: '',
@@ -282,10 +295,58 @@ export default function BucketDetail() {
     const challenge = challenges.find(c => c.id === challengeId);
     
     if (challenge && !challenge.completed) {
-      // If completing for the first time, show rating modal
-      setChallengeToRate(challenge);
-      setTempRating(0);
-      setRatingModalVisible(true);
+      // If completing for the first time, show photo picker and complete with shared system
+      try {
+        // Request camera permissions
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Please grant camera roll permissions to add photos.');
+          return;
+        }
+
+        // Pick an image
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+          const photoUrl = result.assets[0].uri;
+          
+          // Complete the item with shared completion
+          const completionId = await completeItem(challengeId, photoUrl, '');
+          
+          // Update local state
+          setChallenges(prev => 
+            prev.map(c => 
+              c.id === challengeId 
+                ? { ...c, completed: true, photos: [{ url: photoUrl }] }
+                : c
+            )
+          );
+
+          // Show rating modal for the completion
+          if (completionId) {
+            setCompletionToRate({
+              id: completionId,
+              completed_by_name: 'You',
+              user_rating: 0,
+              user_review: ''
+            });
+            setCompletionRatingModalVisible(true);
+          }
+
+          // Refresh the bucket data
+          if (recalculateCount) {
+            await recalculateCount();
+          }
+        }
+      } catch (error) {
+        console.error('Error completing challenge:', error);
+        Alert.alert('Error', 'Failed to complete challenge. Please try again.');
+      }
     } else {
       // If uncompleting, update database and local state
       try {
@@ -517,12 +578,97 @@ export default function BucketDetail() {
                   </View>
                 )}
               </View>
+              
+              {/* Shared Completions Info */}
+              {(() => {
+                const itemCompletions = completions.filter(c => c.item_id === challenge.id);
+                const photos = getPhotosForItem(challenge.id);
+                const averageRating = getAverageRatingForItem(challenge.id);
+                
+                if (itemCompletions.length > 0) {
+                  return (
+                    <View style={styles.sharedCompletionsContainer}>
+                      <View style={styles.sharedCompletionsHeader}>
+                        <Text style={styles.sharedCompletionsTitle}>
+                          Shared Completions ({itemCompletions.length})
+                        </Text>
+                        {averageRating && (
+                          <View style={styles.averageRatingContainer}>
+                            <Ionicons name="star" size={12} color="#FFD700" />
+                            <Text style={styles.averageRatingText}>
+                              {averageRating.toFixed(1)}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      
+                      {photos.length > 0 && (
+                        <View style={styles.sharedPhotosPreview}>
+                          <Ionicons name="camera" size={12} color="#9BA1A6" />
+                          <Text style={styles.sharedPhotosText}>
+                            {photos.length} photo{photos.length !== 1 ? 's' : ''}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                }
+                return null;
+              })()}
             </View>
             
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {/* Shared Photo Album */}
+      {completions.length > 0 && (
+        <View style={styles.photoAlbumSection}>
+          <SharedPhotoAlbum
+            photos={completions
+              .filter(c => c.photo_url)
+              .map(c => ({
+                id: c.id,
+                url: c.photo_url,
+                caption: c.caption,
+                completed_by: c.completed_by_name,
+                completed_by_avatar: c.completed_by_avatar,
+                created_at: c.created_at,
+                user_rating: c.user_rating,
+                user_review: c.user_review
+              }))}
+            onRatePhoto={(photoId, rating, review) => {
+              rateCompletion(photoId, rating, review);
+            }}
+            onAddPhoto={async (photoUrl, caption) => {
+              // For now, we'll add a photo to the first incomplete challenge
+              // In a real implementation, you might want to show a challenge picker
+              const incompleteChallenge = challenges.find(c => !c.completed);
+              if (incompleteChallenge) {
+                try {
+                  const completionId = await completeItem(incompleteChallenge.id, photoUrl, caption || '');
+                  if (completionId) {
+                    setCompletionToRate({
+                      id: completionId,
+                      completed_by_name: 'You',
+                      user_rating: 0,
+                      user_review: ''
+                    });
+                    setCompletionRatingModalVisible(true);
+                  }
+                } catch (error) {
+                  console.error('Error adding photo:', error);
+                  Alert.alert('Error', 'Failed to add photo. Please try again.');
+                }
+              } else {
+                Alert.alert('No Incomplete Challenges', 'Complete a challenge first to add photos to the album.');
+              }
+            }}
+            canAddPhotos={true}
+          />
+        </View>
+      )}
 
       {/* Floating Add Button */}
       <TouchableOpacity style={styles.floatingAddButton} onPress={handleAddItem}>
@@ -776,6 +922,21 @@ export default function BucketDetail() {
           </View>
         </View>
       </Modal>
+
+      {/* Completion Rating Modal */}
+      <CompletionRatingModal
+        visible={completionRatingModalVisible}
+        onClose={() => setCompletionRatingModalVisible(false)}
+        onRate={(rating, review) => {
+          if (completionToRate) {
+            rateCompletion(completionToRate.id, rating, review);
+            setCompletionToRate(null);
+          }
+        }}
+        currentRating={completionToRate?.user_rating}
+        currentReview={completionToRate?.user_review}
+        completedByName={completionToRate?.completed_by_name}
+      />
     </View>
   );
 }
@@ -1115,12 +1276,24 @@ const styles = StyleSheet.create({
   },
   // Modal styles
   blurContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   blurView: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1263,6 +1436,48 @@ const styles = StyleSheet.create({
   },
   modalPhotoAlbumSection: {
     marginBottom: 20,
+  },
+  photoAlbumSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  sharedCompletionsContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: 'rgba(142, 197, 252, 0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 197, 252, 0.2)',
+  },
+  sharedCompletionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sharedCompletionsTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8EC5FC',
+  },
+  averageRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  averageRatingText: {
+    fontSize: 12,
+    color: '#FFD700',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  sharedPhotosPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sharedPhotosText: {
+    fontSize: 11,
+    color: '#9BA1A6',
+    marginLeft: 4,
   },
   modalPhotoAlbumTitle: {
     fontSize: 18,

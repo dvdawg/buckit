@@ -10,8 +10,19 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
+
+// Custom Bucket Icon Component (Filled - Polygon 3)
+const BucketIcon = ({ size = 20, color = '#666' }) => (
+  <Svg width={size} height={size * 0.6} viewBox="0 0 159 171" fill="none">
+    <Path 
+      d="M20.0024 5H138.036C147.013 5.00009 153.979 12.8323 152.933 21.748L137.565 152.748C136.678 160.304 130.275 166 122.667 166H35.3716C27.7635 166 21.3597 160.304 20.4731 152.748L5.10498 21.748C4.05899 12.8323 11.0256 5.00009 20.0024 5Z" 
+      fill={color}
+    />
+  </Svg>
+);
 
 export default function FloatingAddButton() {
   const router = useRouter();
@@ -112,14 +123,12 @@ export default function FloatingAddButton() {
             ]}
           >
             <View style={styles.menuCard}>
-              <Text style={styles.menuTitle}>What would you like to create?</Text>
-              
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={handleCreateBucket}
               >
                 <View style={styles.menuIconContainer}>
-                  <Ionicons name="folder" size={20} color="#8EC5FC" />
+                  <BucketIcon size={20} color="#666" />
                 </View>
                 <Text style={styles.menuText}>Create Bucket</Text>
               </TouchableOpacity>
@@ -131,7 +140,7 @@ export default function FloatingAddButton() {
                 onPress={handleCreateChallenge}
               >
                 <View style={styles.menuIconContainer}>
-                  <Ionicons name="checkmark-circle" size={20} color="#8EC5FC" />
+                  <Ionicons name="checkmark-circle" size={20} color="#666" />
                 </View>
                 <Text style={styles.menuText}>Create Challenge</Text>
               </TouchableOpacity>
@@ -174,55 +183,47 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   menuContainer: {
-    width: 280,
-    borderRadius: 20,
+    width: 200,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 4,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 16,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   menuCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    paddingVertical: 16,
-    borderRadius: 20,
-  },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    borderRadius: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   menuIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(142, 197, 252, 0.2)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 8,
   },
   menuText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#fff',
+    color: '#000',
   },
   menuDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginHorizontal: 20,
-    marginVertical: 4,
+    backgroundColor: '#e0e0e0',
+    marginHorizontal: 16,
+    marginVertical: 2,
   },
 });

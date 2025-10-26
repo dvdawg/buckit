@@ -568,7 +568,7 @@ export default function BucketDetail() {
               </View>
               <View style={styles.challengeTargetDate}>
                 <Text style={styles.targetDatePin}>📅</Text>
-                <Text style={styles.targetDateText}>Target: {new Date(challenge.targetDate).toLocaleDateString()}</Text>
+                <Text style={styles.targetDateText}>{challenge.targetDate ? `Target: ${new Date(challenge.targetDate).toLocaleDateString()}` : 'None yet!'}</Text>
               </View>
               
               {/* Additional Info Row */}
@@ -713,7 +713,7 @@ export default function BucketDetail() {
                           placeholderTextColor="#9BA1A6"
                         />
                       ) : (
-                        <Text style={styles.modalDetailText}>Target: {new Date(selectedChallenge.targetDate).toLocaleDateString()}</Text>
+                        <Text style={styles.modalDetailText}>{selectedChallenge.targetDate ? `Target: ${new Date(selectedChallenge.targetDate).toLocaleDateString()}` : 'None yet!'}</Text>
                       )}
                     </View>
                     {selectedChallenge.completed && (

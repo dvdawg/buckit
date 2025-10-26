@@ -55,7 +55,17 @@ export function useItems() {
           .rpc('get_user_items_secure');
 
         if (!error && data) {
-          setItems(data as Item[]);
+          // Transform the data to include bucket information
+          const transformedItems = data.map((item: any) => ({
+            ...item,
+            bucket: item.bucket_id ? {
+              id: item.bucket_id,
+              title: item.bucket_title,
+              emoji: item.bucket_emoji,
+              color: item.bucket_color
+            } : null
+          }));
+          setItems(transformedItems as Item[]);
         } else if (error) {
           console.error('Ultimate secure RPC failed for items:', error);
           // No fallback - security is paramount

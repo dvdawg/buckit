@@ -206,7 +206,11 @@ export default function ExploreScreen() {
       </View>
 
       {/* Categories Section */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Browse Categories</Text>
           <Text style={styles.sectionSubtitle}>
@@ -324,6 +328,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for floating tab bar
   },
   section: {
     marginBottom: 24,

@@ -106,6 +106,7 @@ function AuthGate() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="buckets" />
+      <Stack.Screen name="challenges" />
       <Stack.Screen name="performance" />
       <Stack.Screen name="splash" />
       <Stack.Screen name="definition" />

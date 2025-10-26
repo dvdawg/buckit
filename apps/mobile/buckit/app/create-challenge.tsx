@@ -128,7 +128,7 @@ export default function CreateChallengeScreen() {
   };
 
   const formatDate = (date: Date | null) => {
-    if (!date) return 'No target date';
+    if (!date) return 'None yet!';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

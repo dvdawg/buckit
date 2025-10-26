@@ -8,6 +8,7 @@ import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 import { useBuckets } from '@/hooks/useBuckets';
 import { useItems } from '@/hooks/useItems';
 import PerformancePreview from '@/components/PerformancePreview';
+import ChallengeModal from '@/components/ChallengeModal';
 import { useEffect, useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -191,6 +192,8 @@ export default function Profile() {
   const { buckets, loading: bucketsLoading, refresh: refreshBuckets } = useBuckets();
   const { items, loading: itemsLoading } = useItems();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [challengeModalVisible, setChallengeModalVisible] = useState(false);
+  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   
   // Monitor session validity
   useSessionMonitor();
@@ -256,8 +259,22 @@ export default function Profile() {
     router.push('/challenges');
   };
 
+  const handleChallengePress = (challenge: any) => {
+    setSelectedChallengeId(challenge.id);
+    setChallengeModalVisible(true);
+  };
+
+  const handleCloseChallengeModal = () => {
+    setChallengeModalVisible(false);
+    setSelectedChallengeId(null);
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Profile Header with Full-Width Image */}
       <View style={styles.headerContainer}>
         <Image 
@@ -360,8 +377,8 @@ export default function Profile() {
                   style={styles.bucketGradient}
                 />
                 <View style={styles.bucketInfo}>
-                  <Text style={styles.bucketTitle}>{bucket.title}</Text>
-                  <Text style={styles.bucketChallenges}>{bucket.challenge_count} Challenges</Text>
+                  <Text style={styles.bucketTitle} numberOfLines={2} ellipsizeMode="tail">{bucket.title}</Text>
+                  <Text style={styles.bucketChallenges} numberOfLines={1} ellipsizeMode="tail">{bucket.challenge_count} Challenges</Text>
                 </View>
               </TouchableOpacity>
             ))
@@ -405,24 +422,28 @@ export default function Profile() {
               
               const urgencyInfo = getUrgencyInfo(item.urgency_level);
               
-              return (
-                <TouchableOpacity key={item.id} style={styles.challengePreviewCard}>
+                return (
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={styles.challengePreviewCard}
+                    onPress={() => handleChallengePress(item)}
+                  >
                   <View style={styles.challengePreviewHeader}>
                     <View style={styles.challengeBucketInfo}>
                       <Text style={styles.challengeBucketEmoji}>{item.bucket?.emoji || '📝'}</Text>
-                      <Text style={styles.challengeBucketName}>{item.bucket?.title || 'Unknown Bucket'}</Text>
+                      <Text style={styles.challengeBucketName} numberOfLines={1} ellipsizeMode="tail">{item.bucket?.title || 'Unknown Bucket'}</Text>
                     </View>
                     <View style={[styles.urgencyBadge, { backgroundColor: urgencyInfo.color }]}>
                       <Text style={styles.urgencyText}>{urgencyInfo.text}</Text>
                     </View>
                   </View>
-                  <Text style={styles.challengePreviewTitle}>{item.title}</Text>
+                  <Text style={styles.challengePreviewTitle} numberOfLines={2} ellipsizeMode="tail">{item.title}</Text>
                   <View style={styles.challengePreviewFooter}>
-                    <Text style={styles.challengeLocation}>
+                    <Text style={styles.challengeLocation} numberOfLines={1} ellipsizeMode="tail">
                       📍 {item.location_name || 'No location'}
                     </Text>
-                    <Text style={styles.dueDateText}>
-                      {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'No deadline'}
+                    <Text style={styles.dueDateText} numberOfLines={1} ellipsizeMode="tail">
+                      {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'None yet!'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -450,6 +471,13 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
       
+      {/* Challenge Modal */}
+      <ChallengeModal
+        visible={challengeModalVisible}
+        challengeId={selectedChallengeId}
+        onClose={handleCloseChallengeModal}
+      />
+      
     </ScrollView>
   );
 }
@@ -458,6 +486,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for floating tab bar
   },
   headerContainer: {
     height: 300,
@@ -613,6 +644,8 @@ const styles = StyleSheet.create({
   challengeBucketInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
   },
   challengeBucketEmoji: {
     fontSize: 16,
@@ -622,6 +655,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9BA1A6',
     fontWeight: '500',
+    flex: 1,
   },
   urgencyBadge: {
     paddingHorizontal: 8,
@@ -647,6 +681,8 @@ const styles = StyleSheet.create({
   challengeLocation: {
     fontSize: 12,
     color: '#9BA1A6',
+    flex: 1,
+    marginRight: 8,
   },
   completionInfo: {
     flexDirection: 'row',
@@ -661,6 +697,7 @@ const styles = StyleSheet.create({
   dueDateText: {
     fontSize: 12,
     color: '#9BA1A6',
+    flexShrink: 0,
   },
   signOutContainer: {
     paddingHorizontal: 20,

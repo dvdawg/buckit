@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
-import DatabaseTest from '@/components/DatabaseTest';
 import LocationDisplay from '@/components/LocationDisplay';
 
 const { width, height } = Dimensions.get('window');
@@ -270,8 +269,6 @@ export default function ChallengeDetail() {
               </View>
             </View>
 
-            {/* Temporary Database Test Component */}
-            <DatabaseTest />
 
             {/* Details */}
             <View style={styles.detailsSection}>
@@ -295,7 +292,7 @@ export default function ChallengeDetail() {
               <View style={styles.detailRow}>
                 <Text style={styles.locationPin}>📅</Text>
                 <Text style={styles.detailText}>
-                  {challenge.deadline ? `Target: ${new Date(challenge.deadline).toLocaleDateString()}` : 'No deadline'}
+                  {challenge.deadline ? `Target: ${new Date(challenge.deadline).toLocaleDateString()}` : 'None yet!'}
                 </Text>
               </View>
               {challenge.is_completed && challenge.satisfaction_rating && (

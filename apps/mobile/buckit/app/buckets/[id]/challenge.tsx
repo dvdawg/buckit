@@ -349,7 +349,7 @@ export default function ChallengeDetail() {
         <BlurView intensity={20} style={styles.blurContainer}>
           <View style={styles.modalContainer}>
             <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+              <Ionicons name="alert-circle-outline" size={64} color="#8EC5FC" />
               <Text style={styles.errorText}>Challenge not found</Text>
               <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
                 <Text style={styles.closeButtonText}>Close</Text>
@@ -494,7 +494,7 @@ export default function ChallengeDetail() {
                   <Ionicons 
                     name={star <= tempRating ? "star" : "star-outline"} 
                     size={40} 
-                    color={star <= tempRating ? "#f59e0b" : "#9BA1A6"} 
+                    color={star <= tempRating ? "#8EC5FC" : "#9BA1A6"} 
                   />
                 </TouchableOpacity>
               ))}

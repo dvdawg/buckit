@@ -88,7 +88,7 @@ function AuthGate() {
     
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000', padding: 20 }}>
-        <Text style={{ color: '#ef4444', fontSize: 18, fontWeight: '600', marginBottom: 10 }}>
+        <Text style={{ color: '#8EC5FC', fontSize: 18, fontWeight: '600', marginBottom: 10 }}>
           Session Issue
         </Text>
         <Text style={{ color: '#9BA1A6', textAlign: 'center', marginBottom: 20 }}>

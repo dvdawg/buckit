@@ -11,6 +11,7 @@ import LocationPicker from '@/components/LocationPicker';
 import SharedPhotoAlbum from '@/components/SharedPhotoAlbum';
 import CompletionRatingModal from '@/components/CompletionRatingModal';
 import ChallengeDetailModal from '@/components/ChallengeDetailModal';
+import ChallengeRatingModal from '@/components/ChallengeRatingModal';
 import ViewOnlyChallengeCard from '@/components/ViewOnlyChallengeCard';
 import ViewOnlyChallengeModal from '@/components/ViewOnlyChallengeModal';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -36,7 +37,6 @@ export default function BucketDetail() {
   const [challenges, setChallenges] = useState<any[]>([]);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [challengeToRate, setChallengeToRate] = useState<any>(null);
-  const [tempRating, setTempRating] = useState(0);
   const [completionRatingModalVisible, setCompletionRatingModalVisible] = useState(false);
   const [completionToRate, setCompletionToRate] = useState<any>(null);
   const [challengeDetailModalVisible, setChallengeDetailModalVisible] = useState(false);
@@ -144,82 +144,6 @@ export default function BucketDetail() {
     }
   };
 
-  const handleRatingSubmit = async () => {
-    if (tempRating === 0) {
-      Alert.alert('Rating Required', 'Please select a rating before submitting.');
-      return;
-    }
-
-    if (!challengeToRate) {
-      Alert.alert('Error', 'No challenge selected for rating.');
-      return;
-    }
-
-    try {
-      // Get user ID
-      const { data: uid } = await supabase.rpc('me_user_id');
-      if (!uid) {
-        Alert.alert('Error', 'User not authenticated');
-        return;
-      }
-
-      // Use the secure RPC function to update satisfaction rating
-      const { error } = await supabase.rpc('update_item_satisfaction_rating', {
-        p_item_id: challengeToRate.id,
-        p_satisfaction_rating: tempRating,
-        p_is_completed: true
-      });
-
-      if (error) {
-        console.error('Error updating item rating:', error);
-        Alert.alert('Error', 'Failed to save rating. Please try again.');
-        return;
-      }
-
-      // Update local state
-      setChallenges(prevChallenges => 
-        prevChallenges.map(challenge => 
-          challenge.id === challengeToRate.id 
-            ? { 
-                ...challenge, 
-                completed: true,
-                satisfaction: tempRating
-              }
-            : challenge
-        )
-      );
-      
-      // Update selected challenge if it's the one being rated
-      if (selectedChallenge && selectedChallenge.id === challengeToRate.id) {
-        setSelectedChallenge((prev: any) => ({
-          ...prev,
-          completed: true,
-          satisfaction: tempRating
-        }));
-      }
-
-      // Close modal and reset
-      setRatingModalVisible(false);
-      setChallengeToRate(null);
-      setTempRating(0);
-      
-      Alert.alert('Challenge Completed!', `You rated "${challengeToRate.title}" ${tempRating} star${tempRating !== 1 ? 's' : ''}!`);
-      
-      // Refresh the bucket data to get updated counts
-      if (recalculateCount) {
-        await recalculateCount();
-      }
-    } catch (error) {
-      console.error('Error in handleRatingSubmit:', error);
-      Alert.alert('Error', 'Failed to save rating. Please try again.');
-    }
-  };
-
-  const handleRatingCancel = () => {
-    setRatingModalVisible(false);
-    setChallengeToRate(null);
-    setTempRating(0);
-  };
 
   const handleEditChallenge = () => {
     // Only allow editing if user can edit the bucket
@@ -321,7 +245,7 @@ export default function BucketDetail() {
     setEditingData(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleChallengeCompletion = async (challengeId: string) => {
+  const toggleChallengeCompletion = (challengeId: string) => {
     // Only allow challenge completion if user can edit the bucket
     if (!bucket?.can_edit) {
       Alert.alert('Access Denied', 'You can only complete challenges in buckets you own or collaborate on.');
@@ -329,67 +253,16 @@ export default function BucketDetail() {
     }
     
     const challenge = challenges.find(c => c.id === challengeId);
-    
-    if (challenge && !challenge.is_completed) {
-      // If completing for the first time, show rating modal directly
-      setCompletionToRate({
-        id: challengeId, // Use challengeId as temporary ID for rating
-        completed_by_name: 'You',
-        user_rating: 0,
-        user_review: ''
-      });
-      setCompletionRatingModalVisible(true);
-    } else {
-      // If uncompleting, update database and local state
-      try {
-        // Get user ID
-        const { data: uid } = await supabase.rpc('me_user_id');
-        if (!uid) {
-          Alert.alert('Error', 'User not authenticated');
-          return;
-        }
+    if (challenge) {
+      setChallengeToRate(challenge);
+      setRatingModalVisible(true);
+    }
+  };
 
-        // Use the secure RPC function to uncomplete the item
-        const { error } = await supabase.rpc('uncomplete_item', {
-          p_item_id: challengeId
-        });
-
-        if (error) {
-          console.error('Error updating item completion:', error);
-          Alert.alert('Error', 'Failed to update challenge. Please try again.');
-          return;
-        }
-
-        // Update local state
-        setChallenges(prevChallenges => 
-          prevChallenges.map(challenge => 
-            challenge.id === challengeId 
-              ? { 
-                  ...challenge, 
-                  is_completed: false,
-                  satisfaction_rating: null
-                }
-              : challenge
-          )
-        );
-        
-        // Update selected challenge if it's the one being toggled
-        if (selectedChallenge && selectedChallenge.id === challengeId) {
-          setSelectedChallenge((prev: any) => ({
-            ...prev,
-            is_completed: false,
-            satisfaction_rating: null
-          }));
-        }
-
-        // Refresh the bucket data to get updated counts
-        if (recalculateCount) {
-          await recalculateCount();
-        }
-      } catch (error) {
-        console.error('Error in toggleChallengeCompletion:', error);
-        Alert.alert('Error', 'Failed to update challenge. Please try again.');
-      }
+  const handleRatingSuccess = async () => {
+    // Refresh the bucket data to get updated counts
+    if (recalculateCount) {
+      await recalculateCount();
     }
   };
 
@@ -437,7 +310,7 @@ export default function BucketDetail() {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+          <Ionicons name="alert-circle-outline" size={64} color="#8EC5FC" />
           <Text style={styles.errorText}>{error || 'Bucket not found'}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
             <Text style={styles.retryButtonText}>Go Back</Text>
@@ -708,62 +581,6 @@ export default function BucketDetail() {
         />
       )}
 
-      {/* Rating Modal */}
-      <Modal
-        visible={ratingModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={handleRatingCancel}
-      >
-        <View style={styles.ratingModalOverlay}>
-          <View style={styles.ratingModalContainer}>
-            <View style={styles.ratingModalHeader}>
-              <Text style={styles.ratingModalTitle}>Rate Your Experience</Text>
-              <Text style={styles.ratingModalSubtitle}>
-                How satisfied were you with "{challengeToRate?.title}"?
-              </Text>
-            </View>
-
-            <View style={styles.starsContainer}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => setTempRating(star)}
-                  style={styles.starButton}
-                >
-                  <Ionicons 
-                    name={star <= tempRating ? "star" : "star-outline"} 
-                    size={40} 
-                    color={star <= tempRating ? "#f59e0b" : "#9BA1A6"} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.ratingModalActions}>
-              <TouchableOpacity 
-                style={styles.ratingCancelButton} 
-                onPress={handleRatingCancel}
-              >
-                <Text style={styles.ratingCancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.ratingSubmitButton} 
-                onPress={handleRatingSubmit}
-              >
-                <LinearGradient
-                  colors={['#8EC5FC', '#E0C3FC']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.ratingSubmitGradient}
-                >
-                  <Text style={styles.ratingSubmitButtonText}>Submit Rating</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Completion Rating Modal */}
       <CompletionRatingModal
@@ -829,6 +646,14 @@ export default function BucketDetail() {
           setChallengeDetailModalVisible(false);
           setSelectedChallengeId(null);
         }}
+      />
+
+      {/* Shared Rating Modal */}
+      <ChallengeRatingModal
+        visible={ratingModalVisible}
+        onClose={() => setRatingModalVisible(false)}
+        onSuccess={handleRatingSuccess}
+        challenge={challengeToRate}
       />
     </View>
   );

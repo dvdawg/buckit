@@ -81,7 +81,7 @@ const allChallenges = [
     location: "Mt Tamalpais",
     dueDate: "Jan 15",
     urgency: "Coming Up",
-    urgencyColor: "#f59e0b",
+    urgencyColor: "#8EC5FC",
     completed: true,
     satisfaction: 5,
   },
@@ -92,7 +92,7 @@ const allChallenges = [
     location: "Home",
     dueDate: "Jan 12",
     urgency: "Missed",
-    urgencyColor: "#ef4444",
+    urgencyColor: "#8EC5FC",
     completed: false,
     satisfaction: null,
   },
@@ -114,7 +114,7 @@ const allChallenges = [
     location: "San Francisco",
     dueDate: "Jan 18",
     urgency: "Coming Up",
-    urgencyColor: "#f59e0b",
+    urgencyColor: "#8EC5FC",
     completed: true,
     satisfaction: 4,
   },
@@ -125,7 +125,7 @@ const allChallenges = [
     location: "Park",
     dueDate: "Jan 14",
     urgency: "Coming Up",
-    urgencyColor: "#f59e0b",
+    urgencyColor: "#8EC5FC",
     completed: false,
     satisfaction: null,
   },
@@ -147,7 +147,7 @@ const allChallenges = [
     location: "SFMOMA",
     dueDate: "Jan 16",
     urgency: "Coming Up",
-    urgencyColor: "#f59e0b",
+    urgencyColor: "#8EC5FC",
     completed: false,
     satisfaction: null,
   },
@@ -169,7 +169,7 @@ const allChallenges = [
     location: "Phone",
     dueDate: "Jan 13",
     urgency: "Missed",
-    urgencyColor: "#ef4444",
+    urgencyColor: "#8EC5FC",
     completed: false,
     satisfaction: null,
   },
@@ -180,7 +180,7 @@ const allChallenges = [
     location: "Kitchen",
     dueDate: "Jan 19",
     urgency: "Coming Up",
-    urgencyColor: "#f59e0b",
+    urgencyColor: "#8EC5FC",
     completed: false,
     satisfaction: null,
   },
@@ -466,9 +466,9 @@ export default function Profile() {
               const getUrgencyInfo = (urgency: string) => {
                 switch (urgency) {
                   case 'overdue':
-                    return { text: 'Overdue', color: '#ef4444' };
+                    return { text: 'Overdue', color: '#8EC5FC' };
                   case 'due_soon':
-                    return { text: 'Due Soon', color: '#f59e0b' };
+                    return { text: 'Due Soon', color: '#8EC5FC' };
                   default:
                     return { text: 'Anytime', color: '#6b7280' };
                 }

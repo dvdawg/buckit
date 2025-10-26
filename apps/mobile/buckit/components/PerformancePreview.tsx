@@ -2,17 +2,68 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { usePerformance } from '@/hooks/usePerformance';
+import { useBuckets } from '@/hooks/useBuckets';
+import { useMe } from '@/hooks/useMe';
+import { useItems } from '@/hooks/useItems';
 
 export default function PerformancePreview() {
   const router = useRouter();
-  const { performance, loading } = usePerformance();
+  const { performance, loading: performanceLoading } = usePerformance();
+  const { buckets, loading: bucketsLoading } = useBuckets();
+  const { me, loading: meLoading } = useMe();
+  const { items, loading: itemsLoading } = useItems();
 
   const handlePress = () => {
     router.push('/performance');
   };
 
+  // Calculate real data
+  const challengesMade = items.length;
+  const challengesCompleted = items.filter(item => item.is_completed).length;
+  const bucketsMade = buckets.length;
+  const currentStreak = me?.current_streak || 0;
+  
+  // Calculate momentum (challenges completed in last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  
+  const currentPeriodMomentum = items.filter(item => {
+    if (!item.completed_at) return false;
+    const completedDate = new Date(item.completed_at);
+    return completedDate >= thirtyDaysAgo;
+  }).length;
+
+  const previousPeriodMomentum = items.filter(item => {
+    if (!item.completed_at) return false;
+    const completedDate = new Date(item.completed_at);
+    return completedDate >= sixtyDaysAgo && completedDate < thirtyDaysAgo;
+  }).length;
+
+  // Check if user has been active for less than 30 days (first month)
+  const accountCreated = me?.created_at ? new Date(me.created_at) : new Date();
+  const daysSinceAccount = Math.floor((new Date().getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24));
+  const isFirstMonth = daysSinceAccount < 30;
+
+  // Calculate momentum percentage change
+  let momentumDisplay, momentumLabel;
+  if (isFirstMonth) {
+    momentumDisplay = '--';
+    momentumLabel = 'vs last month';
+  } else if (previousPeriodMomentum === 0) {
+    // If no previous data, show current count
+    momentumDisplay = currentPeriodMomentum;
+    momentumLabel = 'vs last month';
+  } else {
+    // Calculate percentage change
+    const percentageChange = ((currentPeriodMomentum - previousPeriodMomentum) / previousPeriodMomentum) * 100;
+    momentumDisplay = `${percentageChange > 0 ? '+' : ''}${Math.round(percentageChange)}%`;
+    momentumLabel = 'vs last month';
+  }
+
   // Show loading state
-  if (loading || !performance) {
+  if (performanceLoading || bucketsLoading || meLoading || itemsLoading) {
     return (
       <TouchableOpacity style={styles.container} onPress={handlePress}>
         <View style={styles.header}>
@@ -21,7 +72,7 @@ export default function PerformancePreview() {
           </View>
           <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
         </View>
-        <Text style={styles.loadingText}>Loading analytics data...</Text>
+        <Text style={styles.loadingText}>Loading Analytics Data...</Text>
       </TouchableOpacity>
     );
   }
@@ -38,47 +89,47 @@ export default function PerformancePreview() {
 
       {/* Metrics Grid */}
       <View style={styles.metricsGrid}>
-        {/* Overall Progress */}
+        {/* Challenges Completed */}
         <View style={styles.metricCard}>
           <View style={styles.metricHeader}>
             <Ionicons name="checkmark-circle" size={16} color="#4ade80" />
-            <Text style={styles.metricLabel}>Challenges</Text>
+            <Text style={styles.metricLabel}>Completed</Text>
           </View>
-          <Text style={styles.metricValue}>{Math.round(performance.overallProgress * 100)}%</Text>
-          <Text style={styles.metricSubtext}>across buckets</Text>
+          <Text style={styles.metricValue}>{challengesCompleted}</Text>
+          <Text style={styles.metricSubtext}>Challenges</Text>
         </View>
 
         {/* Current Streak */}
         <View style={styles.metricCard}>
           <View style={styles.metricHeader}>
-            <Ionicons name="flame" size={16} color="#f59e0b" />
+            <Ionicons name="flame" size={16} color="#8EC5FC" />
             <Text style={styles.metricLabel}>Streak</Text>
           </View>
-          <Text style={styles.metricValue}>{performance.currentStreak}</Text>
-          <Text style={styles.metricSubtext}>day streak</Text>
+          <Text style={styles.metricValue}>{currentStreak}</Text>
+          <Text style={styles.metricSubtext}>Days</Text>
         </View>
 
-        {/* This Month */}
+        {/* Momentum */}
         <View style={styles.metricCard}>
           <View style={styles.metricHeader}>
-            <Ionicons name="trending-up" size={16} color="#3b82f6" />
+            <Ionicons name="trending-up" size={16} color="#18357A" />
             <Text style={styles.metricLabel}>Momentum</Text>
           </View>
-          <Text style={styles.metricValue}>+{Math.round(performance.growthRate)}%</Text>
-          <Text style={styles.metricSubtext}>this month</Text>
+          <Text style={styles.metricValue}>{momentumDisplay}</Text>
+          <Text style={styles.metricSubtext}>Vs Last Month</Text>
         </View>
       </View>
 
       {/* Quick Stats */}
       <View style={styles.quickStats}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{performance.totalCompletions}</Text>
-          <Text style={styles.statLabel}>challenges completed</Text>
+          <Text style={styles.statNumber}>{challengesMade}</Text>
+          <Text style={styles.statLabel}>Challenges Made</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{performance.activeBuckets}</Text>
-          <Text style={styles.statLabel}>buckets made</Text>
+          <Text style={styles.statNumber}>{bucketsMade}</Text>
+          <Text style={styles.statLabel}>Buckets Made</Text>
         </View>
       </View>
     </TouchableOpacity>

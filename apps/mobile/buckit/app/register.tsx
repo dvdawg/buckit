@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: '#FF7954',
+    color: '#8EC5FC',
     fontWeight: '500',
   },
   logoContainer: {
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#FF7954',
+    backgroundColor: '#8EC5FC',
     borderRadius: 2,
   },
   progressText: {
@@ -913,10 +913,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
   textInputError: {
-    borderColor: '#ef4444',
+    borderColor: '#8EC5FC',
   },
   errorText: {
-    color: '#ef4444',
+    color: '#8EC5FC',
     fontSize: 14,
     marginTop: 4,
     marginLeft: 4,
@@ -965,7 +965,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   removeImageText: {
-    color: '#ef4444',
+    color: '#8EC5FC',
     fontSize: 14,
     fontWeight: '500',
     fontFamily: 'Poppins',
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   nextButton: {
-    backgroundColor: '#FF7954',
+    backgroundColor: '#8EC5FC',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

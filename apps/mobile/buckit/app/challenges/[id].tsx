@@ -85,7 +85,7 @@ export default function ChallengeDetail() {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={64} color="#ef4444" />
+          <Ionicons name="alert-circle" size={64} color="#8EC5FC" />
           <Text style={styles.errorTitle}>Challenge Not Found</Text>
           <Text style={styles.errorText}>This challenge could not be found or you don't have access to it.</Text>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -119,12 +119,12 @@ export default function ChallengeDetail() {
         )}
         {challenge.location_name && (
           <View style={styles.detailRow}>
-            <Ionicons name="location" size={16} color="#ef4444" />
+            <Ionicons name="location" size={16} color="#8EC5FC" />
             <Text style={styles.detailText}>{challenge.location_name}</Text>
           </View>
         )}
         <View style={styles.detailRow}>
-          <Ionicons name="calendar" size={16} color="#f59e0b" />
+          <Ionicons name="calendar" size={16} color="#8EC5FC" />
           <Text style={styles.detailText}>
             {challenge.deadline ? `Due: ${new Date(challenge.deadline).toLocaleDateString()}` : 'None yet!'}
           </Text>

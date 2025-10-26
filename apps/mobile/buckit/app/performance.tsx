@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePerformance } from '@/hooks/usePerformance';
 import { useBuckets } from '@/hooks/useBuckets';
 import { useMe } from '@/hooks/useMe';
+import { useItems } from '@/hooks/useItems';
 
 const { width } = Dimensions.get('window');
 
@@ -12,9 +13,10 @@ export default function PerformancePage() {
   const { performance, loading: performanceLoading } = usePerformance();
   const { buckets, loading: bucketsLoading } = useBuckets();
   const { me, loading: meLoading } = useMe();
+  const { items, loading: itemsLoading } = useItems();
 
   // Show loading state
-  if (performanceLoading || bucketsLoading || meLoading) {
+  if (performanceLoading || bucketsLoading || meLoading || itemsLoading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -31,47 +33,93 @@ export default function PerformancePage() {
     );
   }
 
-  // Dummy data for demonstration
-  const bucketData = [
-    { bucket: "Fitness", completion: 0.8, color: '#1e40af' },
-    { bucket: "Travel", completion: 0.6, color: '#1e40af' },
-    { bucket: "Food", completion: 0.4, color: '#1e40af' },
-    { bucket: "Art", completion: 0.9, color: '#1e40af' },
-    { bucket: "Music", completion: 0.3, color: '#1e40af' },
-    { bucket: "Family", completion: 0.7, color: '#1e40af' },
-  ];
+  // Calculate real user data
+  const challengesMade = items.length;
+  const challengesCompleted = items.filter(item => item.is_completed).length;
+  const bucketsMade = buckets.length;
+  const bucketsCompleted = buckets.filter(bucket => bucket.completion_percentage === 100).length;
+  
+  // Calculate bucket data with real completion percentages
+  const bucketData = buckets.map(bucket => ({
+    bucket: bucket.title,
+    completion: bucket.completion_percentage / 100,
+    color: bucket.color || '#1e40af'
+  }));
 
   const totalCompletion = bucketData.length > 0 
     ? bucketData.reduce((sum, bucket) => sum + bucket.completion, 0) / bucketData.length 
     : 0;
   
-  const currentStreak = performance?.currentStreak || 0;
-  const totalCompletions = performance?.totalCompletions || 0;
+  const currentStreak = me?.current_streak || 0;
+  const totalCompletions = me?.total_completions || 0;
   const growthRate = performance?.growthRate || 0;
 
-  // Generate weekly progress data (last 4 weeks)
-  const generateWeeklyProgress = () => {
-    const weeks = [];
+  // Generate monthly histogram data (last 6 months)
+  const generateMonthlyHistogram = () => {
+    const months = [];
     const now = new Date();
-    for (let i = 3; i >= 0; i--) {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - (i * 7 + 6));
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
+    
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
       
-      weeks.push({
-        week: `Week ${4 - i}`,
-        completed: Math.floor(Math.random() * 10) + 5, // Placeholder - would need real weekly data
-        date: weekStart
+      // Count completed challenges in this month
+      const completedInMonth = items.filter(item => {
+        if (!item.completed_at) return false;
+        const completedDate = new Date(item.completed_at);
+        return completedDate >= monthStart && completedDate <= monthEnd;
+      }).length;
+      
+      months.push({
+        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        completed: completedInMonth,
+        date: monthStart
       });
     }
-    return weeks;
+    return months;
   };
 
-  const progressData = generateWeeklyProgress();
-  const lastWeek = progressData[progressData.length - 1].completed;
-  const firstWeek = progressData[0].completed;
-  const calculatedGrowthRate = firstWeek > 0 ? ((lastWeek - firstWeek) / firstWeek) * 100 : 0;
+  const monthlyData = generateMonthlyHistogram();
+  const maxCompleted = Math.max(...monthlyData.map(m => m.completed), 1);
+
+  // Calculate momentum (challenges completed in last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  
+  const currentPeriodMomentum = items.filter(item => {
+    if (!item.completed_at) return false;
+    const completedDate = new Date(item.completed_at);
+    return completedDate >= thirtyDaysAgo;
+  }).length;
+
+  const previousPeriodMomentum = items.filter(item => {
+    if (!item.completed_at) return false;
+    const completedDate = new Date(item.completed_at);
+    return completedDate >= sixtyDaysAgo && completedDate < thirtyDaysAgo;
+  }).length;
+
+  // Check if user has been active for less than 30 days (first month)
+  const accountCreated = me?.created_at ? new Date(me.created_at) : new Date();
+  const daysSinceAccount = Math.floor((new Date().getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24));
+  const isFirstMonth = daysSinceAccount < 30;
+
+  // Calculate momentum percentage change
+  let momentumDisplay, momentumLabel;
+  if (isFirstMonth) {
+    momentumDisplay = '--';
+    momentumLabel = 'vs last month';
+  } else if (previousPeriodMomentum === 0) {
+    // If no previous data, show current count
+    momentumDisplay = currentPeriodMomentum;
+    momentumLabel = 'vs last month';
+  } else {
+    // Calculate percentage change
+    const percentageChange = ((currentPeriodMomentum - previousPeriodMomentum) / previousPeriodMomentum) * 100;
+    momentumDisplay = `${percentageChange > 0 ? '+' : ''}${Math.round(percentageChange)}%`;
+    momentumLabel = 'vs last month';
+  }
 
   return (
     <View style={styles.container}>
@@ -85,30 +133,23 @@ export default function PerformancePage() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Overview Cards */}
-        <View style={styles.overviewCardsContainer}>
-          {/* Total Completion Percentage */}
-          <View style={styles.overviewCard}>
-            <View style={styles.radialChartContainer}>
-              <View style={styles.radialChart}>
-                <View style={styles.radialChartBackground} />
-                <View style={styles.radialChartProgress} />
-                <View style={styles.radialChartCenter}>
-                  <Text style={styles.radialChartValue}>68%</Text>
-                  <Text style={styles.radialChartLabel}>Completed</Text>
-                </View>
-              </View>
-            </View>
-            <Text style={styles.overviewCardTitle}>Total Progress</Text>
+        {/* First Row - 4 Stats Boxes */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statBox, { borderColor: '#8EC5FC' }]}>
+            <Text style={styles.statValue}>{challengesMade}</Text>
+            <Text style={styles.statLabel}>Challenges Made</Text>
           </View>
-
-          {/* Last Month Challenges */}
-          <View style={styles.overviewCard}>
-            <View style={styles.numberCard}>
-              <Text style={styles.numberCardValue}>24</Text>
-              <Text style={styles.numberCardLabel}>This Month</Text>
-            </View>
-            <Text style={styles.overviewCardTitle}>Challenges Done</Text>
+          <View style={[styles.statBox, { borderColor: '#1e40af' }]}>
+            <Text style={styles.statValue}>{challengesCompleted}</Text>
+            <Text style={styles.statLabel}>Challenges Completed</Text>
+          </View>
+          <View style={[styles.statBox, { borderColor: '#6b7280' }]}>
+            <Text style={styles.statValue}>{bucketsMade}</Text>
+            <Text style={styles.statLabel}>Buckets Made</Text>
+          </View>
+          <View style={[styles.statBox, { borderColor: '#374151' }]}>
+            <Text style={styles.statValue}>{bucketsCompleted}</Text>
+            <Text style={styles.statLabel}>Buckets Completed</Text>
           </View>
         </View>
 
@@ -120,8 +161,10 @@ export default function PerformancePage() {
           
           <View style={styles.stackedChartContainer}>
             {bucketData.length > 0 ? bucketData.map((bucket, index) => {
-              const completedChallenges = Math.round(bucket.completion * 10); // Assuming 10 total challenges per bucket
-              const totalChallenges = 10;
+              // Get actual challenge counts for this bucket
+              const bucketChallenges = items.filter(item => item.bucket_id === buckets[index]?.id);
+              const completedChallenges = bucketChallenges.filter(item => item.is_completed).length;
+              const totalChallenges = bucketChallenges.length;
               const remainingChallenges = totalChallenges - completedChallenges;
               
               return (
@@ -165,6 +208,52 @@ export default function PerformancePage() {
           </View>
         </View>
 
+        {/* Monthly Histogram */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Challenges Completed (Last 6 Months)</Text>
+          </View>
+          
+          <View style={styles.histogramContainer}>
+            {monthlyData.map((month, index) => {
+              return (
+                <View key={index} style={styles.histogramBar}>
+                  <View style={styles.histogramBarContainer}>
+                    <View 
+                      style={[
+                        styles.histogramBarFill,
+                        { 
+                          height: `${(month.completed / maxCompleted) * 100}%`,
+                          backgroundColor: month.completed > 0 ? '#8EC5FC' : '#374151'
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.histogramLabel}>{month.month}</Text>
+                  <Text style={styles.histogramValue}>{month.completed}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Streak and Momentum Row */}
+        <View style={styles.streakMomentumRow}>
+          <View style={[styles.streakMomentumBox, { borderColor: '#6b7280' }]}>
+            <View style={styles.streakMomentumIcon}>
+              <Ionicons name="flame" size={24} color="#6b7280" />
+            </View>
+            <Text style={styles.streakMomentumValue}>{currentStreak}</Text>
+            <Text style={styles.streakMomentumLabel}>Days Streak</Text>
+          </View>
+          <View style={[styles.streakMomentumBox, { borderColor: '#1e40af' }]}>
+            <View style={styles.streakMomentumIcon}>
+              <Ionicons name="trending-up" size={24} color="#1e40af" />
+            </View>
+            <Text style={styles.streakMomentumValue}>{momentumDisplay}</Text>
+            <Text style={styles.streakMomentumLabel}>{momentumLabel}</Text>
+          </View>
+        </View>
 
       </ScrollView>
     </View>
@@ -186,8 +275,6 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1a1a1a',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -465,5 +552,96 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  // New styles for stats row
+  statsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 8,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    textAlign: 'center',
+  },
+  // Histogram styles
+  histogramContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 120,
+    paddingHorizontal: 8,
+  },
+  histogramBar: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 2,
+  },
+  histogramBarContainer: {
+    height: 80,
+    width: '100%',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  histogramBarFill: {
+    width: '100%',
+    minHeight: 2,
+    borderRadius: 2,
+  },
+  histogramLabel: {
+    fontSize: 10,
+    color: '#9BA1A6',
+    marginBottom: 2,
+  },
+  histogramValue: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  // Streak and momentum styles
+  streakMomentumRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 12,
+  },
+  streakMomentumBox: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+  },
+  streakMomentumIcon: {
+    marginBottom: 12,
+  },
+  streakMomentumValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  streakMomentumLabel: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    textAlign: 'center',
   },
 });

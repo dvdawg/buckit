@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   themeCardSelected: {
     backgroundColor: '#e3f2fd',
-    borderColor: '#2196F3',
+    borderColor: '#18357A',
   },
   themeIcon: {
     fontSize: 32,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   themeNameSelected: {
-    color: '#2196F3',
+    color: '#18357A',
   },
   optionCard: {
     backgroundColor: '#f8f9fa',
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: {
     backgroundColor: '#e3f2fd',
-    borderColor: '#2196F3',
+    borderColor: '#18357A',
   },
   optionName: {
     fontSize: 16,
@@ -356,14 +356,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   optionNameSelected: {
-    color: '#2196F3',
+    color: '#18357A',
   },
   optionDescription: {
     fontSize: 14,
     color: '#666',
   },
   optionDescriptionSelected: {
-    color: '#1976D2',
+    color: '#8EC5FC',
   },
   footer: {
     flexDirection: 'row',
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     borderRadius: 12,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#18357A',
   },
   completeButtonDisabled: {
     backgroundColor: '#ccc',

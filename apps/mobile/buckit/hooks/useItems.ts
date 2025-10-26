@@ -33,51 +33,58 @@ export function useItems() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchItems = async () => {
     if (!user) { 
       setItems([]); 
       setLoading(false); 
       return; 
     }
     
-    (async () => {
-      try {
-        // Get user ID
-        const { data: uid } = await supabase.rpc('me_user_id');
-        if (!uid) { 
-          setItems([]); 
-          setLoading(false); 
-          return; 
-        }
-
-        // Use ultimate secure RPC function that handles authentication internally
-        const { data, error } = await supabase
-          .rpc('get_user_items_secure');
-
-        if (!error && data) {
-          // Transform the data to include bucket information
-          const transformedItems = data.map((item: any) => ({
-            ...item,
-            bucket: item.bucket_id ? {
-              id: item.bucket_id,
-              title: item.bucket_title,
-              emoji: item.bucket_emoji,
-              color: item.bucket_color
-            } : null
-          }));
-          setItems(transformedItems as Item[]);
-        } else if (error) {
-          console.error('Ultimate secure RPC failed for items:', error);
-          // No fallback - security is paramount
-          setItems([]);
-        }
-      } catch (error) {
-        console.error('Error fetching items:', error);
-      } finally {
-        setLoading(false);
+    try {
+      // Get user ID
+      const { data: uid } = await supabase.rpc('me_user_id');
+      if (!uid) { 
+        setItems([]); 
+        setLoading(false); 
+        return; 
       }
-    })();
+
+      // Use ultimate secure RPC function that handles authentication internally
+      const { data, error } = await supabase
+        .rpc('get_user_items_secure');
+
+      if (!error && data) {
+        // Transform the data to include bucket information
+        const transformedItems = data.map((item: any) => ({
+          ...item,
+          bucket: item.bucket_id ? {
+            id: item.bucket_id,
+            title: item.bucket_title,
+            emoji: item.bucket_emoji,
+            color: item.bucket_color
+          } : null
+        }));
+        setItems(transformedItems as Item[]);
+      } else if (error) {
+        console.error('Ultimate secure RPC failed for items:', error);
+        // No fallback - security is paramount
+        setItems([]);
+      }
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
   }, [user]);
 
-  return { items, loading };
+  const refresh = () => {
+    setLoading(true);
+    fetchItems();
+  };
+
+  return { items, loading, refresh };
 }

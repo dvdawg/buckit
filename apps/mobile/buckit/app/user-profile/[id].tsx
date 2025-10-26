@@ -86,12 +86,14 @@ export default function UserProfileScreen() {
       case 'accepted':
         return (
           <TouchableOpacity 
-            style={[styles.actionButton, styles.unfriendButton]}
+            style={styles.unfriendButton}
             onPress={handleFriendAction}
             disabled={actionLoading}
           >
-            <Ionicons name="person-remove" size={16} color="#fff" />
-            <Text style={styles.actionButtonText}>Unfriend</Text>
+            <View style={styles.actionButton}>
+              <Ionicons name="person-remove" size={16} color="#fff" />
+              <Text style={styles.actionButtonText}>Unfriend</Text>
+            </View>
           </TouchableOpacity>
         );
       case 'pending':
@@ -179,15 +181,19 @@ export default function UserProfileScreen() {
             </View>
             <View style={styles.headerButtons}>
               {getActionButton()}
-              <TouchableOpacity 
-                style={styles.backButton}
-                onPress={() => router.back()}
-              >
-                <Ionicons name="arrow-back" size={24} color="#fff" />
-              </TouchableOpacity>
             </View>
           </View>
         </View>
+      </View>
+
+      {/* Header with back button */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
@@ -231,26 +237,9 @@ export default function UserProfileScreen() {
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="folder-outline" size={48} color="#6B7280" />
               <Text style={styles.emptyTitle}>
-                {friendshipStatus === 'accepted' ? 'No buckets yet' : 'No shared buckets'}
+                {friendshipStatus === 'accepted' ? 'No buckets yet' : 'Add this friend to see their buckets'}
               </Text>
-              <Text style={styles.emptySubtitle}>
-                {friendshipStatus === 'accepted' 
-                  ? 'This user hasn\'t created any buckets yet'
-                  : 'This user hasn\'t shared any buckets with you'
-                }
-              </Text>
-              {friendshipStatus !== 'accepted' && (
-                <TouchableOpacity 
-                  style={styles.friendRequestButton}
-                  onPress={handleFriendAction}
-                  disabled={actionLoading}
-                >
-                  <Ionicons name="person-add" size={20} color="#000" />
-                  <Text style={styles.friendRequestButtonText}>Send Friend Request</Text>
-                </TouchableOpacity>
-              )}
             </View>
           )}
         </View>
@@ -289,11 +278,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 24,
   },
+  topHeader: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+  },
   backButton: {
-    backgroundColor: '#8EC5FC',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
+    padding: 8,
   },
   backButtonText: {
     color: '#000',
@@ -355,6 +347,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 0,
+    gap: 6,
   },
   addButton: {
     backgroundColor: '#8EC5FC',
@@ -364,11 +359,13 @@ const styles = StyleSheet.create({
   },
   unfriendButton: {
     backgroundColor: '#EF4444',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 0,
   },
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    marginLeft: 6,
     color: '#fff',
   },
   addButtonText: {

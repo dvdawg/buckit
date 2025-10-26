@@ -75,13 +75,13 @@ export default function DefinitionScreen() {
             <Text style={styles.definition}>"a collection of moments, experiences, or challenges one hopes to live"</Text>
           </View>
         </View>
+      </Animated.View>
 
-        {/* Next Arrow */}
-        <Animated.View style={[styles.arrowContainer, { opacity: buttonOpacity }]}>
-          <TouchableOpacity style={styles.arrowButton} onPress={handleNext}>
-            <Text style={styles.arrowText}>→</Text>
-          </TouchableOpacity>
-        </Animated.View>
+      {/* Next Arrow - Outside content container */}
+      <Animated.View style={[styles.arrowContainer, { opacity: buttonOpacity }]}>
+        <TouchableOpacity style={styles.arrowButton} onPress={handleNext}>
+          <Ionicons name="chevron-forward" size={20} color="#9BA1A6" />
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
@@ -130,17 +130,10 @@ const styles = StyleSheet.create({
   },
   arrowContainer: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    paddingBottom: 0,
-    paddingRight: 0,
+    bottom: 40,
+    right: 20,
   },
   arrowButton: {
-    padding: 10,
-  },
-  arrowText: {
-    fontSize: 32,
-    color: '#4ade80',
-    fontWeight: 'bold',
+    padding: 12,
   },
 });

@@ -17,12 +17,11 @@ export default function PerformancePreview() {
       <TouchableOpacity style={styles.container} onPress={handlePress}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="analytics" size={20} color="#4ade80" />
-            <Text style={styles.title}>Performance</Text>
+            <Text style={styles.title}>Analytics</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
         </View>
-        <Text style={styles.loadingText}>Loading performance data...</Text>
+        <Text style={styles.loadingText}>Loading analytics data...</Text>
       </TouchableOpacity>
     );
   }
@@ -32,8 +31,7 @@ export default function PerformancePreview() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="analytics" size={20} color="#4ade80" />
-          <Text style={styles.title}>Overview</Text>
+          <Text style={styles.title}>Analytics</Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
       </View>
@@ -44,7 +42,7 @@ export default function PerformancePreview() {
         <View style={styles.metricCard}>
           <View style={styles.metricHeader}>
             <Ionicons name="checkmark-circle" size={16} color="#4ade80" />
-            <Text style={styles.metricLabel}>Moments</Text>
+            <Text style={styles.metricLabel}>Challenges</Text>
           </View>
           <Text style={styles.metricValue}>{Math.round(performance.overallProgress * 100)}%</Text>
           <Text style={styles.metricSubtext}>across buckets</Text>
@@ -80,7 +78,7 @@ export default function PerformancePreview() {
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>{performance.activeBuckets}</Text>
-          <Text style={styles.statLabel}>active buckets</Text>
+          <Text style={styles.statLabel}>buckets made</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -113,7 +111,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'Poppins',
-    marginLeft: 8,
   },
   metricsGrid: {
     flexDirection: 'row',

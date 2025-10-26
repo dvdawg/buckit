@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
 import FloatingAddButton from '@/components/FloatingAddButton';
+import { getCurrentTabBarStyle } from '@/components/TabBarStyles';
 import Svg, { Path } from 'react-native-svg';
 
 // Custom Bucket Icon Component
@@ -16,36 +17,21 @@ const BucketIcon = ({ size = 24, color = '#9BA1A6' }) => (
 );
 
 export default function Layout() {
+  // 🎨 GLASS STYLE OPTIONS - Change the style name below to switch:
+  // 'darkGlass' - Dark blur with white text (current)
+  // 'lightGlass' - Light blur with dark text  
+  // 'gradientGlass' - Gradient blur with color transitions
+  // 'subtleDarkGlass' - Subtle dark blur effect
+  // 'ultraLightGlass' - Very light blur effect
+  // 'originalWhite' - Solid white background (original)
+  const currentStyle = getCurrentTabBarStyle('originalWhite');
+  
   return (
     <View style={{ flex: 1 }}>
       <Tabs 
         screenOptions={{ 
           headerShown: false,
-          tabBarStyle: {
-            backgroundColor: '#fff',
-            borderTopWidth: 0,
-            height: 60,
-            paddingTop: 8,
-            paddingBottom: 8,
-            paddingHorizontal: 20,
-            borderRadius: 25,
-            marginHorizontal: 20,
-            marginBottom: 20,
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 8,
-          },
-          tabBarActiveTintColor: '#000',
-          tabBarInactiveTintColor: '#9BA1A6',
+          ...currentStyle,
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '500',

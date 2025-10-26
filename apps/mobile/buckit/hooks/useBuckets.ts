@@ -21,6 +21,25 @@ export function useBuckets() {
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Function to fetch buckets for a specific user
+  const fetchUserBuckets = async (userId: string): Promise<Bucket[]> => {
+    try {
+      const { data, error } = await supabase.rpc('get_user_buckets', {
+        user_id: userId
+      });
+      
+      if (error) {
+        console.error('Error fetching user buckets:', error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (err) {
+      console.error('Error in fetchUserBuckets:', err);
+      return [];
+    }
+  };
+
   const fetchBuckets = async () => {
     if (!user) { 
       setBuckets([]); 
@@ -123,5 +142,5 @@ export function useBuckets() {
     }
   };
 
-  return { buckets, loading, refresh, recalculateCounts };
+  return { buckets, loading, refresh, recalculateCounts, fetchUserBuckets };
 }

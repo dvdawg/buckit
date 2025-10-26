@@ -23,10 +23,12 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getUserByHandle } = useUserSearch();
   const { sendFriendRequest, unfriend, getFriendshipStatus } = useFriends();
-  const { buckets } = useBuckets();
+  const { fetchUserBuckets } = useBuckets();
   
   const [user, setUser] = useState<any>(null);
+  const [userBuckets, setUserBuckets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bucketsLoading, setBucketsLoading] = useState(false);
   const [friendshipStatus, setFriendshipStatus] = useState<string>('none');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -42,6 +44,9 @@ export default function UserProfileScreen() {
       if (userData) {
         setUser(userData);
         setFriendshipStatus(userData.friendship_status);
+        
+        // Fetch the user's buckets
+        await loadUserBuckets(userData.id);
       } else {
         Alert.alert('Error', 'User not found');
         router.back();
@@ -52,6 +57,21 @@ export default function UserProfileScreen() {
       router.back();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserBuckets = async (userId: string) => {
+    try {
+      setBucketsLoading(true);
+      console.log('Loading buckets for user:', userId);
+      const buckets = await fetchUserBuckets(userId);
+      console.log('Loaded user buckets:', buckets);
+      setUserBuckets(buckets);
+    } catch (error) {
+      console.error('Error loading user buckets:', error);
+      setUserBuckets([]);
+    } finally {
+      setBucketsLoading(false);
     }
   };
 
@@ -152,9 +172,17 @@ export default function UserProfileScreen() {
     );
   }
 
-  // For now, we'll use the existing buckets hook
-  // In a real implementation, you'd call get_user_buckets() RPC function
-  const visibleBuckets = friendshipStatus === 'accepted' ? (buckets || []) : [];
+  // Show user's buckets based on friendship status and visibility
+  const visibleBuckets = userBuckets.filter(bucket => {
+    // Always show public buckets
+    if (bucket.visibility === 'public') return true;
+    
+    // Show friends-only buckets if we're friends
+    if (bucket.visibility === 'friends' && friendshipStatus === 'accepted') return true;
+    
+    // Don't show private buckets unless it's the current user (which shouldn't happen in this view)
+    return false;
+  });
 
   return (
     <View style={styles.container}>
@@ -202,7 +230,12 @@ export default function UserProfileScreen() {
           <Text style={styles.sectionTitle}>
             {friendshipStatus === 'accepted' ? 'Buckets' : 'Shared Buckets'}
           </Text>
-          {visibleBuckets.length > 0 ? (
+          {bucketsLoading ? (
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="small" color="#8EC5FC" />
+              <Text style={styles.loadingText}>Loading buckets...</Text>
+            </View>
+          ) : visibleBuckets.length > 0 ? (
             <View style={styles.bucketsGrid}>
               {visibleBuckets.map((bucket) => (
                 <TouchableOpacity 
@@ -223,12 +256,12 @@ export default function UserProfileScreen() {
                     </Text>
                     <View style={styles.bucketVisibility}>
                       <Ionicons 
-                        name={bucket.visibility === 'friends' ? 'people' : 'person-add'} 
+                        name={bucket.visibility === 'public' ? 'globe' : bucket.visibility === 'friends' ? 'people' : 'lock-closed'} 
                         size={12} 
                         color="#6B7280" 
                       />
                       <Text style={styles.bucketVisibilityText}>
-                        {bucket.visibility === 'friends' ? 'Friends' : 'Manual'}
+                        {bucket.visibility === 'public' ? 'Public' : bucket.visibility === 'friends' ? 'Friends' : 'Private'}
                       </Text>
                     </View>
                   </View>
@@ -457,6 +490,17 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
+  },
+  loadingState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    color: '#9BA1A6',
+    fontSize: 14,
     marginLeft: 8,
   },
 });

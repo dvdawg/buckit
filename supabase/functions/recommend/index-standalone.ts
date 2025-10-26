@@ -1,11 +1,121 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { mmrSelect } from "./mmr.ts";
-import { createLinUCBBandit } from "./ucb.ts";
 
 type Params = { userId: string; lat: number; lon: number; radiusKm?: number; k?: number };
 
 const EMBED_DIM = Number(Deno.env.get("EMBED_DIM") ?? 1536);
+
+// MMR Selection function (embedded)
+function mmrSelect<T extends { embedding?: number[]; score: number }>(
+  candidates: T[], k: number, lambda = 0.7
+): T[] {
+  const selected: T[] = [];
+  const pool = [...candidates].sort((a,b)=>b.score - a.score).slice(0, 120);
+  
+  while (selected.length < k && pool.length) {
+    let bestIdx = 0, best = -Infinity;
+    
+    for (let i=0; i<pool.length; i++){
+      const c = pool[i];
+      const simToUser = c.score;
+      const simToSel = selected.length
+        ? Math.max(...selected.map(s => cosine(c.embedding, s.embedding)))
+        : 0;
+      const s = lambda*simToUser - (1-lambda)*simToSel;
+      if (s > best){ 
+        best = s; 
+        bestIdx = i; 
+      }
+    }
+    selected.push(pool.splice(bestIdx,1)[0]);
+  }
+  
+  return selected;
+}
+
+function cosine(a?: number[], b?: number[]) {
+  if (!a || !b) return 0;
+  let s=0, na=0, nb=0;
+  for (let i=0; i<Math.min(a.length,b.length); i++){ 
+    s+=a[i]*b[i]; 
+    na+=a[i]*a[i]; 
+    nb+=b[i]*b[i]; 
+  }
+  return s / (Math.sqrt(na)*Math.sqrt(nb) + 1e-8);
+}
+
+// LinUCB Bandit function (embedded)
+function createLinUCBBandit(supabase: ReturnType<typeof createClient>, userId: string) {
+  return {
+    async injectExplore<T extends { id: string; score: number; reasons: any }>(
+      current: T[], 
+      all: T[], 
+      exploreK = 2
+    ): Promise<T[]> {
+      if (all.length <= current.length) return current;
+      
+      const has = new Set(current.map(x => x.id));
+      const pool = all.filter(x => !has.has(x.id)).slice(0, 50);
+      
+      if (pool.length === 0) return current;
+      
+      // Compute UCB scores for exploration candidates
+      const ucbCandidates = await Promise.all(
+        pool.map(async (candidate) => {
+          const features = [
+            candidate.reasons.appeal || 0,
+            candidate.reasons.trait || 0,
+            candidate.reasons.state || 0,
+            candidate.reasons.social || 0,
+            candidate.reasons.cost || 0,
+            candidate.reasons.poprec || 0
+          ];
+          
+          const { data: ucbScore } = await supabase.rpc('compute_ucb_score', {
+            p_user_id: userId,
+            p_item_id: candidate.id,
+            p_features: features
+          });
+          
+          return {
+            ...candidate,
+            ucbScore: ucbScore || 0
+          };
+        })
+      );
+      
+      // Sort by UCB score and pick top exploreK
+      const sortedByUCB = ucbCandidates.sort((a, b) => b.ucbScore - a.ucbScore);
+      const picks = sortedByUCB.slice(0, exploreK);
+      
+      const out = [...current];
+      
+      // Inject exploration items at strategic positions
+      if (picks[0]) out.splice(Math.min(3, out.length), 0, picks[0]);
+      if (picks[1]) out.splice(Math.min(7, out.length), 0, picks[1]);
+      
+      return out;
+    },
+    
+    async updateWithReward(
+      itemId: string, 
+      features: number[], 
+      reward: number
+    ): Promise<void> {
+      try {
+        await supabase.rpc('update_bandit_arm', {
+          p_user_id: userId,
+          p_item_id: itemId,
+          p_features: features,
+          p_reward: reward,
+          p_alpha: 1.0
+        });
+      } catch (error) {
+        console.error('Error updating bandit arm:', error);
+      }
+    }
+  };
+}
 
 export const handler = serve(async (req) => {
   const startTime = Date.now();
@@ -34,10 +144,11 @@ export const handler = serve(async (req) => {
       p_window_minutes: 10
     });
 
-    if (rateLimitCheck && !rateLimitCheck[0]?.allowed) {
+    if (rateLimitCheck && rateLimitCheck.length > 0 && !rateLimitCheck[0].allowed) {
       return new Response(JSON.stringify({ 
         error: "Rate limit exceeded",
-        retry_after: rateLimitCheck[0]?.reset_at 
+        remaining: rateLimitCheck[0].remaining,
+        reset_at: rateLimitCheck[0].reset_at
       }), {
         status: 429,
         headers: { 
@@ -98,11 +209,8 @@ export const handler = serve(async (req) => {
       p_radius_km: radiusKm,
       p_limit: 300
     });
-    
-    if (candErr) {
-      console.error("Error fetching candidates:", candErr);
-      throw candErr;
-    }
+
+    if (candErr) throw candErr;
 
     const stateVec = await computeStateVector(supabase, body.userId, EMBED_DIM);
 
@@ -128,14 +236,24 @@ export const handler = serve(async (req) => {
       // Appeal score: use precomputed score or fallback to trait similarity
       const appeal = c.appeal_score ?? trait;
 
-      // Subjective value with appeal term
-      const score = 0.25*appeal + 0.25*trait + 0.20*state + 0.15*social + 0.10*poprec - 0.25*cost;
+      // Final scoring with A/B testable weights
+      const appealWeight = experimentParams.appeal_weight || 0.25;
+      const traitWeight = experimentParams.trait_weight || 0.25;
+      const stateWeight = experimentParams.state_weight || 0.20;
+      const costWeight = experimentParams.cost_weight || 0.25;
+      
+      const score = appealWeight * appeal + 
+                   traitWeight * trait + 
+                   stateWeight * state + 
+                   social - 
+                   costWeight * cost + 
+                   0.10 * poprec;
 
-      return {
-        id: c.id,
-        score,
-        reasons: { appeal, trait, state, social, cost, poprec },
-        embedding: emb
+      return { 
+        id: c.id, 
+        score, 
+        reasons: { appeal, trait, state, social, cost, poprec }, 
+        embedding: emb 
       };
     });
 
@@ -221,7 +339,7 @@ async function computeStateVector(supabase: any, userId: string, dim: number): P
   // Use recent views/likes/saves/starts/completes from events; fallback to completions
   const { data: ev } = await supabase
     .from("events")
-    .select("created_at, items:items!inner(embedding, embedding_vec)")
+    .select("created_at, items:items!inner(embedding)")
     .eq("user_id", userId)
     .in("event_type", ["view","like","save","start","complete"])
     .order("created_at", { ascending: false })
@@ -231,7 +349,7 @@ async function computeStateVector(supabase: any, userId: string, dim: number): P
   if (!rows.length) {
     const { data: comp } = await supabase
       .from("completions")
-      .select("created_at, items:items!inner(embedding, embedding_vec)")
+      .select("created_at, items:items!inner(embedding)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(10);
@@ -239,198 +357,88 @@ async function computeStateVector(supabase: any, userId: string, dim: number): P
     rows.push(...comp);
   }
 
-  // Build time features for DIN-lite attention
-  const now = new Date();
-  const hour = now.getHours();
-  const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-  
-  // Create query vector from time features
-  const queryVec = new Array(dim).fill(0);
-  // Simple time-based features: hour bucket and weekend indicator
-  const hourBucket = Math.floor(hour / 6); // 0-3 buckets
-  const weekendFlag = isWeekend ? 1 : 0;
-  
-  // Inject time features into query vector (simple approach)
-  for (let i = 0; i < Math.min(10, dim); i++) {
-    queryVec[i] = (hourBucket - 1.5) * 0.1; // Center around 0
-  }
-  for (let i = 10; i < Math.min(20, dim); i++) {
-    queryVec[i] = weekendFlag * 0.2;
-  }
+  const now = Date.now();
+  const acc = new Array(dim).fill(0);
+  let wsum = 0;
 
-  // Compute attention over recent item embeddings
-  const itemEmbeddings: number[][] = [];
-  const attentionWeights: number[] = [];
-  
   for (const r of rows) {
-    const emb = (r.items.embedding_vec || r.items.embedding) as number[] | null;
-    if (!emb || emb.length !== dim) continue;
+    const emb = r.items.embedding as number[] | null;
+    if (!emb) continue;
     
-    itemEmbeddings.push(emb);
+    const ageSec = (now - new Date(r.created_at).getTime())/1000;
+    const w = Math.exp(-ageSec/(7*24*3600) * Math.log(2));
     
-    // Compute attention score: (K·q)/sqrt(d)
-    let attentionScore = 0;
-    for (let i = 0; i < dim; i++) {
-      attentionScore += emb[i] * queryVec[i];
-    }
-    attentionScore /= Math.sqrt(dim);
-    
-    // Add recency bias
-    const ageSec = (Date.now() - new Date(r.created_at).getTime()) / 1000;
-    const recencyBias = Math.exp(-ageSec / (7 * 24 * 3600) * Math.log(2));
-    attentionScore += recencyBias * 0.5;
-    
-    attentionWeights.push(attentionScore);
+    for (let i=0; i<dim && i<emb.length; i++) acc[i] += emb[i]*w;
+    wsum += w;
   }
-  
-  if (itemEmbeddings.length === 0) return null;
-  
-  // Apply softmax to attention weights
-  const maxWeight = Math.max(...attentionWeights);
-  const expWeights = attentionWeights.map(w => Math.exp(w - maxWeight));
-  const sumExpWeights = expWeights.reduce((sum, w) => sum + w, 0);
-  const softmaxWeights = expWeights.map(w => w / sumExpWeights);
-  
-  // Compute attention-weighted sum
-  const stateVec = new Array(dim).fill(0);
-  for (let i = 0; i < itemEmbeddings.length; i++) {
-    for (let j = 0; j < dim; j++) {
-      stateVec[j] += itemEmbeddings[i][j] * softmaxWeights[i];
-    }
-  }
-  
-  return stateVec;
+
+  if (wsum === 0) return null;
+  return acc.map(x => x/wsum);
 }
 
-// Effort penalty constants
-const DISTANCE_PENALTIES = {
-  FREE_THRESHOLD: 3,    // 0-3km: no penalty
-  LINEAR_THRESHOLD: 10, // 3-10km: linear penalty
-  MAX_PENALTY: 1.5      // >10km: steeper penalty, capped
-};
-
-const PRICE_PENALTIES = {
-  LOW_THRESHOLD: 25,    // ≤$25: light penalty
-  MED_THRESHOLD: 100,   // ≤$100: moderate penalty
-  HIGH_PENALTY: 0.50    // >$100: higher penalty
-};
-
-const DIFFICULTY_PENALTIES = {
-  MIN_DIFFICULTY: 1,    // Easy difficulty
-  MAX_DIFFICULTY: 5,    // Hard difficulty
-  MAX_PENALTY: 0.5      // Maximum difficulty penalty
-};
-
-function distancePenalty(km?: number|null): number {
-  if (!km || km <= 0) return 0;
-  
-  if (km <= DISTANCE_PENALTIES.FREE_THRESHOLD) {
-    return 0; // No penalty for close items
-  } else if (km <= DISTANCE_PENALTIES.LINEAR_THRESHOLD) {
-    // Linear penalty from 3-10km
-    return (km - DISTANCE_PENALTIES.FREE_THRESHOLD) / 
-           (DISTANCE_PENALTIES.LINEAR_THRESHOLD - DISTANCE_PENALTIES.FREE_THRESHOLD) * 0.3;
-  } else {
-    // Steeper penalty beyond 10km, capped
-    return Math.min(DISTANCE_PENALTIES.MAX_PENALTY, 0.3 + (km - DISTANCE_PENALTIES.LINEAR_THRESHOLD) * 0.1);
-  }
+function distancePenalty(km?: number|null){
+  if (!km) return 0;
+  if (km <= 3) return 0;
+  if (km <= 10) return (km - 3) / 7 * 0.3;
+  return 0.3 + (km - 10) / 20 * 1.2;
 }
 
-function pricePenalty(min?: number|null, max?: number|null): number {
-  // Use median price (average of min and max, or just min if max is null)
-  const medianPrice = max !== null ? (min + max) / 2 : min;
-  
-  if (!medianPrice || medianPrice <= 0) return 0;
-  
-  if (medianPrice <= PRICE_PENALTIES.LOW_THRESHOLD) {
-    return 0.05; // Light penalty
-  } else if (medianPrice <= PRICE_PENALTIES.MED_THRESHOLD) {
-    return 0.15; // Moderate penalty
-  } else {
-    return PRICE_PENALTIES.HIGH_PENALTY; // Higher penalty
-  }
+function pricePenalty(min?: number|null, max?: number|null){
+  const p = (max ?? min ?? 0);
+  if (p <= 0) return 0;
+  if (p <= 25) return 0.05;
+  if (p <= 50) return 0.15;
+  if (p <= 100) return 0.30;
+  return 0.50;
 }
 
-function difficultyPenalty(d?: number|null): number {
-  if (d == null) return 0.1; // Default small penalty for missing difficulty
-  
-  // Map difficulty from [1,5] to [0, 0.5] penalty
-  const normalized = (d - DIFFICULTY_PENALTIES.MIN_DIFFICULTY) / 
-                    (DIFFICULTY_PENALTIES.MAX_DIFFICULTY - DIFFICULTY_PENALTIES.MIN_DIFFICULTY);
-  
-  return Math.max(0, normalized * DIFFICULTY_PENALTIES.MAX_PENALTY);
+function difficultyPenalty(d?: number|null){
+  if (d == null) return 0.1;
+  return Math.max(0, ((d-1)/4) * 0.5);
 }
+
 function popularityBoost(completes?: number|null, created_at?: string|null){
   const pop = Math.log(1 + (completes ?? 0));
   const rec = created_at ? Math.max(0, 1 - (Date.now() - new Date(created_at).getTime())/(10*24*3600*1000)) : 0;
   return (pop/3) + 0.2*rec;
 }
 
-async function applyDiversityConstraints(
-  supabase: any, 
-  userId: string, 
-  candidates: any[], 
-  k: number
-): Promise<any[]> {
-  const MAX_ITEMS_PER_BUCKET = Math.max(1, Math.floor(k / 3)); // Max 3 items per bucket
-  const bucketCounts: Record<string, number> = {};
-  const filtered: any[] = [];
+async function applyDiversityConstraints(supabase: any, userId: string, candidates: any[], k: number): Promise<any[]> {
+  // Per-bucket cap: max 3 items from same bucket
+  const bucketCounts = new Map<string, number>();
+  const maxPerBucket = 3;
   
-  // Get bucket information for candidates
-  const itemIds = candidates.map(c => c.id);
-  const { data: items } = await supabase
-    .from('items')
-    .select('id, bucket_id')
-    .in('id', itemIds);
-  
-  const itemToBucket = new Map(items?.map((item: any) => [item.id, item.bucket_id]) || []);
-  
-  // Apply per-bucket cap
-  for (const candidate of candidates) {
-    const bucketId = itemToBucket.get(candidate.id);
-    if (!bucketId) {
-      filtered.push(candidate);
-      continue;
-    }
+  const filtered = candidates.filter(candidate => {
+    const bucketId = candidate.bucket_id || 'default';
+    const currentCount = bucketCounts.get(bucketId) || 0;
     
-    const currentCount = bucketCounts[bucketId] || 0;
-    if (currentCount < MAX_ITEMS_PER_BUCKET) {
-      filtered.push(candidate);
-      bucketCounts[bucketId] = currentCount + 1;
+    if (currentCount < maxPerBucket) {
+      bucketCounts.set(bucketId, currentCount + 1);
+      return true;
     }
-  }
+    return false;
+  });
   
   console.log(`Diversity filtering: ${candidates.length} -> ${filtered.length} items`);
   return filtered;
 }
 
-async function applyExposureDampening(
-  supabase: any, 
-  userId: string, 
-  candidates: any[]
-): Promise<any[]> {
-  const dampened: any[] = [];
-  
-  for (const candidate of candidates) {
-    // Get exposure dampening factor
-    const { data: dampeningFactor } = await supabase
-      .rpc('get_exposure_dampening', {
+async function applyExposureDampening(supabase: any, userId: string, candidates: any[]): Promise<any[]> {
+  const dampened = await Promise.all(
+    candidates.map(async (candidate) => {
+      const { data: dampeningFactor } = await supabase.rpc('get_exposure_dampening', {
         p_user_id: userId,
         p_item_id: candidate.id,
         p_max_exposures: 5,
         p_dampening_days: 7
       });
-    
-    const factor = dampeningFactor || 1.0;
-    
-    if (factor > 0.2) { // Only include items with reasonable dampening
-      dampened.push({
+      
+      return {
         ...candidate,
-        score: candidate.score * factor, // Apply dampening to score
-        exposure_dampening: factor
-      });
-    }
-  }
+        score: candidate.score * (dampeningFactor || 1.0)
+      };
+    })
+  );
   
   console.log(`Exposure dampening: ${candidates.length} -> ${dampened.length} items`);
   return dampened;

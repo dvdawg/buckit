@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useUserSearch, useFriends } from '@/hooks/useFriends';
 import { useBuckets } from '@/hooks/useBuckets';
+import Avatar from '@/components/Avatar';
 
 const { width } = Dimensions.get('window');
 
@@ -188,12 +189,16 @@ export default function UserProfileScreen() {
     <View style={styles.container}>
       {/* Profile Header */}
       <View style={styles.headerContainer}>
-        <Image 
-          source={{ 
-            uri: user.avatar_url || 'https://via.placeholder.com/300x200/6B7280/FFFFFF?text=Profile'
-          }} 
-          style={styles.profileHeaderImage} 
-        />
+        {user.avatar_url ? (
+          <Image 
+            source={{ uri: user.avatar_url }} 
+            style={styles.profileHeaderImage} 
+          />
+        ) : (
+          <View style={[styles.profileHeaderImage, styles.defaultProfileImage]}>
+            <Avatar user={user} size="xlarge" style={styles.profileAvatar} />
+          </View>
+        )}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
@@ -340,6 +345,14 @@ const styles = StyleSheet.create({
   profileHeaderImage: {
     width: '100%',
     height: '100%',
+  },
+  defaultProfileImage: {
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    opacity: 0.8,
   },
   headerGradient: {
     position: 'absolute',

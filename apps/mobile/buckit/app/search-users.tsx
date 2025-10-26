@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserSearch, useFriends } from '@/hooks/useFriends';
+import Avatar from '@/components/Avatar';
 
 const { width } = Dimensions.get('window');
 
@@ -155,12 +156,7 @@ export default function SearchUsersScreen() {
                 style={styles.userCard}
                 onPress={() => handleUserPress(user)}
               >
-                <Image
-                  source={{ 
-                    uri: user.avatar_url || 'https://via.placeholder.com/50x50/6B7280/FFFFFF?text=' + (user.handle?.[0] || '?')
-                  }}
-                  style={styles.avatar}
-                />
+                <Avatar user={user} size="medium" />
                 <View style={styles.userInfo}>
                   <Text style={styles.userName}>{user.full_name || user.handle}</Text>
                   <Text style={styles.userHandle}>@{user.handle}</Text>

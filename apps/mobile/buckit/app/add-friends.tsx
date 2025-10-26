@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useUserSearch, useFriends, UserSearchResult } from '@/hooks/useFriends';
+import Avatar from '@/components/Avatar';
 
 export default function AddFriendsScreen() {
   const router = useRouter();
@@ -120,12 +121,7 @@ export default function AddFriendsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.userInfo}>
-          <Image
-            source={{ 
-              uri: item.avatar_url || 'https://via.placeholder.com/50x50/6B7280/FFFFFF?text=' + (item.handle?.[0] || '?')
-            }}
-            style={styles.avatar}
-          />
+          <Avatar user={item} size="medium" />
           <View style={styles.userDetails}>
             <Text style={styles.username}>@{item.handle}</Text>
             <Text style={styles.fullName}>{item.full_name || item.handle}</Text>

@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Avatar from './Avatar';
 import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
@@ -191,9 +192,13 @@ export default function SharedPhotoAlbum({
               
               <View style={styles.photoDetails}>
                 <View style={styles.photoHeader}>
-                  <Image
-                    source={{ uri: selectedPhoto.completed_by_avatar || 'https://via.placeholder.com/40x40/6B7280/FFFFFF?text=' + selectedPhoto.completed_by[0] }}
-                    style={styles.avatar}
+                  <Avatar 
+                    user={{
+                      avatar_url: selectedPhoto.completed_by_avatar,
+                      full_name: selectedPhoto.completed_by,
+                      handle: null
+                    }}
+                    size="small"
                   />
                   <View style={styles.photoInfo}>
                     <Text style={styles.completedByName}>{selectedPhoto.completed_by}</Text>

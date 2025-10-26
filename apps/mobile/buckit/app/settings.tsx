@@ -7,6 +7,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
 import { supabase } from '@/lib/supabase';
+import Avatar from '@/components/Avatar';
 
 export default function Settings() {
   const router = useRouter();
@@ -353,13 +354,7 @@ export default function Settings() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            {me?.avatar_url ? (
-              <Image source={{ uri: me.avatar_url }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={40} color="#9BA1A6" />
-              </View>
-            )}
+            <Avatar user={me || {}} size="large" />
           </View>
           <TouchableOpacity 
             style={styles.changeAvatarButton}

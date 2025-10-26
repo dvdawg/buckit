@@ -105,7 +105,7 @@ RETURNS TABLE (
 LANGUAGE SQL
 SECURITY DEFINER
 AS $$
-    SELECT 
+    SELECT DISTINCT
         u.id,
         u.handle,
         u.full_name,
@@ -114,13 +114,10 @@ AS $$
         u.created_at
     FROM friendships f
     JOIN users u ON (
-        CASE 
-            WHEN f.user_id = me_user_id() THEN u.id = f.friend_id
-            ELSE u.id = f.user_id
-        END
+        (f.user_id = me_user_id() AND u.id = f.friend_id)
+        OR (f.friend_id = me_user_id() AND u.id = f.user_id)
     )
-    WHERE (f.user_id = me_user_id() OR f.friend_id = me_user_id())
-    AND f.status = 'accepted'
+    WHERE f.status = 'accepted'
     ORDER BY u.full_name;
 $$;
 

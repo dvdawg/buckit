@@ -10,6 +10,7 @@ import { useItems } from '@/hooks/useItems';
 import { useFriends } from '@/hooks/useFriends';
 import PerformancePreview from '@/components/PerformancePreview';
 import ChallengeDetailModal from '@/components/ChallengeDetailModal';
+import Avatar from '@/components/Avatar';
 import { useEffect, useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -298,10 +299,16 @@ export default function Profile() {
     <View style={styles.container}>
       {/* Profile Header with Full-Width Image */}
       <View style={styles.headerContainer}>
-        <Image 
-          source={{ uri: me?.avatar_url || dummyUser.profileImage }} 
-          style={styles.profileHeaderImage} 
-        />
+        {me?.avatar_url ? (
+          <Image 
+            source={{ uri: me.avatar_url }} 
+            style={styles.profileHeaderImage} 
+          />
+        ) : (
+          <View style={[styles.profileHeaderImage, styles.defaultProfileImage]}>
+            <Avatar user={me || {}} size="xlarge" style={styles.profileAvatar} />
+          </View>
+        )}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
@@ -525,6 +532,14 @@ const styles = StyleSheet.create({
   profileHeaderImage: {
     width: '100%',
     height: '100%',
+  },
+  defaultProfileImage: {
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    opacity: 0.8,
   },
   headerGradient: {
     position: 'absolute',

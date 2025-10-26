@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/hooks/useSession';
+import Avatar from './Avatar';
 
 interface Friend {
   id: string;
@@ -108,15 +109,7 @@ export default function FriendsSelectionModal({
       >
         <View style={styles.friendInfo}>
           <View style={styles.avatarContainer}>
-            {item.avatar_url ? (
-              <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>
-                  {item.full_name.split(' ').map(n => n[0]).join('')}
-                </Text>
-              </View>
-            )}
+            <Avatar user={item} size="medium" />
           </View>
           <View style={styles.friendDetails}>
             <Text style={styles.friendName}>{item.full_name}</Text>

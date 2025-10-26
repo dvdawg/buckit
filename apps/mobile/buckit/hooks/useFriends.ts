@@ -51,7 +51,16 @@ export function useFriends() {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_friends');
       if (error) throw error;
-      setFriends(data || []);
+      
+      // Deduplicate friends by ID to prevent duplicate key errors
+      const uniqueFriends = (data || []).reduce((acc: Friend[], friend: Friend) => {
+        if (!acc.find(f => f.id === friend.id)) {
+          acc.push(friend);
+        }
+        return acc;
+      }, []);
+      
+      setFriends(uniqueFriends);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch friends');
     } finally {

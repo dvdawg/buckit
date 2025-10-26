@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFriends, Friend } from '@/hooks/useFriends';
+import Avatar from '@/components/Avatar';
 
 export default function FriendsListScreen() {
   const router = useRouter();
@@ -62,18 +63,13 @@ export default function FriendsListScreen() {
 
         {!loading && friends.length > 0 && (
           <View style={styles.friendsList}>
-            {friends.map((friend) => (
+            {friends.map((friend, index) => (
               <TouchableOpacity 
-                key={friend.id} 
+                key={`${friend.id}-${index}`} 
                 style={styles.friendCard}
                 onPress={() => handleFriendPress(friend)}
               >
-                <Image
-                  source={{ 
-                    uri: friend.avatar_url || 'https://via.placeholder.com/50x50/6B7280/FFFFFF?text=' + (friend.handle?.[0] || '?')
-                  }}
-                  style={styles.avatar}
-                />
+                <Avatar user={friend} size="medium" />
                 <View style={styles.friendInfo}>
                   <Text style={styles.friendName}>{friend.full_name || friend.handle}</Text>
                   <Text style={styles.friendHandle}>@{friend.handle}</Text>
@@ -158,14 +154,9 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 16,
-  },
   friendInfo: {
     flex: 1,
+    marginLeft: 16,
   },
   friendName: {
     fontSize: 16,

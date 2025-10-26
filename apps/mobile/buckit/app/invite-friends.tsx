@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/hooks/useSession';
+import Avatar from '@/components/Avatar';
 
 // Dummy friends data
 const dummyFriends = [
@@ -164,13 +165,7 @@ export default function InviteFriendsScreen() {
       <View style={styles.friendCard}>
         <View style={styles.friendInfo}>
           <View style={styles.avatarContainer}>
-            {item.avatar_url ? (
-              <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
-            ) : (
-              <Text style={styles.avatarText}>
-                {item.full_name.split(' ').map(n => n[0]).join('')}
-              </Text>
-            )}
+            <Avatar user={item} size="medium" />
           </View>
           <View style={styles.friendDetails}>
             <Text style={styles.username}>@{item.handle}</Text>

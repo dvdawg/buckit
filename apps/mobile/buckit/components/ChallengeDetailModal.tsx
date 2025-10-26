@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
 
@@ -34,6 +35,8 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
   const [loading, setLoading] = useState(false);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [tempRating, setTempRating] = useState(0);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -106,6 +109,8 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
 
       if (challengeData) {
         setChallenge(challengeData);
+        // Initialize photos array from challenge data
+        setPhotos(challengeData.photos || []);
         
         // Now fetch the bucket data with permissions using the same RPC as bucket detail page
         const { data: bucketData, error: bucketError } = await supabase
@@ -249,6 +254,120 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
     setTempRating(0);
   };
 
+  const pickImage = async () => {
+    try {
+      // Request permission to access media library
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant camera roll permissions to add photos.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const uploadImage = async (imageAsset: any) => {
+    if (!challengeId || !bucket?.can_edit) {
+      Alert.alert('Access Denied', 'You can only add photos to challenges in buckets you own or collaborate on.');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+
+      // Get user ID
+      const { data: uid } = await supabase.rpc('me_user_id');
+      if (!uid) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+
+      // Create a unique filename
+      const fileExt = imageAsset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${challengeId}_${Date.now()}.${fileExt}`;
+      const filePath = `challenge-photos/${fileName}`;
+
+      // Use FormData approach for React Native compatibility
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageAsset.uri,
+        type: `image/${fileExt}`,
+        name: fileName,
+      } as any);
+
+      // Get the Supabase URL from environment
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      
+      // Upload using fetch with FormData
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+
+      const uploadResponse = await fetch(
+        `${supabaseUrl}/storage/v1/object/challenge-photos/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('Upload error:', errorText);
+        Alert.alert('Error', 'Failed to upload image. Please try again.');
+        return;
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('challenge-photos')
+        .getPublicUrl(filePath);
+
+      // Update the challenge with the new photo
+      const updatedPhotos = [...photos, publicUrl];
+      const { error: updateError } = await supabase
+        .from('items')
+        .update({ photos: updatedPhotos })
+        .eq('id', challengeId);
+
+      if (updateError) {
+        console.error('Error updating challenge photos:', updateError);
+        Alert.alert('Error', 'Failed to save photo to challenge. Please try again.');
+        return;
+      }
+
+      // Update local state
+      setPhotos(updatedPhotos);
+      setChallenge({ ...challenge, photos: updatedPhotos });
+      Alert.alert('Success', 'Photo added to challenge!');
+    } catch (error) {
+      console.error('Error in uploadImage:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   if (!visible) return null;
 
   return (
@@ -350,17 +469,29 @@ export default function ChallengeDetailModal({ visible, challengeId, onClose }: 
                   {/* Photo Album */}
                   <View style={styles.modalPhotoAlbumSection}>
                     <Text style={styles.modalPhotoAlbumTitle}>
-                      Photo Album ({challenge.photos ? challenge.photos.length : 0})
+                      Photo Album ({photos.length})
                     </Text>
                     <View style={styles.modalPhotoGrid}>
-                      {/* Upload Button */}
-                      <TouchableOpacity style={styles.uploadButton}>
-                        <Ionicons name="add" size={24} color="#9BA1A6" />
-                        <Text style={styles.uploadText}>Add Photo</Text>
-                      </TouchableOpacity>
+                      {/* Upload Button - Only show if user can edit */}
+                      {bucket?.can_edit && (
+                        <TouchableOpacity 
+                          style={[styles.uploadButton, uploadingPhoto && styles.uploadButtonDisabled]}
+                          onPress={pickImage}
+                          disabled={uploadingPhoto}
+                        >
+                          {uploadingPhoto ? (
+                            <ActivityIndicator size="small" color="#8EC5FC" />
+                          ) : (
+                            <Ionicons name="add" size={24} color="#9BA1A6" />
+                          )}
+                          <Text style={styles.uploadText}>
+                            {uploadingPhoto ? 'Uploading...' : 'Add Photo'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                       
                       {/* Existing Photos */}
-                      {challenge.photos && challenge.photos.map((photo: string, index: number) => (
+                      {photos.map((photo: string, index: number) => (
                         <Image
                           key={index}
                           source={{ uri: photo }}
@@ -584,6 +715,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+  },
+  uploadButtonDisabled: {
+    opacity: 0.6,
   },
   uploadText: {
     fontSize: 12,

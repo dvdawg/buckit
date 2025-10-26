@@ -1,12 +1,14 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/hooks/useSession';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useRecommendations } from '@/hooks/use-recommendations';
-import { useLocation } from '@/hooks/useLocation';
+import { useLocation } from '../../hooks/useLocation';
+import { useFriendsFeed } from '@/hooks/useFriendsFeed';
 import ColdStartModal from '@/components/ColdStartModal';
+import FriendsCompletionCard from '@/components/FriendsCompletionCard';
 
 
 export default function Home() {
@@ -14,32 +16,16 @@ export default function Home() {
   const router = useRouter();
   const { location, loading: locationLoading } = useLocation();
   const [showColdStart, setShowColdStart] = useState(false);
-  const [posts, setPosts] = useState([
-    {
-      id: "1",
-      user: {
-        name: "Jenny",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786",
-      },
-      image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
-      title: "At-Home Yoga",
-      location: "Home Studio",
-      likes: 12,
-      comments: 3,
-    },
-    {
-      id: "2", 
-      user: {
-        name: "Jenny",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786",
-      },
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-      title: "Cloud Watching",
-      location: "Golden Gate Park",
-      likes: 8,
-      comments: 1,
-    },
-  ]);
+  
+  // Friends feed data
+  const { 
+    completions, 
+    loading: feedLoading, 
+    error: feedError, 
+    hasMore, 
+    loadMore, 
+    refresh: refreshFeed 
+  } = useFriendsFeed();
 
   // Recommendations
   const { 
@@ -68,15 +54,14 @@ export default function Home() {
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
     onRefresh: async () => {
-      // Refresh recommendations
-      await refetchRecommendations();
+      // Refresh both recommendations and friends feed
+      await Promise.all([
+        refetchRecommendations(),
+        refreshFeed()
+      ]);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you would fetch fresh data here
-      // For now, we'll just shuffle the existing posts to simulate new content
-      setPosts(prevPosts => [...prevPosts].sort(() => Math.random() - 0.5));
     },
     minDuration: 1200, // 1.2 seconds minimum for smooth transition
   });
@@ -152,7 +137,7 @@ export default function Home() {
                   <View style={styles.reasonTags}>
                     {rec.reasons.trait > 0.5 && <Text style={styles.reasonTag}>Personal</Text>}
                     {rec.reasons.social > 0.3 && <Text style={styles.reasonTag}>Social</Text>}
-                    {rec.reasons.appeal > 0.7 && <Text style={styles.reasonTag}>Popular</Text>}
+                    {rec.reasons.poprec > 0.7 && <Text style={styles.reasonTag}>Popular</Text>}
                   </View>
                 </TouchableOpacity>
               ))}
@@ -160,43 +145,60 @@ export default function Home() {
           </View>
         )}
         
-        {posts.map((post) => (
-        <View key={post.id} style={styles.postContainer}>
-          {/* User Profile Above Post */}
-          <View style={styles.postUserProfile}>
-            <Image source={{ uri: post.user.avatar }} style={styles.postUserAvatar} />
-            <Text style={styles.postUserName}>{post.user.name}</Text>
-          </View>
-
-          {/* Post Image */}
-          <View style={styles.postImageContainer}>
-            <Image source={{ uri: post.image }} style={styles.postImage} />
-            
-            {/* Post Title Overlay */}
-            <View style={styles.postTitleOverlay}>
-              <Text style={styles.postTitle}>{post.title}</Text>
-              <View style={styles.locationContainer}>
-                <Text style={styles.locationPin}>📍</Text>
-                <Text style={styles.locationText}>{post.location}</Text>
-              </View>
+        {/* Friends Feed Section */}
+        <View style={styles.feedSection}>
+          <Text style={styles.sectionTitle}>Friends' Activity</Text>
+          
+          {feedError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{feedError}</Text>
+              <TouchableOpacity onPress={refreshFeed} style={styles.retryButton}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
             </View>
-            
-            {/* Like Button */}
-            <TouchableOpacity style={styles.likeButton}>
-              <Ionicons name="star-outline" size={24} color="#fff" />
+          )}
+          
+          {feedLoading && completions.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#8EC5FC" />
+              <Text style={styles.loadingText}>Loading friends' activity...</Text>
+            </View>
+          ) : completions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={48} color="#666" />
+              <Text style={styles.emptyTitle}>No activity yet</Text>
+              <Text style={styles.emptyText}>
+                When your friends complete challenges, you'll see them here!
+              </Text>
+            </View>
+          ) : (
+            completions.map((completion) => (
+              <FriendsCompletionCard
+                key={completion.completion_id}
+                completion={completion}
+                onPress={() => {
+                  // Navigate to challenge detail
+                  router.push(`/buckets/${completion.bucket_id}/challenges/${completion.item_id}`);
+                }}
+              />
+            ))
+          )}
+          
+          {/* Load More Button */}
+          {hasMore && completions.length > 0 && (
+            <TouchableOpacity 
+              style={styles.loadMoreButton} 
+              onPress={loadMore}
+              disabled={feedLoading}
+            >
+              {feedLoading ? (
+                <ActivityIndicator size="small" color="#8EC5FC" />
+              ) : (
+                <Text style={styles.loadMoreText}>Load More</Text>
+              )}
             </TouchableOpacity>
-          </View>
-
-          {/* Comment Section */}
-          <View style={styles.commentSection}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Add a comment..."
-              placeholderTextColor="#666"
-            />
-          </View>
+          )}
         </View>
-        ))}
       </ScrollView>
     </View>
   );
@@ -224,83 +226,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'Poppins',
-  },
-  postContainer: {
-    marginBottom: 20,
-  },
-  postUserProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  postUserAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  postUserName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    fontFamily: 'Poppins',
-  },
-  postImageContainer: {
-    position: 'relative',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  postImage: {
-    width: '100%',
-    height: 500,
-  },
-  postTitleOverlay: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-  },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    fontFamily: 'Poppins',
-    marginBottom: 4,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationPin: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#A0A0A0',
-    fontFamily: 'Poppins',
-  },
-  likeButton: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  commentSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  commentInput: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#fff',
   },
   // Recommendations styles
   recommendationsSection: {
@@ -359,6 +284,82 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+    fontFamily: 'Poppins',
+  },
+  // Friends feed styles
+  feedSection: {
+    paddingHorizontal: 20,
+  },
+  errorContainer: {
+    backgroundColor: '#2a1a1a',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontFamily: 'Poppins',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#8EC5FC',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Poppins',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: '#A0A0A0',
+    fontSize: 14,
+    fontFamily: 'Poppins',
+    marginTop: 12,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Poppins',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    color: '#A0A0A0',
+    fontSize: 14,
+    fontFamily: 'Poppins',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  loadMoreButton: {
+    backgroundColor: '#1a1a1a',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  loadMoreText: {
+    color: '#8EC5FC',
+    fontSize: 16,
+    fontWeight: '600',
     fontFamily: 'Poppins',
   },
 });

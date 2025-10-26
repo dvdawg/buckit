@@ -35,21 +35,24 @@ export function usePerformance() {
         console.log('Fetching performance data...');
         console.log('Current user from session:', user);
         
-        // Get user ID
-        const { data: uid, error: uidError } = await supabase.rpc('me_user_id');
-        console.log('me_user_id result:', { uid, uidError });
+        // Get user ID with better error handling
+        let finalUid = null;
         
-        if (uidError) {
-          console.error('Error getting user ID:', uidError);
-          setPerformance(null);
-          setLoading(false);
-          return;
+        try {
+          const { data: uid, error: uidError } = await supabase.rpc('me_user_id');
+          console.log('me_user_id result:', { uid, uidError });
+          
+          if (!uidError && uid) {
+            finalUid = uid;
+          } else {
+            console.log('me_user_id failed, trying direct user lookup...');
+          }
+        } catch (rpcError) {
+          console.log('RPC call failed, trying direct user lookup...', rpcError);
         }
         
-        let finalUid = uid;
-        
-        if (!uid) { 
-          console.log('No user ID found - checking if user exists in users table...');
+        if (!finalUid) { 
+          console.log('No user ID from RPC - checking if user exists in users table...');
           
           // Let's try to find the user directly
           const { data: authUser } = await supabase.auth.getUser();

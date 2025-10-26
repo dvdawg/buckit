@@ -85,6 +85,10 @@ export default function AddFriendsScreen() {
     router.push(`/profile/${userId}`);
   };
 
+  const handleSearchPress = () => {
+    router.push('/search-users');
+  };
+
   const renderUserItem = ({ item }: { item: typeof dummyUsers[0] }) => {
     const isRequestSent = sentRequests.includes(item.id);
     
@@ -168,6 +172,12 @@ export default function AddFriendsScreen() {
             onChangeText={handleSearch}
           />
         </View>
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={handleSearchPress}
+        >
+          <Ionicons name="arrow-forward" size={20} color="#000" />
+        </TouchableOpacity>
       </View>
 
       {/* Search Results */}
@@ -213,10 +223,14 @@ const styles = StyleSheet.create({
     width: 40,
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 20,
+    gap: 12,
   },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -225,6 +239,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  searchButton: {
+    backgroundColor: '#8EC5FC',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchInput: {
     flex: 1,

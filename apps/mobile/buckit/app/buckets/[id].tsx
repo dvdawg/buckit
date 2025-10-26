@@ -19,12 +19,6 @@ export default function BucketDetail() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
   const [challenges, setChallenges] = useState<any[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [bucketData, setBucketData] = useState({
-    title: '',
-    description: '',
-    headerImage: '',
-  });
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [challengeToRate, setChallengeToRate] = useState<any>(null);
   const [tempRating, setTempRating] = useState(0);
@@ -47,16 +41,9 @@ export default function BucketDetail() {
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
 
-  // Update bucket data when bucket loads
+  // Transform items to challenges format for compatibility
   useEffect(() => {
-    if (bucket) {
-      setBucketData({
-        title: bucket.title,
-        description: bucket.description || '',
-        headerImage: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
-      });
-      
-      // Transform items to challenges format for compatibility
+    if (items) {
       const transformedChallenges = items.map(item => ({
         id: item.id,
         title: item.title,
@@ -69,7 +56,7 @@ export default function BucketDetail() {
       }));
       setChallenges(transformedChallenges);
     }
-  }, [bucket, items]);
+  }, [items]);
 
   // Challenge data for modal
   const challenge = {
@@ -107,140 +94,17 @@ export default function BucketDetail() {
   };
 
   const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const handleSaveChanges = async () => {
-    try {
-      // Use the secure RPC function to update bucket data
-      const { error } = await supabase.rpc('update_bucket_secure', {
-        p_bucket_id: id,
-        p_title: bucketData.title,
-        p_description: bucketData.description,
-        p_cover_url: bucketData.headerImage
-      });
-
-      if (error) {
-        console.error('Error updating bucket:', error);
-        Alert.alert('Error', `Failed to update bucket: ${error.message}`);
-        return;
-      }
-
-      Alert.alert('Changes Saved', 'Your bucket has been updated successfully!');
-      setIsEditing(false);
-      
-      // Refresh bucket data
-      if (recalculateCount) {
-        recalculateCount();
-      }
-    } catch (error) {
-      console.error('Error updating bucket:', error);
-      Alert.alert('Error', 'Failed to update bucket. Please try again.');
-    }
-  };
-
-  const handleCancelEdit = () => {
     if (bucket) {
-      setBucketData({
-        title: bucket.title,
+      // Navigate to create bucket page with pre-filled data
+      const params = new URLSearchParams({
+        edit: 'true',
+        bucketId: bucket.id,
+        title: bucket.title || '',
         description: bucket.description || '',
-        headerImage: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+        coverUrl: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
       });
+      router.push(`/create-bucket?${params.toString()}`);
     }
-    setIsEditing(false);
-  };
-
-  const handleChangeImage = async () => {
-    try {
-      // Request permission to access media library
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert(
-          'Permission Required', 
-          'Permission to access camera roll is required to change your bucket cover. Please enable it in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => ImagePicker.requestMediaLibraryPermissionsAsync() }
-          ]
-        );
-        return;
-      }
-
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [16, 9], // Good aspect ratio for bucket covers
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadBucketCover(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
-
-  const uploadBucketCover = async (imageUri: string) => {
-    setIsUploadingImage(true);
-    try {
-      // Create a unique filename
-      const fileExt = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${id}-${Date.now()}.${fileExt}`;
-      const filePath = `bucket-covers/${fileName}`;
-
-      // Map file extensions to proper MIME types
-      const mimeTypeMap: { [key: string]: string } = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
-        'gif': 'image/gif',
-        'webp': 'image/webp'
-      };
-      
-      const contentType = mimeTypeMap[fileExt] || 'image/jpeg';
-
-      // Convert image to bytes
-      const response = await fetch(imageUri);
-      const arrayBuffer = await response.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('bucket-covers')
-        .upload(filePath, bytes, {
-          contentType: contentType,
-          upsert: true
-        });
-
-      if (error) {
-        console.error('Upload error:', error);
-        Alert.alert('Error', 'Failed to upload image');
-        return;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('bucket-covers')
-        .getPublicUrl(filePath);
-
-      // Update bucket data with new cover URL
-      setBucketData(prev => ({ ...prev, headerImage: publicUrl }));
-      
-      Alert.alert('Success', 'Bucket cover updated successfully!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      Alert.alert('Error', 'Failed to upload image');
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-  const updateBucketData = (field: string, value: string) => {
-    setBucketData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleRatingSubmit = async () => {
@@ -556,7 +420,7 @@ export default function BucketDetail() {
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <Image source={{ uri: bucketData.headerImage }} style={styles.headerImage} />
+        <Image source={{ uri: bucket?.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' }} style={styles.headerImage} />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
@@ -578,7 +442,7 @@ export default function BucketDetail() {
               style={styles.editButton}
               onPress={handleEditToggle}
             >
-              <Ionicons name={isEditing ? "close" : "create-outline"} size={24} color="#fff" />
+              <Ionicons name="create-outline" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.shareButton}
@@ -591,66 +455,11 @@ export default function BucketDetail() {
 
         {/* Bucket Info */}
         <View style={styles.bucketInfo}>
-          {isEditing ? (
-            <>
-              <TouchableOpacity 
-                style={styles.imageEditButton} 
-                onPress={handleChangeImage}
-                disabled={isUploadingImage}
-              >
-                <Image source={{ uri: bucketData.headerImage }} style={styles.editableImage} />
-                <View style={styles.imageEditOverlay}>
-                  {isUploadingImage ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <>
-                      <Ionicons name="camera" size={24} color="#fff" />
-                      <Text style={styles.imageEditText}>Change Photo</Text>
-                    </>
-                  )}
-                </View>
-              </TouchableOpacity>
-              <TextInput
-                style={styles.bucketTitleInput}
-                value={bucketData.title}
-                onChangeText={(value) => updateBucketData('title', value)}
-                placeholder="Bucket Name"
-                placeholderTextColor="#9BA1A6"
-              />
-              <TextInput
-                style={styles.bucketDescriptionInput}
-                value={bucketData.description}
-                onChangeText={(value) => updateBucketData('description', value)}
-                placeholder="Bucket Description"
-                placeholderTextColor="#9BA1A6"
-                multiline
-                numberOfLines={3}
-              />
-              <View style={styles.editActions}>
-                <TouchableOpacity style={styles.cancelButton} onPress={handleCancelEdit}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
-                  <LinearGradient
-                    colors={['#8EC5FC', '#E0C3FC']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.saveButtonGradient}
-                  >
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={styles.bucketTitle}>{bucketData.title}</Text>
-              <Text style={styles.bucketDescription}>{bucketData.description}</Text>
-              <View style={styles.bucketMeta}>
-                <Text style={styles.createdDate}>Created {new Date(bucket.created_at).toLocaleDateString()}</Text>
-              </View>
-            </>
-          )}
+          <Text style={styles.bucketTitle}>{bucket?.title}</Text>
+          <Text style={styles.bucketDescription}>{bucket?.description}</Text>
+          <View style={styles.bucketMeta}>
+            <Text style={styles.createdDate}>Created {new Date(bucket?.created_at).toLocaleDateString()}</Text>
+          </View>
         </View>
       </View>
 
@@ -1056,102 +865,6 @@ const styles = StyleSheet.create({
   createdDate: {
     fontSize: 16,
     color: '#9BA1A6',
-  },
-  // Editing styles
-  imageEditButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: 'center',
-    marginBottom: 16,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  editableImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageEditOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageEditText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  bucketTitleInput: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#fff',
-    textAlign: 'left',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  bucketDescriptionInput: {
-    fontSize: 16,
-    color: '#9BA1A6',
-    textAlign: 'left',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 16,
-  },
-  cancelButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#8EC5FC',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  saveButtonGradient: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  saveButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
   },
   // Rating modal styles
   ratingModalOverlay: {

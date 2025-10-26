@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Modal, Animated, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,8 @@ const jitsBucket = {
   id: "1",
   title: "Jits",
   cover: "https://images.unsplash.com/photo-1604908177575-084b2d14c16d",
+  headerImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+  description: "Adventure bucket for exploring the great outdoors and challenging yourself with new experiences.",
   createdDate: "09/25/2025",
   challenges: [
     {
@@ -80,6 +82,12 @@ export default function BucketDetail() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
   const [challenges, setChallenges] = useState<any[]>(jitsBucket?.challenges || []);
+  const [isEditing, setIsEditing] = useState(false);
+  const [bucketData, setBucketData] = useState({
+    title: jitsBucket.title,
+    description: jitsBucket.description,
+    headerImage: jitsBucket.headerImage,
+  });
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -114,6 +122,34 @@ export default function BucketDetail() {
   const handleAddItem = () => {
     // TODO: Open modal to add new item/challenge
     console.log('Add new item to bucket');
+  };
+
+  const handleEditToggle = () => {
+    setIsEditing(!isEditing);
+  };
+
+  const handleSaveChanges = () => {
+    // TODO: Save changes to backend
+    Alert.alert('Changes Saved', 'Your bucket has been updated successfully!');
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setBucketData({
+      title: jitsBucket.title,
+      description: jitsBucket.description,
+      headerImage: jitsBucket.headerImage,
+    });
+    setIsEditing(false);
+  };
+
+  const handleChangeImage = () => {
+    // TODO: Implement image picker
+    Alert.alert('Change Image', 'Image picker functionality would be implemented here');
+  };
+
+  const updateBucketData = (field: string, value: string) => {
+    setBucketData(prev => ({ ...prev, [field]: value }));
   };
 
   const toggleChallengeCompletion = (challengeId: string) => {
@@ -203,9 +239,9 @@ export default function BucketDetail() {
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <Image source={{ uri: bucket.cover }} style={styles.headerImage} />
+        <Image source={{ uri: bucket.headerImage }} style={styles.headerImage} />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
           style={styles.headerGradient}
         />
         
@@ -214,20 +250,74 @@ export default function BucketDetail() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.shareButton}>
-            <Ionicons name="people" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerRightButtons}>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={handleEditToggle}
+            >
+              <Ionicons name={isEditing ? "close" : "create-outline"} size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.shareButton}
+              onPress={() => router.push('/invite-friends')}
+            >
+              <Ionicons name="people" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Bucket Info */}
         <View style={styles.bucketInfo}>
-          <Text style={styles.bucketTitle}>{bucket.title}</Text>
-          <View style={styles.bucketMeta}>
-            <Text style={styles.createdDate}>Created {bucket.createdDate}</Text>
-            <View style={styles.statusIcon}>
-              <Ionicons name="ellipse" size={8} color="#fff" />
-            </View>
-          </View>
+          {isEditing ? (
+            <>
+              <TouchableOpacity style={styles.imageEditButton} onPress={handleChangeImage}>
+                <Image source={{ uri: bucketData.headerImage }} style={styles.editableImage} />
+                <View style={styles.imageEditOverlay}>
+                  <Ionicons name="camera" size={24} color="#fff" />
+                  <Text style={styles.imageEditText}>Change Photo</Text>
+                </View>
+              </TouchableOpacity>
+              <TextInput
+                style={styles.bucketTitleInput}
+                value={bucketData.title}
+                onChangeText={(value) => updateBucketData('title', value)}
+                placeholder="Bucket Name"
+                placeholderTextColor="#9BA1A6"
+              />
+              <TextInput
+                style={styles.bucketDescriptionInput}
+                value={bucketData.description}
+                onChangeText={(value) => updateBucketData('description', value)}
+                placeholder="Bucket Description"
+                placeholderTextColor="#9BA1A6"
+                multiline
+                numberOfLines={3}
+              />
+              <View style={styles.editActions}>
+                <TouchableOpacity style={styles.cancelButton} onPress={handleCancelEdit}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
+                  <LinearGradient
+                    colors={['#8EC5FC', '#E0C3FC']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.saveButtonGradient}
+                  >
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.bucketTitle}>{bucketData.title}</Text>
+              <Text style={styles.bucketDescription}>{bucketData.description}</Text>
+              <View style={styles.bucketMeta}>
+                <Text style={styles.createdDate}>Created {bucket.createdDate}</Text>
+              </View>
+            </>
+          )}
         </View>
       </View>
 
@@ -454,7 +544,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 120,
+    height: 150,
   },
   headerNav: {
     position: 'absolute',
@@ -466,6 +556,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editButton: {
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -490,6 +591,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 8,
   },
+  bucketDescription: {
+    fontSize: 16,
+    color: '#B0B0B0',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
   bucketMeta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -497,11 +606,102 @@ const styles = StyleSheet.create({
   createdDate: {
     fontSize: 16,
     color: '#fff',
-    marginRight: 8,
   },
-  statusIcon: {
-    width: 8,
-    height: 8,
+  // Editing styles
+  imageEditButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignSelf: 'center',
+    marginBottom: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  editableImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageEditOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageEditText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  bucketTitleInput: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  bucketDescriptionInput: {
+    fontSize: 16,
+    color: '#B0B0B0',
+    textAlign: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  editActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  cancelButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#8EC5FC',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  saveButtonGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  saveButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
   },
   challengesSection: {
     flex: 1,

@@ -9,6 +9,8 @@ import {
   Dimensions,
   ScrollView,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -35,6 +37,7 @@ export default function RegisterScreen() {
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     Animated.parallel([
@@ -51,6 +54,7 @@ export default function RegisterScreen() {
     ]).start();
   }, []);
 
+
   const updateFormData = (key: string, value: string) => {
     let processedValue = value;
     
@@ -59,17 +63,15 @@ export default function RegisterScreen() {
       // Remove all non-digits
       const digits = value.replace(/\D/g, '');
       
-      // Format as MM/DD/YYYY
-      if (digits.length >= 2) {
-        processedValue = digits.slice(0, 2);
-        if (digits.length >= 4) {
-          processedValue += '/' + digits.slice(2, 4);
-        }
-        if (digits.length >= 8) {
-          processedValue += '/' + digits.slice(4, 8);
-        }
-      } else {
+      // Format as MM/DD/YYYY with automatic slash insertion
+      if (digits.length === 0) {
+        processedValue = '';
+      } else if (digits.length <= 2) {
         processedValue = digits;
+      } else if (digits.length <= 4) {
+        processedValue = digits.slice(0, 2) + '/' + digits.slice(2);
+      } else {
+        processedValue = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4, 8);
       }
     }
     
@@ -86,8 +88,12 @@ export default function RegisterScreen() {
   };
 
   const validatePhone = (phone: string) => {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+    if (!phone.trim()) return true; // Empty phone is valid since it's optional
+    // Remove all non-digit characters except + at the start
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    // Check if it starts with + and has 10-15 digits, or just has 10-15 digits
+    const phoneRegex = /^(\+?1?)?[2-9]\d{2}[2-9]\d{2}\d{4}$/;
+    return phoneRegex.test(cleaned) || /^\+?[1-9]\d{9,14}$/.test(cleaned);
   };
 
   const validateBirthday = (birthday: string) => {
@@ -99,10 +105,15 @@ export default function RegisterScreen() {
     const now = new Date();
     const age = now.getFullYear() - year;
     
-    return date.getMonth() === month - 1 && 
-           date.getDate() === day && 
-           date.getFullYear() === year &&
-           age >= 13 && age <= 120;
+    // Check if the date is valid (handles leap years, month boundaries, etc.)
+    const isValidDate = date.getMonth() === month - 1 && 
+                       date.getDate() === day && 
+                       date.getFullYear() === year;
+    
+    // Check age requirements
+    const isAgeValid = age >= 13 && age <= 120;
+    
+    return isValidDate && isAgeValid;
   };
 
   const validateForm = () => {
@@ -114,9 +125,7 @@ export default function RegisterScreen() {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!validatePhone(formData.phone)) {
+    if (formData.phone && !validatePhone(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
@@ -140,9 +149,7 @@ export default function RegisterScreen() {
       newErrors.lastName = 'Last name is required';
     }
 
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
-    }
+    // City is now optional - no validation needed
 
     if (!formData.birthday) {
       newErrors.birthday = 'Birthday is required';
@@ -258,8 +265,8 @@ export default function RegisterScreen() {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.email && formData.phone && formData.password && formData.confirmPassword && 
-               formData.firstName && formData.lastName && formData.city && formData.birthday;
+        return formData.email && formData.password && formData.confirmPassword && 
+               formData.firstName && formData.lastName && formData.birthday;
       case 2:
         return true; // Profile picture is optional
       default:
@@ -274,7 +281,7 @@ export default function RegisterScreen() {
       
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Email</Text>
+          <Text style={styles.inputLabel}>Email *</Text>
           <TextInput
             style={[styles.textInput, errors.email && styles.textInputError]}
             placeholder="Enter your email"
@@ -289,10 +296,10 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Phone Number</Text>
+          <Text style={styles.inputLabel}>Phone Number (Optional)</Text>
           <TextInput
             style={[styles.textInput, errors.phone && styles.textInputError]}
-            placeholder="Enter your phone number"
+            placeholder="Enter your phone number (optional)"
             placeholderTextColor="#9BA1A6"
             value={formData.phone}
             onChangeText={(value) => updateFormData('phone', value)}
@@ -302,7 +309,7 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Password</Text>
+          <Text style={styles.inputLabel}>Password *</Text>
           <TextInput
             style={[styles.textInput, errors.password && styles.textInputError]}
             placeholder="Create a password"
@@ -316,7 +323,7 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Confirm Password</Text>
+          <Text style={styles.inputLabel}>Confirm Password *</Text>
           <TextInput
             style={[styles.textInput, errors.confirmPassword && styles.textInputError]}
             placeholder="Confirm your password"
@@ -330,7 +337,7 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>First Name</Text>
+          <Text style={styles.inputLabel}>First Name *</Text>
           <TextInput
             style={[styles.textInput, errors.firstName && styles.textInputError]}
             placeholder="Enter your first name"
@@ -343,7 +350,7 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Last Name</Text>
+          <Text style={styles.inputLabel}>Last Name *</Text>
           <TextInput
             style={[styles.textInput, errors.lastName && styles.textInputError]}
             placeholder="Enter your last name"
@@ -356,10 +363,10 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>City</Text>
+          <Text style={styles.inputLabel}>City (Optional)</Text>
           <TextInput
             style={[styles.textInput, errors.city && styles.textInputError]}
-            placeholder="Enter your city"
+            placeholder="Enter your city (optional)"
             placeholderTextColor="#9BA1A6"
             value={formData.city}
             onChangeText={(value) => updateFormData('city', value)}
@@ -369,10 +376,10 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Birthday</Text>
+          <Text style={styles.inputLabel}>Birthday *</Text>
           <TextInput
             style={[styles.textInput, errors.birthday && styles.textInputError]}
-            placeholder="MM/DD/YYYY"
+            placeholder="MM/DD/YYYY (e.g., 01/15/1990)"
             placeholderTextColor="#9BA1A6"
             value={formData.birthday}
             onChangeText={(value) => updateFormData('birthday', value)}
@@ -440,10 +447,23 @@ export default function RegisterScreen() {
         </View>
 
         {/* Content */}
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-        </ScrollView>
+        <KeyboardAvoidingView 
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          <ScrollView 
+            ref={scrollViewRef}
+            style={styles.scrollView} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollContent}
+            keyboardDismissMode="interactive"
+          >
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+          </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Navigation */}
         <View style={styles.navigationContainer}>
@@ -520,8 +540,15 @@ const styles = StyleSheet.create({
     color: '#9BA1A6',
     textAlign: 'center',
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   stepContainer: {
     paddingBottom: 20,

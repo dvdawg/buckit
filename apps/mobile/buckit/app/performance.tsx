@@ -20,7 +20,7 @@ export default function PerformancePage() {
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
-          </TouchableOpacity>
+          </TouchableOpacity> 
           <Text style={styles.headerTitle}>Overview</Text>
           <View style={styles.headerSpacer} />
         </View>
@@ -31,14 +31,12 @@ export default function PerformancePage() {
     );
   }
 
-  // Prepare bucket data from real data
   const bucketData = buckets.map((bucket, index) => ({
     bucket: bucket.title,
     completion: (bucket.completion_percentage || 0) / 100,
     color: bucket.color || '#4ade80'
   }));
 
-  // Calculate real metrics
   const totalCompletion = bucketData.length > 0 
     ? bucketData.reduce((sum, bucket) => sum + bucket.completion, 0) / bucketData.length 
     : 0;

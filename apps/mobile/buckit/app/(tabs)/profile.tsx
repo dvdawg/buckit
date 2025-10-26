@@ -6,7 +6,7 @@ import { useSession } from '@/hooks/useSession';
 import { useMe } from '@/hooks/useMe';
 import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 import PerformancePreview from '@/components/PerformancePreview';
-import { useEffect } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 
 // Dummy data
 const dummyUser = {
@@ -184,10 +184,24 @@ const { width } = Dimensions.get('window');
 export default function Profile() {
   const router = useRouter();
   const { signOut, user, isSessionValid } = useSession();
-  const { me, loading } = useMe();
+  const { me, loading, refresh } = useMe();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Monitor session validity
   useSessionMonitor();
+
+  // No automatic refresh - only manual refresh or when settings page calls refresh()
+
+  // Debug logging for user data
+  useEffect(() => {
+    console.log('Profile: User data updated:', {
+      full_name: me?.full_name,
+      handle: me?.handle,
+      location: me?.location,
+      avatar_url: me?.avatar_url,
+      loading
+    });
+  }, [me, loading]);
 
   useEffect(() => {
     // If no valid session, redirect to splash
@@ -227,13 +241,41 @@ export default function Profile() {
           style={styles.headerGradient}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>
-            {loading ? 'Loading...' : (me?.full_name ?? me?.handle ?? dummyUser.name)}
-          </Text>
-          <Text style={styles.userLocation}>
-            {me?.location || `Points: ${me?.points || 0}`}
-          </Text>
+          <View style={styles.userInfoTop}>
+            <View style={styles.userInfoLeft}>
+              <Text style={styles.userName}>
+                {loading ? 'Loading...' : (me?.full_name ?? me?.handle ?? dummyUser.name)}
+              </Text>
+              <Text style={styles.userLocation}>
+                {me?.location || `Points: ${me?.points || 0}`}
+              </Text>
             </View>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                style={styles.refreshButton}
+                onPress={async () => {
+                  console.log('Profile: Manual refresh triggered');
+                  setIsRefreshing(true);
+                  await refresh();
+                  setIsRefreshing(false);
+                }}
+                disabled={isRefreshing}
+              >
+                <Ionicons 
+                  name={isRefreshing ? "refresh" : "refresh-outline"} 
+                  size={20} 
+                  color="#fff" 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.settingsButton}
+                onPress={() => router.push('/settings')}
+              >
+                <Ionicons name="settings-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
           </View>
 
       {/* Performance Preview */}
@@ -356,7 +398,29 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
+  },
+  userInfoTop: {
+    flexDirection: 'row',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  userInfoLeft: {
+    flex: 1,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  refreshButton: {
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
+  },
+  settingsButton: {
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
   },
   userName: {
     fontSize: 24,

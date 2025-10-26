@@ -18,6 +18,8 @@ export interface Database {
           avatar_url: string | null
           points: number
           location: string | null
+          phone_number: string | null
+          birthday: string | null
           current_streak: number
           longest_streak: number
           total_completions: number
@@ -32,6 +34,8 @@ export interface Database {
           avatar_url?: string | null
           points?: number
           location?: string | null
+          phone_number?: string | null
+          birthday?: string | null
           current_streak?: number
           longest_streak?: number
           total_completions?: number
@@ -46,6 +50,8 @@ export interface Database {
           avatar_url?: string | null
           points?: number
           location?: string | null
+          phone_number?: string | null
+          birthday?: string | null
           current_streak?: number
           longest_streak?: number
           total_completions?: number

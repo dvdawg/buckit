@@ -9,6 +9,8 @@ type Me = {
   avatar_url: string | null;
   points: number;
   location: string | null;
+  phone_number: string | null;
+  birthday: string | null;
   current_streak: number;
   longest_streak: number;
   total_completions: number;
@@ -20,54 +22,65 @@ export function useMe() {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) { setMe(null); setLoading(false); return; }
-    (async () => {
-      try {
-        // get users.id via RPC me_user_id(), then fetch row
-        const { data: uid } = await supabase.rpc('me_user_id');
+  const fetchUserData = async () => {
+    if (!user) { 
+      setMe(null); 
+      setLoading(false); 
+      return; 
+    }
+    
+    try {
+      // get users.id via RPC me_user_id(), then fetch row
+      const { data: uid } = await supabase.rpc('me_user_id');
+      
+      if (!uid) { 
+        console.log('No user ID from me_user_id, checking auth user...');
         
-        if (!uid) { 
-          console.log('No user ID from me_user_id, checking auth user...');
-          
-          // Get authenticated user
-          const { data: authUser } = await supabase.auth.getUser();
-          if (!authUser?.user?.id) {
-            setMe(null);
-            setLoading(false);
-            return;
-          }
-          
-          // Check if user exists in users table
-          const { data: existingUser } = await supabase
-            .from('users')
-            .select('*')
-            .eq('auth_id', authUser.user.id)
-            .single();
-            
-          if (existingUser) {
-            setMe(existingUser as Me);
-            setLoading(false);
-            return;
-          }
-          
-          // User needs to be created via migration
-          console.log('User not found - needs to be created via migration');
+        // Get authenticated user
+        const { data: authUser } = await supabase.auth.getUser();
+        if (!authUser?.user?.id) {
           setMe(null);
           setLoading(false);
           return;
         }
         
-        const { data, error } = await supabase.from('users').select('*').eq('id', uid).single();
-        if (!error) setMe(data as Me);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error in useMe:', error);
+        // Check if user exists in users table
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('*')
+          .eq('auth_id', authUser.user.id)
+          .single();
+          
+        if (existingUser) {
+          setMe(existingUser as Me);
+          setLoading(false);
+          return;
+        }
+        
+        // User needs to be created via migration
+        console.log('User not found - needs to be created via migration');
         setMe(null);
         setLoading(false);
+        return;
       }
-    })();
+      
+      const { data, error } = await supabase.from('users').select('*').eq('id', uid).single();
+      if (!error) setMe(data as Me);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error in useMe:', error);
+      setMe(null);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
   }, [user]);
 
-  return { me, loading };
+  const refresh = () => {
+    fetchUserData();
+  };
+
+  return { me, loading, refresh };
 }

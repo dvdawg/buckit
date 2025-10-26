@@ -13,6 +13,8 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '@/lib/supabase';
 import BucketLogo from '@/components/BucketLogo';
 
@@ -34,6 +36,22 @@ export default function RegisterScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [countryCode, setCountryCode] = useState('+1');
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  
+  const countryCodes = [
+    { code: '+1', country: 'US/CA' },
+    { code: '+44', country: 'UK' },
+    { code: '+33', country: 'France' },
+    { code: '+49', country: 'Germany' },
+    { code: '+81', country: 'Japan' },
+    { code: '+86', country: 'China' },
+    { code: '+91', country: 'India' },
+    { code: '+61', country: 'Australia' },
+    { code: '+55', country: 'Brazil' },
+    { code: '+52', country: 'Mexico' },
+  ];
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -58,28 +76,46 @@ export default function RegisterScreen() {
   const updateFormData = (key: string, value: string) => {
     let processedValue = value;
     
-    // Format birthday input
-    if (key === 'birthday') {
-      // Remove all non-digits
-      const digits = value.replace(/\D/g, '');
-      
-      // Format as MM/DD/YYYY with automatic slash insertion
-      if (digits.length === 0) {
-        processedValue = '';
-      } else if (digits.length <= 2) {
-        processedValue = digits;
-      } else if (digits.length <= 4) {
-        processedValue = digits.slice(0, 2) + '/' + digits.slice(2);
-      } else {
-        processedValue = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4, 8);
-      }
+    // Format phone number with automatic + and dashes
+    if (key === 'phone') {
+      processedValue = formatPhoneNumber(value);
     }
     
     setFormData(prev => ({ ...prev, [key]: processedValue }));
+    
     // Clear error when user starts typing
     if (errors[key]) {
       setErrors(prev => ({ ...prev, [key]: '' }));
     }
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // If no digits, return empty string
+    if (digits.length === 0) {
+      return '';
+    }
+    
+    // Return just the digits (no formatting)
+    return digits;
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      setFormData(prev => ({ ...prev, birthday: formattedDate }));
+    }
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const closeDatePicker = () => {
+    setShowDatePicker(false);
   };
 
   const validateEmail = (email: string) => {
@@ -89,31 +125,31 @@ export default function RegisterScreen() {
 
   const validatePhone = (phone: string) => {
     if (!phone.trim()) return true; // Empty phone is valid since it's optional
-    // Remove all non-digit characters except + at the start
-    const cleaned = phone.replace(/[^\d+]/g, '');
-    // Check if it starts with + and has 10-15 digits, or just has 10-15 digits
-    const phoneRegex = /^(\+?1?)?[2-9]\d{2}[2-9]\d{2}\d{4}$/;
-    return phoneRegex.test(cleaned) || /^\+?[1-9]\d{9,14}$/.test(cleaned);
+    // Check if it's 10 digits (US phone number)
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(phone);
   };
 
   const validateBirthday = (birthday: string) => {
-    const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-    if (!dateRegex.test(birthday)) return false;
+    if (!birthday) return false;
     
-    const [month, day, year] = birthday.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
+    const date = new Date(birthday);
     const now = new Date();
-    const age = now.getFullYear() - year;
     
-    // Check if the date is valid (handles leap years, month boundaries, etc.)
-    const isValidDate = date.getMonth() === month - 1 && 
-                       date.getDate() === day && 
-                       date.getFullYear() === year;
+    // Check if it's a valid date
+    if (isNaN(date.getTime())) return false;
     
-    // Check age requirements
-    const isAgeValid = age >= 13 && age <= 120;
+    // Check if date is not in the future
+    if (date > now) return false;
     
-    return isValidDate && isAgeValid;
+    // Check if user is at least 13 years old
+    const age = now.getFullYear() - date.getFullYear();
+    const monthDiff = now.getMonth() - date.getMonth();
+    const dayDiff = now.getDate() - date.getDate();
+    
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+    
+    return actualAge >= 13 && actualAge <= 120;
   };
 
   const validateForm = () => {
@@ -154,7 +190,7 @@ export default function RegisterScreen() {
     if (!formData.birthday) {
       newErrors.birthday = 'Birthday is required';
     } else if (!validateBirthday(formData.birthday)) {
-      newErrors.birthday = 'Please enter a valid birthday (MM/DD/YYYY) and ensure you are at least 13 years old';
+      newErrors.birthday = 'Please select a valid birthday and ensure you are at least 13 years old';
     }
 
     setErrors(newErrors);
@@ -291,20 +327,53 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            onFocus={closeDatePicker}
           />
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Phone Number (Optional)</Text>
-          <TextInput
-            style={[styles.textInput, errors.phone && styles.textInputError]}
-            placeholder="Enter your phone number (optional)"
-            placeholderTextColor="#9BA1A6"
-            value={formData.phone}
-            onChangeText={(value) => updateFormData('phone', value)}
-            keyboardType="phone-pad"
-          />
+          <View style={styles.phoneInputWrapper}>
+            <View style={styles.phoneInputContainer}>
+              <TouchableOpacity 
+                style={styles.countryCodeContainer}
+                onPress={() => setShowCountryPicker(!showCountryPicker)}
+              >
+                <Text style={styles.countryCodeText}>{countryCode}</Text>
+                <Ionicons name="chevron-down" size={16} color="#9BA1A6" />
+              </TouchableOpacity>
+              <TextInput
+                style={[styles.phoneTextInput, errors.phone && styles.textInputError]}
+                placeholder="Enter your phone number"
+                placeholderTextColor="#9BA1A6"
+                value={formData.phone}
+                onChangeText={(value) => updateFormData('phone', value)}
+                keyboardType="phone-pad"
+                onFocus={closeDatePicker}
+              />
+            </View>
+            {showCountryPicker && (
+              <View style={styles.countryPickerContainer}>
+                {countryCodes.map((country) => (
+                  <TouchableOpacity
+                    key={country.code}
+                    style={[
+                      styles.countryOption,
+                      countryCode === country.code && styles.countryOptionSelected
+                    ]}
+                    onPress={() => {
+                      setCountryCode(country.code);
+                      setShowCountryPicker(false);
+                    }}
+                  >
+                    <Text style={styles.countryOptionText}>{country.code}</Text>
+                    <Text style={styles.countryOptionCountry}>{country.country}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
           {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
         </View>
 
@@ -318,6 +387,7 @@ export default function RegisterScreen() {
             onChangeText={(value) => updateFormData('password', value)}
             secureTextEntry
             autoCapitalize="none"
+            onFocus={closeDatePicker}
           />
           {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
@@ -332,6 +402,7 @@ export default function RegisterScreen() {
             onChangeText={(value) => updateFormData('confirmPassword', value)}
             secureTextEntry
             autoCapitalize="none"
+            onFocus={closeDatePicker}
           />
           {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
         </View>
@@ -345,6 +416,7 @@ export default function RegisterScreen() {
             value={formData.firstName}
             onChangeText={(value) => updateFormData('firstName', value)}
             autoCapitalize="words"
+            onFocus={closeDatePicker}
           />
           {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
         </View>
@@ -358,6 +430,7 @@ export default function RegisterScreen() {
             value={formData.lastName}
             onChangeText={(value) => updateFormData('lastName', value)}
             autoCapitalize="words"
+            onFocus={closeDatePicker}
           />
           {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
         </View>
@@ -371,21 +444,32 @@ export default function RegisterScreen() {
             value={formData.city}
             onChangeText={(value) => updateFormData('city', value)}
             autoCapitalize="words"
+            onFocus={closeDatePicker}
           />
           {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Birthday *</Text>
-          <TextInput
-            style={[styles.textInput, errors.birthday && styles.textInputError]}
-            placeholder="MM/DD/YYYY (e.g., 01/15/1990)"
-            placeholderTextColor="#9BA1A6"
-            value={formData.birthday}
-            onChangeText={(value) => updateFormData('birthday', value)}
-            keyboardType="number-pad"
-            maxLength={10}
-          />
+          <TouchableOpacity 
+            style={[styles.textInput, styles.dateInput, errors.birthday && styles.textInputError]}
+            onPress={openDatePicker}
+          >
+            <Text style={[styles.dateText, !formData.birthday && styles.placeholderText]}>
+              {formData.birthday ? new Date(formData.birthday).toLocaleDateString() : 'Select your birthday'}
+            </Text>
+            <Ionicons name="calendar-outline" size={20} color="#9BA1A6" />
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={formData.birthday ? new Date(formData.birthday) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+              minimumDate={new Date(1900, 0, 1)}
+            />
+          )}
           {errors.birthday && <Text style={styles.errorText}>{errors.birthday}</Text>}
         </View>
       </View>
@@ -586,6 +670,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#fff',
+    flex: 1,
+  },
+  placeholderText: {
+    color: '#9BA1A6',
+  },
   textInputError: {
     borderColor: '#ef4444',
   },
@@ -637,5 +734,84 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
+  },
+  phoneInputWrapper: {
+    position: 'relative',
+    zIndex: 1,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#374151',
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#4b5563',
+  },
+  countryCodeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    marginRight: 4,
+  },
+  phoneTextInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    color: '#fff',
+    fontSize: 16,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  countryPickerContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#374151',
+    zIndex: 99999,
+    elevation: 999,
+    maxHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  countryOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  countryOptionSelected: {
+    backgroundColor: '#374151',
+  },
+  countryOptionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  countryOptionCountry: {
+    color: '#9BA1A6',
+    fontSize: 14,
   },
 });

@@ -60,17 +60,21 @@ export default function UserProfileScreen() {
 
     try {
       setActionLoading(true);
+      console.log('Friend action triggered, status:', friendshipStatus, 'user:', user.id);
       
       if (friendshipStatus === 'accepted') {
+        console.log('Attempting to unfriend user:', user.id);
         await unfriend(user.id);
         setFriendshipStatus('none');
         Alert.alert('Success', 'Removed from friends');
       } else if (friendshipStatus === 'none' || friendshipStatus === 'declined') {
+        console.log('Attempting to send friend request to:', user.id);
         await sendFriendRequest(user.id);
         setFriendshipStatus('pending');
         Alert.alert('Success', 'Friend request sent!');
       }
     } catch (error) {
+      console.error('Friend action error:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to perform action');
     } finally {
       setActionLoading(false);

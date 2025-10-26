@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export interface Friend {
@@ -46,7 +46,7 @@ export function useFriends() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFriends = async () => {
+  const fetchFriends = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_friends');
@@ -57,9 +57,9 @@ export function useFriends() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchFriendRequests = async () => {
+  const fetchFriendRequests = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_friend_requests');
@@ -70,9 +70,9 @@ export function useFriends() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const sendFriendRequest = async (friendId: string) => {
+  const sendFriendRequest = useCallback(async (friendId: string) => {
     try {
       setLoading(true);
       const { error } = await supabase.rpc('send_friend_request', {
@@ -86,25 +86,31 @@ export function useFriends() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchFriendRequests]);
 
-  const acceptFriendRequest = async (userId: string) => {
+  const acceptFriendRequest = useCallback(async (userId: string) => {
     try {
       setLoading(true);
+      console.log('Calling accept_friend_request with p_user_id:', userId);
       const { error } = await supabase.rpc('accept_friend_request', {
         p_user_id: userId
       });
-      if (error) throw error;
+      if (error) {
+        console.error('accept_friend_request error:', error);
+        throw error;
+      }
+      console.log('Friend request accepted successfully');
       await Promise.all([fetchFriends(), fetchFriendRequests()]); // Refresh both
     } catch (err) {
+      console.error('acceptFriendRequest error:', err);
       setError(err instanceof Error ? err.message : 'Failed to accept friend request');
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchFriends, fetchFriendRequests]);
 
-  const rejectFriendRequest = async (userId: string) => {
+  const rejectFriendRequest = useCallback(async (userId: string) => {
     try {
       setLoading(true);
       const { error } = await supabase.rpc('reject_friend_request', {
@@ -118,25 +124,31 @@ export function useFriends() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchFriendRequests]);
 
-  const unfriend = async (friendId: string) => {
+  const unfriend = useCallback(async (friendId: string) => {
     try {
       setLoading(true);
+      console.log('Unfriending user:', friendId);
       const { error } = await supabase.rpc('unfriend', {
         p_friend_id: friendId
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Unfriend error:', error);
+        throw error;
+      }
+      console.log('Unfriend successful');
       await fetchFriends(); // Refresh friends
     } catch (err) {
+      console.error('Unfriend error:', err);
       setError(err instanceof Error ? err.message : 'Failed to unfriend');
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchFriends]);
 
-  const getFriendCount = async (): Promise<number> => {
+  const getFriendCount = useCallback(async (): Promise<number> => {
     try {
       const { data, error } = await supabase.rpc('get_friend_count');
       if (error) throw error;
@@ -145,9 +157,9 @@ export function useFriends() {
       setError(err instanceof Error ? err.message : 'Failed to get friend count');
       return 0;
     }
-  };
+  }, []);
 
-  const getFriendshipStatus = async (userId: string): Promise<string> => {
+  const getFriendshipStatus = useCallback(async (userId: string): Promise<string> => {
     try {
       const { data, error } = await supabase.rpc('get_friendship_status', {
         p_user_id: userId
@@ -158,12 +170,12 @@ export function useFriends() {
       setError(err instanceof Error ? err.message : 'Failed to get friendship status');
       return 'none';
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFriends();
     fetchFriendRequests();
-  }, []);
+  }, [fetchFriends, fetchFriendRequests]);
 
   return {
     friends,
@@ -186,7 +198,7 @@ export function useUserSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const searchUsers = async (searchTerm: string, limit: number = 20) => {
+  const searchUsers = useCallback(async (searchTerm: string, limit: number = 20) => {
     if (!searchTerm.trim()) {
       setSearchResults([]);
       return;
@@ -206,9 +218,9 @@ export function useUserSearch() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getUserByHandle = async (handle: string) => {
+  const getUserByHandle = useCallback(async (handle: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_user_by_handle', {
@@ -222,7 +234,7 @@ export function useUserSearch() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     searchResults,

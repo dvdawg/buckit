@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,143 +8,131 @@ import {
   ScrollView,
   Alert,
   FlatList,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Dummy users data for search
-const dummyUsers = [
-  {
-    id: '1',
-    username: 'alex_adventures',
-    fullName: 'Alex Johnson',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-    location: 'San Francisco, CA',
-    mutualFriends: 3,
-  },
-  {
-    id: '2',
-    username: 'sarah_explorer',
-    fullName: 'Sarah Chen',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786',
-    location: 'Berkeley, CA',
-    mutualFriends: 1,
-  },
-  {
-    id: '3',
-    username: 'mike_fitness',
-    fullName: 'Mike Rodriguez',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e',
-    location: 'Oakland, CA',
-    mutualFriends: 5,
-  },
-  {
-    id: '4',
-    username: 'emma_travels',
-    fullName: 'Emma Wilson',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
-    location: 'Palo Alto, CA',
-    mutualFriends: 2,
-  },
-  {
-    id: '5',
-    username: 'david_foodie',
-    fullName: 'David Kim',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-    location: 'San Jose, CA',
-    mutualFriends: 0,
-  },
-];
+import { useUserSearch, useFriends, UserSearchResult } from '@/hooks/useFriends';
 
 export default function AddFriendsScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState(dummyUsers);
-  const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [friendshipStatuses, setFriendshipStatuses] = useState<Record<string, string>>({});
+  const { searchResults, loading, searchUsers } = useUserSearch();
+  const { sendFriendRequest } = useFriends();
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const timeoutId = setTimeout(() => {
+        searchUsers(searchQuery);
+      }, 300); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery, searchUsers]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (query.trim() === '') {
-      setSearchResults(dummyUsers);
-    } else {
-      const filtered = dummyUsers.filter(user =>
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.fullName.toLowerCase().includes(query.toLowerCase())
-      );
-      setSearchResults(filtered);
+  };
+
+  const handleSendFriendRequest = async (userId: string) => {
+    try {
+      await sendFriendRequest(userId);
+      setFriendshipStatuses(prev => ({
+        ...prev,
+        [userId]: 'pending'
+      }));
+      Alert.alert('Success', 'Friend request sent!');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to send friend request');
     }
   };
 
-  const handleSendFriendRequest = (userId: string) => {
-    setSentRequests(prev => [...prev, userId]);
-    Alert.alert('Friend Request Sent', 'Your friend request has been sent!');
-  };
-
-  const handleViewProfile = (userId: string) => {
-    router.push(`/profile/${userId}`);
+  const handleViewProfile = (user: UserSearchResult) => {
+    router.push(`/user-profile/${user.handle}`);
   };
 
   const handleSearchPress = () => {
     router.push('/search-users');
   };
 
-  const renderUserItem = ({ item }: { item: typeof dummyUsers[0] }) => {
-    const isRequestSent = sentRequests.includes(item.id);
-    
+  const getActionButton = (user: UserSearchResult) => {
+    const status = friendshipStatuses[user.id] || user.friendship_status;
+
+    switch (status) {
+      case 'accepted':
+        return (
+          <TouchableOpacity style={[styles.addButton, styles.friendsButton]}>
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.addButtonGradient}
+            >
+              <Ionicons name="checkmark" size={16} color="#fff" />
+              <Text style={[styles.addButtonText, styles.friendsButtonText]}>Friends</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        );
+      case 'pending':
+        return (
+          <TouchableOpacity style={[styles.addButton, styles.pendingButton]}>
+            <LinearGradient
+              colors={['#F59E0B', '#D97706']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.addButtonGradient}
+            >
+              <Ionicons name="time" size={16} color="#fff" />
+              <Text style={[styles.addButtonText, styles.pendingButtonText]}>Pending</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        );
+      default:
+        return (
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleSendFriendRequest(user.id);
+            }}
+          >
+            <LinearGradient
+              colors={['#8EC5FC', '#E0C3FC']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.addButtonGradient}
+            >
+              <Ionicons name="person-add" size={16} color="#000" />
+              <Text style={styles.addButtonText}>Add Friend</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        );
+    }
+  };
+
+  const renderUserItem = ({ item }: { item: UserSearchResult }) => {
     return (
       <TouchableOpacity 
         style={styles.userCard}
-        onPress={() => handleViewProfile(item.id)}
+        onPress={() => handleViewProfile(item)}
         activeOpacity={0.7}
       >
         <View style={styles.userInfo}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {item.fullName.split(' ').map(n => n[0]).join('')}
-            </Text>
-          </View>
+          <Image
+            source={{ 
+              uri: item.avatar_url || 'https://via.placeholder.com/50x50/6B7280/FFFFFF?text=' + (item.handle?.[0] || '?')
+            }}
+            style={styles.avatar}
+          />
           <View style={styles.userDetails}>
-            <Text style={styles.username}>@{item.username}</Text>
-            <Text style={styles.fullName}>{item.fullName}</Text>
-            <Text style={styles.location}>📍 {item.location}</Text>
-            {item.mutualFriends > 0 && (
-              <Text style={styles.mutualFriends}>
-                {item.mutualFriends} mutual friend{item.mutualFriends !== 1 ? 's' : ''}
-              </Text>
-            )}
+            <Text style={styles.username}>@{item.handle}</Text>
+            <Text style={styles.fullName}>{item.full_name || item.handle}</Text>
+            <Text style={styles.location}>⭐ {item.points} points</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={[
-            styles.addButton,
-            isRequestSent && styles.addButtonSent
-          ]}
-          onPress={(e) => {
-            e.stopPropagation(); // Prevent triggering the card press
-            handleSendFriendRequest(item.id);
-          }}
-          disabled={isRequestSent}
-        >
-          <LinearGradient
-            colors={isRequestSent ? ['#374151', '#4B5563'] : ['#8EC5FC', '#E0C3FC']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.addButtonGradient}
-          >
-            <Ionicons 
-              name={isRequestSent ? "checkmark" : "person-add"} 
-              size={16} 
-              color={isRequestSent ? "#9BA1A6" : "#000"} 
-            />
-            <Text style={[
-              styles.addButtonText,
-              isRequestSent && styles.addButtonTextSent
-            ]}>
-              {isRequestSent ? 'Sent' : 'Add'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        {getActionButton(item)}
       </TouchableOpacity>
     );
   };
@@ -183,16 +171,45 @@ export default function AddFriendsScreen() {
       {/* Search Results */}
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsTitle}>
-          {searchQuery ? `Search Results (${searchResults.length})` : 'Suggested Friends'}
+          {searchQuery ? `Search Results (${searchResults.length})` : 'Find Friends'}
         </Text>
         
-        <FlatList
-          data={searchResults}
-          renderItem={renderUserItem}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.resultsList}
-        />
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8EC5FC" />
+            <Text style={styles.loadingText}>Searching...</Text>
+          </View>
+        )}
+
+        {!loading && searchQuery.trim() && searchResults.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search" size={48} color="#6B7280" />
+            <Text style={styles.emptyTitle}>No users found</Text>
+            <Text style={styles.emptySubtitle}>
+              Try searching with a different username or name
+            </Text>
+          </View>
+        )}
+
+        {!loading && searchQuery.trim() && searchResults.length > 0 && (
+          <FlatList
+            data={searchResults}
+            renderItem={renderUserItem}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.resultsList}
+          />
+        )}
+
+        {!searchQuery.trim() && (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="people" size={48} color="#6B7280" />
+            <Text style={styles.emptyTitle}>Find Friends</Text>
+            <Text style={styles.emptySubtitle}>
+              Search for friends by their username or name
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -282,19 +299,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  avatarContainer: {
+  avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#8EC5FC',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 12,
   },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: '#9BA1A6',
+    marginTop: 12,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 40,
   },
   userDetails: {
     flex: 1,
@@ -351,5 +388,17 @@ const styles = StyleSheet.create({
   },
   addButtonTextSent: {
     color: '#9BA1A6',
+  },
+  friendsButton: {
+    shadowColor: '#10B981',
+  },
+  pendingButton: {
+    shadowColor: '#F59E0B',
+  },
+  friendsButtonText: {
+    color: '#fff',
+  },
+  pendingButtonText: {
+    color: '#fff',
   },
 });

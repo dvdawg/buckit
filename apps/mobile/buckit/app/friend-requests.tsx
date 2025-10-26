@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFriends, FriendRequest } from '@/hooks/useFriends';
+import { supabase } from '@/lib/supabase';
 
 export default function FriendRequestsScreen() {
   const router = useRouter();
@@ -24,6 +25,25 @@ export default function FriendRequestsScreen() {
     rejectFriendRequest 
   } = useFriends();
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUserId = async () => {
+      try {
+        const { data: userId, error } = await supabase.rpc('me_user_id');
+        if (error) {
+          console.error('Error getting current user ID:', error);
+        } else {
+          setCurrentUserId(userId);
+        }
+      } catch (err) {
+        console.error('Error in getCurrentUserId:', err);
+      }
+    };
+    
+    getCurrentUserId();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -33,9 +53,12 @@ export default function FriendRequestsScreen() {
 
   const handleAcceptRequest = async (userId: string) => {
     try {
+      console.log('Accepting friend request from user:', userId);
+      console.log('Current user ID:', currentUserId);
       await acceptFriendRequest(userId);
       Alert.alert('Success', 'Friend request accepted!');
     } catch (error) {
+      console.error('Error accepting friend request:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to accept friend request');
     }
   };
@@ -50,8 +73,20 @@ export default function FriendRequestsScreen() {
   };
 
   const getRequestInfo = (request: FriendRequest) => {
-    // Determine if this is a request sent TO me or BY me
-    const isIncoming = request.friend_id === request.user_info.id;
+    if (!currentUserId) {
+      return {
+        isIncoming: false,
+        user: request.user_info,
+        status: request.status,
+      };
+    }
+    
+    // The database function returns requests where current user is either sender or receiver
+    // user_info is always the sender (user_id), friend_info is always the receiver (friend_id)
+    // If friend_id matches current user, it's incoming (someone sent it TO me)
+    // If user_id matches current user, it's outgoing (I sent it TO someone)
+    const isIncoming = request.friend_id === currentUserId;
+    
     return {
       isIncoming,
       user: isIncoming ? request.user_info : request.friend_info,
@@ -59,11 +94,14 @@ export default function FriendRequestsScreen() {
     };
   };
 
+  // Filter requests where I am the recipient (incoming requests)
   const incomingRequests = friendRequests.filter(req => 
-    req.friend_id === req.user_info.id && req.status === 'pending'
+    currentUserId && req.friend_id === currentUserId && req.status === 'pending'
   );
+  
+  // Filter requests where I am the sender (outgoing requests)  
   const sentRequests = friendRequests.filter(req => 
-    req.user_id === req.user_info.id && req.status === 'pending'
+    currentUserId && req.user_id === currentUserId && req.status === 'pending'
   );
 
   const renderRequestItem = (request: FriendRequest) => {

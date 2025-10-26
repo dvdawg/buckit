@@ -53,9 +53,10 @@ END;
 $$;
 
 -- Function to get friend requests (both sent and received)
+DROP FUNCTION IF EXISTS get_friend_requests();
 CREATE OR REPLACE FUNCTION get_friend_requests()
 RETURNS TABLE (
-    id UUID,
+    id TEXT,
     user_id UUID,
     friend_id UUID,
     status TEXT,
@@ -67,7 +68,7 @@ LANGUAGE SQL
 SECURITY DEFINER
 AS $$
     SELECT 
-        f.id,
+        f.user_id::TEXT || '_' || f.friend_id::TEXT as id,
         f.user_id,
         f.friend_id,
         f.status,

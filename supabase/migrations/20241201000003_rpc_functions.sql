@@ -193,9 +193,9 @@ BEGIN
     
     -- Check if friendship already exists
     IF EXISTS (
-        SELECT 1 FROM friendships 
-        WHERE (user_id = user_id AND friend_id = p_friend_id)
-        OR (user_id = p_friend_id AND friend_id = user_id)
+        SELECT 1 FROM friendships f
+        WHERE (f.user_id = user_id AND f.friend_id = p_friend_id)
+        OR (f.user_id = p_friend_id AND f.friend_id = user_id)
     ) THEN
         RAISE EXCEPTION 'Friendship already exists';
     END IF;

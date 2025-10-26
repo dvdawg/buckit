@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   bucketTitle: {
     fontSize: 32,
@@ -924,11 +924,10 @@ const styles = StyleSheet.create({
   },
   bucketDescription: {
     fontSize: 16,
-    color: '#B0B0B0',
-    textAlign: 'center',
+    color: '#9BA1A6',
+    textAlign: 'left',
     marginBottom: 12,
     lineHeight: 22,
-    paddingHorizontal: 20,
   },
   bucketMeta: {
     flexDirection: 'row',
@@ -936,7 +935,7 @@ const styles = StyleSheet.create({
   },
   createdDate: {
     fontSize: 16,
-    color: '#fff',
+    color: '#9BA1A6',
   },
   // Editing styles
   imageEditButton: {
@@ -972,7 +971,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
-    textAlign: 'center',
+    textAlign: 'left',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -983,8 +982,8 @@ const styles = StyleSheet.create({
   },
   bucketDescriptionInput: {
     fontSize: 16,
-    color: '#B0B0B0',
-    textAlign: 'center',
+    color: '#9BA1A6',
+    textAlign: 'left',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -997,7 +996,7 @@ const styles = StyleSheet.create({
   },
   editActions: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 16,
   },
   cancelButton: {

@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function Settings() {
   const router = useRouter();
-  const { user, isSessionValid } = useSession();
+  const { user, isSessionValid, signOut } = useSession();
   const { me, loading, refresh } = useMe();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -612,6 +612,24 @@ export default function Settings() {
           <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
         </TouchableOpacity>
       </View>
+
+      {/* Sign Out Section */}
+      <View style={styles.section}>
+        <TouchableOpacity 
+          style={styles.signOutButton} 
+          onPress={async () => {
+            try {
+              console.log('Settings: Starting sign out...');
+              await signOut();
+              console.log('Settings: Sign out completed');
+            } catch (error) {
+              console.error('Settings: Sign out error:', error);
+            }
+          }}
+        >
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -912,5 +930,18 @@ const styles = StyleSheet.create({
   countryOptionCountry: {
     color: '#9BA1A6',
     fontSize: 14,
+  },
+  signOutButton: {
+    backgroundColor: '#ef4444',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  signOutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

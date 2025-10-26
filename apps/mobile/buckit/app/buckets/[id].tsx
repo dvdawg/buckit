@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useState, useRef, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { useBucket } from '@/hooks/useBucket';
 import { supabase } from '@/lib/supabase';
 import LocationPicker from '@/components/LocationPicker';
@@ -33,6 +34,7 @@ export default function BucketDetail() {
     coordinates: { latitude: number; longitude: number };
     address?: string;
   } | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -99,12 +101,11 @@ export default function BucketDetail() {
         bucketId: bucket.id,
         title: bucket.title || '',
         description: bucket.description || '',
-        coverUrl: bucket.cover_url || ''
+        coverUrl: bucket.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
       });
       router.push(`/create-bucket?${params.toString()}`);
     }
   };
-
 
   const handleRatingSubmit = async () => {
     if (tempRating === 0) {
@@ -454,19 +455,11 @@ export default function BucketDetail() {
 
         {/* Bucket Info */}
         <View style={styles.bucketInfo}>
-          <Image 
-            source={{ uri: bucket?.cover_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' }} 
-            style={styles.bucketImage} 
-          />
           <Text style={styles.bucketTitle}>{bucket?.title}</Text>
           <Text style={styles.bucketDescription}>{bucket?.description}</Text>
-          <Text style={styles.createdDate}>
-            Created {bucket?.created_at ? new Date(bucket.created_at).toLocaleDateString('en-US', { 
-              month: '2-digit', 
-              day: '2-digit', 
-              year: 'numeric' 
-            }) : 'Unknown'}
-          </Text>
+          <View style={styles.bucketMeta}>
+            <Text style={styles.createdDate}>Created {new Date(bucket?.created_at).toLocaleDateString()}</Text>
+          </View>
         </View>
       </View>
 
@@ -872,102 +865,6 @@ const styles = StyleSheet.create({
   createdDate: {
     fontSize: 16,
     color: '#9BA1A6',
-  },
-  // Editing styles
-  imageEditButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: 'center',
-    marginBottom: 16,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  editableImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageEditOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageEditText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  bucketTitleInput: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#fff',
-    textAlign: 'left',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  bucketDescriptionInput: {
-    fontSize: 16,
-    color: '#9BA1A6',
-    textAlign: 'left',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 16,
-  },
-  cancelButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#8EC5FC',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  saveButtonGradient: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  saveButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
   },
   // Rating modal styles
   ratingModalOverlay: {

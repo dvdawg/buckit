@@ -77,7 +77,9 @@ export default function FloatingAddButton() {
         onPress={handleAddPress}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={24} color="#8EC5FC" />
+        <View style={styles.addButtonContainer}>
+          <Ionicons name="add" size={20} color="#fff" />
+        </View>
       </TouchableOpacity>
 
       {/* Modal */}
@@ -146,7 +148,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 0,
+  },
+  addButtonContainer: {
+    backgroundColor: '#000',
+    width: 50,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   overlay: {
     flex: 1,

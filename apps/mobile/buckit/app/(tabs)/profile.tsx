@@ -7,6 +7,7 @@ import { useMe } from '@/hooks/useMe';
 import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 import { useBuckets } from '@/hooks/useBuckets';
 import { useItems } from '@/hooks/useItems';
+import { useFriends } from '@/hooks/useFriends';
 import PerformancePreview from '@/components/PerformancePreview';
 import ChallengeModal from '@/components/ChallengeModal';
 import { useEffect, useCallback, useState } from 'react';
@@ -192,9 +193,11 @@ export default function Profile() {
   const { me, loading, refresh } = useMe();
   const { buckets, loading: bucketsLoading, refresh: refreshBuckets } = useBuckets();
   const { items, loading: itemsLoading } = useItems();
+  const { getFriendCount } = useFriends();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
+  const [friendCount, setFriendCount] = useState<number>(0);
 
   // Pull to refresh functionality
   const { refreshing, onRefresh } = usePullToRefresh({
@@ -202,6 +205,8 @@ export default function Profile() {
       // Refresh all data
       await refresh();
       await refreshBuckets();
+      const count = await getFriendCount();
+      setFriendCount(count);
     },
     minDuration: 1000, // 1 second minimum for smooth transition
   });
@@ -244,6 +249,15 @@ export default function Profile() {
       loading
     });
   }, [me, loading]);
+
+  // Load friend count on mount
+  useEffect(() => {
+    const loadFriendCount = async () => {
+      const count = await getFriendCount();
+      setFriendCount(count);
+    };
+    loadFriendCount();
+  }, [getFriendCount]);
 
   useEffect(() => {
     // If no valid session, redirect to splash
@@ -301,14 +315,26 @@ export default function Profile() {
               <Text style={styles.userLocation}>
                 {me?.location || `Points: ${me?.points || 0}`}
               </Text>
-              <Text style={styles.userFollowers}>
-                53 Friends
-              </Text>
+              <TouchableOpacity 
+                onPress={() => router.push('/friends-list')}
+                style={styles.followersContainer}
+              >
+                <Text style={styles.userFollowers}>
+                  {friendCount} Friends
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
+              </TouchableOpacity>
             </View>
             <View style={styles.headerButtons}>
               <TouchableOpacity 
+                style={styles.friendRequestsButton}
+                onPress={() => router.push('/friend-requests')}
+              >
+                <Ionicons name="people-outline" size={20} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity 
                 style={styles.addFriendsButton}
-                onPress={() => router.push('/add-friends')}
+                onPress={() => router.push('/search-users')}
               >
                 <Ionicons name="person-add-outline" size={20} color="#fff" />
               </TouchableOpacity>
@@ -539,6 +565,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  friendRequestsButton: {
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
+  },
   addFriendsButton: {
     padding: 8,
     backgroundColor: 'rgba(0,0,0,0.3)',
@@ -564,10 +595,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#9BA1A6',
   },
+  followersContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
   userFollowers: {
     fontSize: 16,
     color: '#9BA1A6',
-    marginTop: 2,
+    marginRight: 4,
   },
   section: {
     paddingHorizontal: 20,

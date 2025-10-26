@@ -1,0 +1,417 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useUserSearch, useFriends } from '@/hooks/useFriends';
+import { useBuckets } from '@/hooks/useBuckets';
+
+const { width } = Dimensions.get('window');
+
+export default function UserProfileScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { getUserByHandle } = useUserSearch();
+  const { sendFriendRequest, unfriend, getFriendshipStatus } = useFriends();
+  const { buckets } = useBuckets();
+  
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [friendshipStatus, setFriendshipStatus] = useState<string>('none');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [id]);
+
+  const loadUserProfile = async () => {
+    try {
+      setLoading(true);
+      // For now, we'll use the id as handle - in a real app you'd have a proper user lookup
+      const userData = await getUserByHandle(id as string);
+      if (userData) {
+        setUser(userData);
+        setFriendshipStatus(userData.friendship_status);
+      } else {
+        Alert.alert('Error', 'User not found');
+        router.back();
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      Alert.alert('Error', 'Failed to load user profile');
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFriendAction = async () => {
+    if (!user) return;
+
+    try {
+      setActionLoading(true);
+      
+      if (friendshipStatus === 'accepted') {
+        await unfriend(user.id);
+        setFriendshipStatus('none');
+        Alert.alert('Success', 'Removed from friends');
+      } else if (friendshipStatus === 'none' || friendshipStatus === 'declined') {
+        await sendFriendRequest(user.id);
+        setFriendshipStatus('pending');
+        Alert.alert('Success', 'Friend request sent!');
+      }
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to perform action');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getActionButton = () => {
+    switch (friendshipStatus) {
+      case 'accepted':
+        return (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.unfriendButton]}
+            onPress={handleFriendAction}
+            disabled={actionLoading}
+          >
+            <Ionicons name="person-remove" size={16} color="#fff" />
+            <Text style={styles.actionButtonText}>Unfriend</Text>
+          </TouchableOpacity>
+        );
+      case 'pending':
+        return (
+          <TouchableOpacity style={[styles.actionButton, styles.pendingButton]} disabled>
+            <Ionicons name="time" size={16} color="#fff" />
+            <Text style={styles.actionButtonText}>Pending</Text>
+          </TouchableOpacity>
+        );
+      case 'declined':
+        return (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.addButton]}
+            onPress={handleFriendAction}
+            disabled={actionLoading}
+          >
+            <Ionicons name="person-add" size={16} color="#000" />
+            <Text style={[styles.actionButtonText, styles.addButtonText]}>Add Friend</Text>
+          </TouchableOpacity>
+        );
+      default:
+        return (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.addButton]}
+            onPress={handleFriendAction}
+            disabled={actionLoading}
+          >
+            <Ionicons name="person-add" size={16} color="#000" />
+            <Text style={[styles.actionButtonText, styles.addButtonText]}>Add Friend</Text>
+          </TouchableOpacity>
+        );
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8EC5FC" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="person-outline" size={64} color="#6B7280" />
+        <Text style={styles.errorTitle}>User Not Found</Text>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Filter buckets that are visible to friends or public
+  const visibleBuckets = buckets?.filter(bucket => 
+    bucket.visibility === 'public' || 
+    (bucket.visibility === 'friends' && friendshipStatus === 'accepted')
+  ) || [];
+
+  return (
+    <View style={styles.container}>
+      {/* Profile Header */}
+      <View style={styles.headerContainer}>
+        <Image 
+          source={{ 
+            uri: user.avatar_url || 'https://via.placeholder.com/300x200/6B7280/FFFFFF?text=Profile'
+          }} 
+          style={styles.profileHeaderImage} 
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
+          style={styles.headerGradient}
+        />
+        <View style={styles.userInfo}>
+          <View style={styles.userInfoTop}>
+            <View style={styles.userInfoLeft}>
+              <Text style={styles.userName}>{user.full_name || user.handle}</Text>
+              <Text style={styles.userHandle}>@{user.handle}</Text>
+              <Text style={styles.userLocation}>
+                {user.location || `${user.points} points`}
+              </Text>
+            </View>
+            <View style={styles.headerButtons}>
+              {getActionButton()}
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => router.back()}
+              >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Content */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Buckets Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {friendshipStatus === 'accepted' ? 'Buckets' : 'Public Buckets'}
+          </Text>
+          {visibleBuckets.length > 0 ? (
+            <View style={styles.bucketsGrid}>
+              {visibleBuckets.map((bucket) => (
+                <TouchableOpacity 
+                  key={bucket.id} 
+                  style={styles.bucketCard}
+                  onPress={() => router.push(`/buckets/${bucket.id}`)}
+                >
+                  <Image
+                    source={{ uri: bucket.cover_url || 'https://via.placeholder.com/150x100/6B7280/FFFFFF?text=Bucket' }}
+                    style={styles.bucketImage}
+                  />
+                  <View style={styles.bucketInfo}>
+                    <Text style={styles.bucketTitle} numberOfLines={1}>
+                      {bucket.title}
+                    </Text>
+                    <Text style={styles.bucketDescription} numberOfLines={2}>
+                      {bucket.description || 'No description'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Ionicons name="folder-outline" size={48} color="#6B7280" />
+              <Text style={styles.emptyTitle}>
+                {friendshipStatus === 'accepted' ? 'No buckets yet' : 'No public buckets'}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {friendshipStatus === 'accepted' 
+                  ? 'This user hasn\'t created any buckets yet'
+                  : 'This user doesn\'t have any public buckets'
+                }
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+  },
+  loadingText: {
+    color: '#9BA1A6',
+    marginTop: 12,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    paddingHorizontal: 40,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  backButton: {
+    backgroundColor: '#8EC5FC',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  backButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerContainer: {
+    height: 300,
+    position: 'relative',
+  },
+  profileHeaderImage: {
+    width: '100%',
+    height: '100%',
+  },
+  headerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 150,
+  },
+  userInfo: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  userInfoTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  userInfoLeft: {
+    flex: 1,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  userHandle: {
+    fontSize: 16,
+    color: '#9BA1A6',
+    marginBottom: 4,
+  },
+  userLocation: {
+    fontSize: 16,
+    color: '#9BA1A6',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  addButton: {
+    backgroundColor: '#8EC5FC',
+  },
+  pendingButton: {
+    backgroundColor: '#F59E0B',
+  },
+  unfriendButton: {
+    backgroundColor: '#EF4444',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+    color: '#fff',
+  },
+  addButtonText: {
+    color: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    marginTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  bucketsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  bucketCard: {
+    width: (width - 60) / 2,
+    backgroundColor: '#1F2937',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  bucketImage: {
+    width: '100%',
+    height: 100,
+  },
+  bucketInfo: {
+    padding: 12,
+  },
+  bucketTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  bucketDescription: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    lineHeight: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
+  },
+});

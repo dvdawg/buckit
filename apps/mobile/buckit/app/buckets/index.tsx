@@ -32,7 +32,7 @@ export default function Buckets() {
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Buckets</Text>
+        <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>My Buckets</Text>
         <TouchableOpacity style={styles.addButton} onPress={handleAddBucket}>
           <Ionicons name="add" size={24} color="#8EC5FC" />
         </TouchableOpacity>
@@ -106,9 +106,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
   },
   addButton: {
     width: 40,

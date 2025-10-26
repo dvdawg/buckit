@@ -111,7 +111,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginLeft: 8,
   },
   metricsGrid: {
@@ -130,14 +131,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   metricLabel: {
-    fontSize: 12,
-    color: '#9BA1A6',
+    fontSize: 13,
+    color: '#A0A0A0',
+    fontFamily: 'Poppins',
     marginLeft: 4,
   },
   metricValue: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 2,
   },
   metricSubtext: {

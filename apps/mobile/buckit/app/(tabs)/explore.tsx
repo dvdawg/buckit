@@ -205,7 +205,7 @@ export default function ExploreScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore</Text>
+        <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>Explore</Text>
         <Text style={styles.headerSubtitle}>Discover new challenges and buckets</Text>
       </View>
 
@@ -321,14 +321,16 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#9BA1A6',
+    fontSize: 15,
+    color: '#D1D1D1',
+    fontFamily: 'Poppins',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -361,19 +363,22 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 14,
-    color: '#9BA1A6',
+    fontSize: 13,
+    color: '#A0A0A0',
+    fontFamily: 'Poppins',
   },
   subsectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: '500',
+    color: '#EAEAEA',
+    fontFamily: 'Poppins',
     marginBottom: 16,
   },
   contentGrid: {
@@ -438,13 +443,15 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 4,
   },
   cardDescription: {
     fontSize: 14,
-    color: '#B0B0B0',
+    color: '#D1D1D1',
+    fontFamily: 'Poppins',
     marginBottom: 12,
     lineHeight: 18,
   },
@@ -483,12 +490,14 @@ const styles = StyleSheet.create({
   challengeTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 4,
   },
   challengeDescription: {
     fontSize: 14,
-    color: '#B0B0B0',
+    color: '#D1D1D1',
+    fontFamily: 'Poppins',
     lineHeight: 18,
   },
   challengeDetails: {
@@ -545,7 +554,8 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     textAlign: 'center',
   },
   // Niche categories styles
@@ -593,7 +603,8 @@ const styles = StyleSheet.create({
   nicheCategoryName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     textAlign: 'center',
   },
 });

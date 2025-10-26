@@ -854,14 +854,16 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   stepTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 8,
   },
   stepSubtitle: {
-    fontSize: 16,
-    color: '#9BA1A6',
+    fontSize: 15,
+    color: '#D1D1D1',
+    fontFamily: 'Poppins',
     marginBottom: 32,
   },
   formContainer: {

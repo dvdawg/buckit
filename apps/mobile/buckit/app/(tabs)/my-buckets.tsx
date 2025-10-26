@@ -75,7 +75,7 @@ export default function MyBuckets() {
     <View style={styles.container}>
       {/* Navigation Header - No back button, tab bar persists */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Buckets</Text>
+        <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>My Buckets</Text>
         <TouchableOpacity style={styles.addButton} onPress={handleAddBucket}>
           <Ionicons name="add" size={24} color="#8EC5FC" />
         </TouchableOpacity>
@@ -124,17 +124,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
   },
   addButton: {
+    position: 'absolute',
+    right: 20,
+    top: 60,
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -147,6 +151,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    paddingTop: 20,
     minHeight: 400, // Ensure minimum height for proper scrolling
   },
   bucketCard: {

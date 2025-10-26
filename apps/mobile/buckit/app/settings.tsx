@@ -342,7 +342,7 @@ export default function Settings() {
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>Settings</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -653,9 +653,10 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
   },
   headerRight: {
     width: 40,
@@ -673,8 +674,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '500',
+    color: '#EAEAEA',
+    fontFamily: 'Poppins',
     marginBottom: 20,
   },
   avatarSection: {
@@ -719,7 +721,8 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 8,
   },
   textInput: {
@@ -814,7 +817,8 @@ const styles = StyleSheet.create({
   },
   settingItemText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginLeft: 12,
   },
   settingItemRight: {

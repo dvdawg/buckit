@@ -61,7 +61,7 @@ export default function Home() {
   if (!user || !isSessionValid) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
-        <Text style={{ color: '#fff' }}>Loading...</Text>
+        <Text style={{ color: '#FFFFFF', fontFamily: 'Poppins' }}>Loading...</Text>
       </View>
     );
   }
@@ -147,9 +147,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   appTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
   },
   postContainer: {
     marginBottom: 20,
@@ -169,7 +170,8 @@ const styles = StyleSheet.create({
   postUserName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
   },
   postImageContainer: {
     position: 'relative',
@@ -188,8 +190,9 @@ const styles = StyleSheet.create({
   },
   postTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     marginBottom: 4,
   },
   locationContainer: {
@@ -202,7 +205,8 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: '#9BA1A6',
+    color: '#A0A0A0',
+    fontFamily: 'Poppins',
   },
   likeButton: {
     position: 'absolute',

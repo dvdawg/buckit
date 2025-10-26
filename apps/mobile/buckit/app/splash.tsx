@@ -75,8 +75,9 @@ const styles = StyleSheet.create({
   },
   buckitText: {
     fontSize: 64,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     letterSpacing: 1,
     marginLeft: 16,
   },

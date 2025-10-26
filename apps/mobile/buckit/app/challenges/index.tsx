@@ -50,7 +50,7 @@ export default function ChallengesIndex() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>All Challenges</Text>
+        <Text style={[styles.headerTitle, { fontFamily: 'Poppins' }]}>All Challenges</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -144,9 +144,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 16,

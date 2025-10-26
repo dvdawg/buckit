@@ -376,7 +376,7 @@ export default function Profile() {
           console.log('Navigating to /buckets');
           router.push('/buckets');
         }}>
-          <Text style={styles.sectionTitle}>Buckets</Text>
+          <Text style={[styles.sectionTitle, { fontFamily: 'Poppins' }]}>Buckets</Text>
           <View style={styles.sectionHeaderRight}>
             <Text style={styles.seeAllText}>See All</Text>
             <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
@@ -428,7 +428,7 @@ export default function Profile() {
       {/* All Challenges Section */}
       <View style={styles.section}>
         <TouchableOpacity style={styles.sectionHeader} onPress={handleAllChallenges}>
-          <Text style={styles.sectionTitle}>All Challenges</Text>
+          <Text style={[styles.sectionTitle, { fontFamily: 'Poppins' }]}>All Challenges</Text>
           <View style={styles.sectionHeaderRight}>
             <Text style={styles.seeAllText}>See All</Text>
             <Ionicons name="chevron-forward" size={16} color="#9BA1A6" />
@@ -598,9 +598,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
   },
   sectionHeaderRight: {
     flexDirection: 'row',

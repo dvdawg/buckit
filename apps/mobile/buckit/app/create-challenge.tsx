@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useBuckets } from '@/hooks/useBuckets';
@@ -31,6 +31,7 @@ const BucketIcon = ({ size = 20, color = '#8EC5FC' }) => (
 
 export default function CreateChallengeScreen() {
   const router = useRouter();
+  const { bucketId } = useLocalSearchParams();
   const { buckets, loading: bucketsLoading } = useBuckets();
   const [formData, setFormData] = useState({
     title: '',
@@ -38,7 +39,7 @@ export default function CreateChallengeScreen() {
     location: '',
     category: '',
     targetDate: null as Date | null,
-    bucketId: '',
+    bucketId: bucketId as string || '',
   });
   const [selectedLocation, setSelectedLocation] = useState<{
     name: string;
@@ -118,6 +119,10 @@ export default function CreateChallengeScreen() {
   };
 
   const selectBucket = (bucketId: string) => {
+    // Don't allow changing bucket if it was pre-selected
+    if (bucketId && formData.bucketId === bucketId) {
+      return;
+    }
     setFormData(prev => ({ ...prev, bucketId }));
     setShowBucketModal(false);
   };
@@ -179,19 +184,28 @@ export default function CreateChallengeScreen() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Bucket *</Text>
-            <TouchableOpacity 
-              style={styles.bucketButton}
-              onPress={() => setShowBucketModal(true)}
-            >
-              <BucketIcon size={20} color="#8EC5FC" />
-              <Text style={styles.bucketButtonText}>
-                {formData.bucketId ? 
-                  buckets.find(b => b.id === formData.bucketId)?.title || 'Select Bucket' : 
-                  'Select Bucket'
-                }
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color="#8EC5FC" />
-            </TouchableOpacity>
+            {bucketId ? (
+              <View style={[styles.bucketButton, styles.bucketButtonDisabled]}>
+                <BucketIcon size={20} color="#8EC5FC" />
+                <Text style={styles.bucketButtonText}>
+                  {buckets.find(b => b.id === formData.bucketId)?.title || 'Loading...'}
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.bucketButton}
+                onPress={() => setShowBucketModal(true)}
+              >
+                <BucketIcon size={20} color="#8EC5FC" />
+                <Text style={styles.bucketButtonText}>
+                  {formData.bucketId ? 
+                    buckets.find(b => b.id === formData.bucketId)?.title || 'Select Bucket' : 
+                    'Select Bucket'
+                  }
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#8EC5FC" />
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -291,13 +305,14 @@ export default function CreateChallengeScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Bucket Selection Modal */}
-      <Modal
-        visible={showBucketModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowBucketModal(false)}
-      >
+      {/* Bucket Selection Modal - Only show if no bucket pre-selected */}
+      {!bucketId && (
+        <Modal
+          visible={showBucketModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowBucketModal(false)}
+        >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
@@ -333,7 +348,8 @@ export default function CreateChallengeScreen() {
             </ScrollView>
           </View>
         </View>
-      </Modal>
+        </Modal>
+      )}
 
     </KeyboardAvoidingView>
   );
@@ -409,6 +425,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  bucketButtonDisabled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    opacity: 0.7,
   },
   bucketButtonText: {
     flex: 1,

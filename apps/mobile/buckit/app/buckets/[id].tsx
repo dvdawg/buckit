@@ -92,8 +92,7 @@ export default function BucketDetail() {
   };
 
   const handleAddItem = () => {
-    // TODO: Open modal to add new item/challenge
-    console.log('Add new item to bucket');
+    router.push(`/create-challenge?bucketId=${id}`);
   };
 
   const handleRecalculateCount = async () => {

@@ -21,6 +21,10 @@ export default function Buckets() {
     router.back();
   };
 
+  const handleAddBucket = () => {
+    router.push('/create-bucket');
+  };
+
   return (
     <View style={styles.container}>
       {/* Navigation Header */}
@@ -29,7 +33,9 @@ export default function Buckets() {
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Buckets</Text>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity style={styles.addButton} onPress={handleAddBucket}>
+          <Ionicons name="add" size={24} color="#8EC5FC" />
+        </TouchableOpacity>
       </View>
 
       {/* Buckets Grid */}
@@ -99,8 +105,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
-  headerSpacer: {
+  addButton: {
     width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(142, 197, 252, 0.2)',
+    borderRadius: 20,
   },
   scrollView: {
     flex: 1,

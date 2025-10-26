@@ -15,6 +15,10 @@ export default function MyBuckets() {
     router.push(`/buckets/${bucketId}`);
   };
 
+  const handleAddBucket = () => {
+    router.push('/create-bucket');
+  };
+
   const renderBucketCard = (bucket: any) => {
     // Use cover_url if available, otherwise use a placeholder
     const imageSource = bucket.cover_url 
@@ -62,7 +66,7 @@ export default function MyBuckets() {
       {/* Navigation Header - No back button, tab bar persists */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Buckets</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={handleAddBucket}>
           <Ionicons name="add" size={24} color="#8EC5FC" />
         </TouchableOpacity>
       </View>

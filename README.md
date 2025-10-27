@@ -44,23 +44,27 @@ Combining the effect of all of these factors creates a trained comprehensive sco
 The following papers fed into our scoring system design:
 
 #### Human vmPFC is necessary for (pro-)social valuation (Nature Human Behaviour, 2024 — Lockwood et al.)
-Lesion study with 25 vmPFC patients plus controls using effort-for-reward tasks across selfish and prosocial conditions. vmPFC lesions disrupted reward-effort integration and reduced prosocial effort expenditure, establishing necessity (not correlation) for computing subjective value over social targets. Upgrades prior fMRI claims to causal evidence.For Buckit: Implement a single scalar subjective value function that integrates social parameters (co-participation, prosocial impact) and subtracts cost terms. Prosocial features should be weighted in the value computation, not applied as post-hoc modifiers.
+A lesion study with 25 vmPFC patients with controls using effort-reward tasks in selfish and "prosocial" conditions. These lesions disrupted reward/effort tradeoffs and effort for prosocial behaviors, showing necessity for computing subjective social values.
+
+For Buckit: We implement scalar value function that integrates social parameters and subtracts cost terms. Prosocial features should be weighted in the value computation.
 
 #### Value estimation vs effort mobilization dissociate (J. Neurosci, 2024 — Clairis et al.)
-fMRI study decomposing option valuation (expected utility) from effort mobilization using RL/utility models. vmPFC signals track subjective value estimation; dorsomedial PFC reflects effort mobilization. The systems operate sequentially: value estimation precedes energization.
-For Buckit: Decouple "appeal" and "executability" in the scoring function. Compute raw value from content features and social bonuses, then apply cost discounting (distance, price, time, coordination complexity). Post-process with an execution feasibility gate that downweights high-friction items. Surface both appeal justification and feasibility signals in the UI.
+An fMRI study breaking down expected utility from effort with RL/utility models. vmPFC signals track subjective value estimation and dorsomedial PFC track effort. These systems estimate value before energization.
 
+For Buckit: We decouple "appeal" and "executability" in the scoring function. Compute raw value from content features and social bonuses, then apply cost discounting (distance, price, time, coordination complexity). Post-process with an execution feasibility gate that downweights high-friction items. Emphasizes both appeal and feasibility signals in the UI.
 
 #### Default-Mode Network represents aesthetic appeal across domains (PNAS, 2019 — Vessel et al.)
-fMRI during visual stimulus viewing across categories. DMN activity patterns (medial PFC, posterior cingulate) encode aesthetic appeal in a domain-general manner, independent of category-specific visual processing. Suggests a content-agnostic appeal/resonance signal.
-For Buckit: Train a multimodal appeal predictor over CLIP embeddings of activity images, text, and descriptions. Supervise on completion/skip decisions and sentiment annotations to learn domain-general appeal even for cold-start items—a computational analog of DMN's general aesthetic signal.
+A study on fMRI during visual stimulus viewing across categories. DMN activity patterns encode aesthetic appeal in general domains, independent of category-specific visual processing.
+
+For Buckit: We train a multimodal appeal predictor over CLIP embeddings of activity images, text, and descriptions. Supervising on completion/skip decisions and sentiment annotations creates a computational analog of DMN's aesthetic signal.
 
 
 #### State-dependent connectivity predicts peak pleasure (PLoS Biology, 2024 — Mori et al.)
-Resting-state fMRI before music listening. Pre-task connectivity between auditory and reward networks predicted pleasure intensity better than trait-level baselines. Within-subject pleasure fluctuates with instantaneous brain state, not just stable preferences.
-For Buckit: Represent users as trait embeddings (long-run interaction history) plus state embeddings inferred from context (timestamp, weather, recent activity sequence, location, social configuration). Apply context-dependent gating: reweight category scores by session state—upweight indoor/cultural activities during rain/evening, outdoor activities during sun/morning.
+A study on resting-state fMRI before music listening. Pre-task connectivity between auditory and reward networks predicted pleasure intensity better than trait-level baselines.
 
+For Buckit: Represent users as trait embeddings (long-run interaction history) plus state embeddings created from context (timestamp, weather, recent activity sequence, location, social configuration). reweight category scores by session state, increasing the weight of indoor/cultural activities during rain/evening, outdoor activities during sun/morning.
 
 #### Multi-objective recommender systems for long-term outcomes (Frontiers in Big Data, 2023 — Jannach et al.)
-Survey of recommendation objectives beyond accuracy: diversity, novelty, serendipity, fairness, long-term engagement, multi-stakeholder optimization. Covers evaluation frameworks and optimization strategies including constrained reranking, Pareto methods, and exploration-aware bandits.
-For Buckit: Define KPIs including verified completions per 1K impressions, streak retention, diversity@K, and catalog coverage. Implement two-stage ranking: (1) candidate retrieval via embedding similarity + geo-filtering; (2) constrained reranking with diversity, novelty, and budget constraints (MMR + fairness bounds). Evaluate A/B tests on long-term metrics (return rate, completion rate) rather than click-through proxies.
+A survey of recommendation goals besides accuracy: diversity, novelty, fairness, long-term engagement, and more. Covers evaluation frameworks and optimization strategies including constrained reranking, Pareto methods, and exploration-aware bandits.
+
+For Buckit: We define KPIs including verified completions per 1000 impressions and catalog coverage with two-stage ranking: (1) recommended candidate list creation using embedding similarity + geo-filtering; (2) reranking with diversity, novelty, and budget constraints (MMR + fairness bounds).
